@@ -17,6 +17,7 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           # 项目配置的打包目录名称
-          folder: .
+          # folder: .
+          folder: hh/dist/index.html
           # 提交分支名
           branch: static-pages

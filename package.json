@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "node todo_webpack.js"
+    "build": "cd ./hh && yarn build"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/LeoJ-cn/blog-website/issues"
   },
-  "homepage": "https://github.com/LeoJ-cn/blog-website#readme"
+  "homepage": "https://github.com/LeoJ-cn/blog-website#readme",
+  "devDependencies": {
+    "@vue/cli": "^5.0.8"
+  }
 }
