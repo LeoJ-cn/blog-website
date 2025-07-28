@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "cd ./hh && yarn build"
+    "cusBuild": "cd ./hh && yarn install && yarn build"
   },
   "repository": {
     "type": "git",
