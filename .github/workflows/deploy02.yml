@@ -16,4 +16,7 @@ jobs:
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: . # The folder the action should deploy.
+          # 项目配置的打包目录名称
+          folder: .
+          # 提交分支名
+          branch: static-pages
