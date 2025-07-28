@@ -20,4 +20,4 @@ jobs:
           # folder: .
           folder: ./hh/dist/index.html
           # 提交分支名
-          branch: static-pages
+          # branch: static-pages
