@@ -18,6 +18,6 @@ jobs:
         with:
           # 项目配置的打包目录名称
           # folder: .
-          folder: hh/dist
+          folder: vue2web/dist
           # 提交分支名
           branch: static-pages
