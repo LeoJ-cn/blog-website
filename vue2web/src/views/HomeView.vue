@@ -5,7 +5,7 @@
       :style="{ 'font-size': '12px' }"
       src="../assets/logo.png"
     />
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App" />
+    <HelloWorld msg="vue2+vue3+Welcome to Your Vue.js + TypeScript App" />
   </div>
 </template>
 
