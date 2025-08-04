@@ -36,7 +36,6 @@ export default Vue.extend({
   },
   methods: {
     changeType() {
-      debugger;
       const zm = 1;
       const b = "4";
       const zmc = zm + b;

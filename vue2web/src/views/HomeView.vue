@@ -2,7 +2,7 @@
   <div class="home">
     <img
       alt="Vue logo"
-      :style="{ 'font-size': '12px' }"
+      :style="{ 'font-size': '12px', width: '26px' }"
       src="../assets/logo.png"
     />
     <HelloWorld msg="vue2+vue3+Welcome to Your Vue.js + TypeScript App" />

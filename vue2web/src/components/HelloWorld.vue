@@ -1,8 +1,7 @@
 <template>
-  <div class="hello">
+  <button class="hello" @click="clickHel">
     <h1>{{ msg }}</h1>
-    <h2>zzzmm</h2>
-  </div>
+  </button>
 </template>
 
 <script lang="ts">
@@ -10,7 +9,10 @@ import { Component, Prop, Vue } from "vue-property-decorator";
 
 @Component
 export default class HelloWorld extends Vue {
-  @Prop() private msg!: string;
+  @Prop({ default: "msg_default" }) private msg!: string;
+  clickHel() {
+    alert(this.msg);
+  }
 }
 </script>
 
