@@ -8,7 +8,23 @@
     "sass": "1.83.4",
     "typescript": "5.7.3",
     "vite": "6.0.11",
-    "vue-tsc": "2.2.0"
+    "vue-tsc": "2.2.0",
+    "@babel/core": "7.26.7",
+    "@babel/preset-env": "7.26.7",
+    "@babel/preset-typescript": "7.26.0",
+    "babel-loader": "9.2.1",
+    "css-loader": "7.1.2",
+    "html-webpack-plugin": "5.6.3",
+    "mini-css-extract-plugin": "2.9.2",
+    "postcss": "8.5.3",
+    "postcss-loader": "8.1.1",
+    "sass-loader": "16.0.5",
+    "style-loader": "4.0.0",
+    "ts-node": "10.9.2",
+    "vue-loader": "17.4.2",
+    "webpack": "5.98.0",
+    "webpack-cli": "6.0.1",
+    "webpack-dev-server": "5.2.0"
   },
   "dependencies": {
     "@blog/config": "workspace:*",
@@ -20,9 +36,9 @@
   },
   "scripts": {
     "dev:vite": "vite --mode development",
-    "dev:webpack": "echo 'Webpack application will be added in Phase 5.'",
+    "dev:webpack": "webpack serve --config webpack.config.mjs --mode development",
     "build:vite": "vite build --mode production",
-    "build:webpack": "echo 'Webpack build will be added in Phase 5.'",
+    "build:webpack": "webpack --config webpack.config.mjs --mode production",
     "typecheck": "vue-tsc --noEmit"
   }
 }
