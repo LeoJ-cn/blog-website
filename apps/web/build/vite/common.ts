@@ -1,5 +1,6 @@
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
+import vueJsx from '@vitejs/plugin-vue-jsx'
 import type { UserConfig } from 'vite'
 
 export const createViteCommonConfig = (): UserConfig => ({
@@ -10,7 +11,7 @@ export const createViteCommonConfig = (): UserConfig => ({
     cacheDir: 'node_modules/.vite',
     appType: 'spa',
     // 通用插件；环境专属插件在 development/production 中追加。
-    plugins: [vue()],
+    plugins: [vue(), vueJsx()],
     // public 目录会原样复制到构建产物。
     publicDir: 'public',
     // 构建时常量注入，不是运行时环境变量。
@@ -48,7 +49,8 @@ export const createViteCommonConfig = (): UserConfig => ({
     // 通用构建输出、压缩前处理、CommonJS 和 Rollup 配置。
     build: {
       outDir: '../../dist-vite', emptyOutDir: true, cssCodeSplit: true, manifest: true,
-      target: 'es2020',
+      // Legacy 插件会根据 targets 生成兼容产物，现代产物保持 Vite 默认的 esnext。
+      target: 'esnext',
       write: true,
       copyPublicDir: true,
       cssTarget: 'es2020',

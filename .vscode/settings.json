@@ -1,6 +1,6 @@
 {
   // TypeScript
-  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.path": "apps/web/node_modules/typescript/lib",
 
   // Vue 3 / Volar
   // 禁用 Vetur 能力，避免和 Vue - Official 冲突
