@@ -10,7 +10,7 @@ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 const require = createRequire(import.meta.url)
-const isProduction = process.env.NODE_ENV === 'production'
+const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('production')
 const isAnalyze = process.env.ANALYZE === 'true'
 const babelLoader = {
   loader: 'babel-loader',
@@ -33,7 +33,7 @@ export default {
   },
   resolve: {
     extensions: ['.ts', '.js', '.vue'],
-    alias: { '@': path.resolve(root, 'src'), vue: path.dirname(require.resolve('vue/package.json')) },
+    alias: { '@': path.resolve(root, 'src'), vue$: require.resolve('vue/dist/vue.runtime.esm-bundler.js') },
   },
   module: {
     rules: [
@@ -43,8 +43,8 @@ export default {
         exclude: /node_modules/,
         use: ['thread-loader', babelLoader],
       },
-      { test: /\.s[ac]ss$/i, use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader', 'sass-loader'] },
-      { test: /\.css$/i, use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader'] },
+      { test: /\.s[ac]ss$/i, use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader', 'postcss-loader', 'sass-loader'] },
+      { test: /\.css$/i, use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader', 'postcss-loader'] },
       { test: /\.(png|jpe?g|gif|svg|webp)$/i, type: 'asset' },
     ],
   },

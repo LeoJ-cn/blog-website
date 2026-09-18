@@ -5,19 +5,23 @@
   "type": "module",
   "devDependencies": {
     "@vitejs/plugin-vue": "5.2.1",
+    "@vitejs/plugin-legacy": "6.0.2",
     "sass": "1.83.4",
-    "typescript": "5.7.3",
+    "typescript": "5.6.3",
     "vite": "6.0.11",
     "vue-tsc": "2.2.0",
+    "rollup-plugin-visualizer": "5.14.0",
     "@babel/core": "7.26.7",
     "@babel/preset-env": "7.26.7",
     "@babel/preset-typescript": "7.26.0",
     "babel-loader": "9.2.1",
     "css-loader": "7.1.2",
     "css-minimizer-webpack-plugin": "7.0.2",
+    "core-js": "3.39.0",
     "html-webpack-plugin": "5.6.3",
     "mini-css-extract-plugin": "2.9.2",
-    "postcss": "8.5.3",
+    "postcss": "8.5.13",
+    "autoprefixer": "10.4.20",
     "postcss-loader": "8.1.1",
     "sass-loader": "16.0.5",
     "style-loader": "4.0.0",
@@ -43,6 +47,7 @@
     "build:vite": "vite build --mode production",
     "build:webpack": "webpack --config webpack.config.mjs --mode production",
     "analyze:webpack": "ANALYZE=true webpack --config webpack.config.mjs --mode production",
+    "analyze:vite": "ANALYZE=true vite build --mode production",
     "typecheck": "vue-tsc --noEmit"
   }
 }

@@ -15,6 +15,9 @@
     "build": "pnpm build:vite",
     "build:vite": "pnpm --filter @blog/web build:vite",
     "build:webpack": "pnpm --filter @blog/web build:webpack",
+    "analyze:webpack": "pnpm --filter @blog/web analyze:webpack",
+    "analyze:vite": "pnpm --filter @blog/web analyze:vite",
+    "benchmark:build": "node scripts/build-benchmark/index.mjs",
     "typecheck": "pnpm --filter @blog/web typecheck",
     "lint": "echo 'Phase 1 placeholder: lint configuration will be added in a later phase.'",
     "test:e2e": "echo 'Phase 1 placeholder: Playwright will be added in a later phase.'"
