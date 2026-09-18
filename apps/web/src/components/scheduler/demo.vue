@@ -1016,7 +1016,9 @@ onBeforeUnmount(() => {
           ▶ 启动分片任务
         </button>
 
-        <button class="btn-danger" :disabled="!isTaskActive" @click="cancelTask">⏹ 取消任务</button>
+        <button class="btn-danger" :disabled="!isTaskActive" @click="cancelTask">
+          ⏹ 取消任务
+        </button>
 
         <button class="btn-warning" :disabled="!isTaskActive" @click="togglePause">
           {{ state.isPaused ? '▶ 继续' : '⏸ 暂停' }}

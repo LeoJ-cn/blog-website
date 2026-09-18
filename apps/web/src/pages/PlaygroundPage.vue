@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Scheduler from '../components/scheduler/scheduler.vue'
+import Scheduler from '../components/scheduler/demo.vue'
 import '../components/scheduler/test-ua'
 import { EmptyState } from '@blog/ui'
 
