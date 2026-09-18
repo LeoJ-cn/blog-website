@@ -6,12 +6,20 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('../../pages/HomePage.tsx'),
+      component: () => import('../../pages/HomePage'),
     },
     {
       path: '/playground',
       name: 'playground',
       component: () => import('../../pages/PlaygroundPage.vue'),
+      redirect: '/playground/performance',
+      children: [
+        {
+          path: ':category',
+          name: 'playground-category',
+          component: () => import('../../pages/PlaygroundCategoryPage.vue'),
+        },
+      ],
     },
     {
       path: '/:pathMatch(.*)*',

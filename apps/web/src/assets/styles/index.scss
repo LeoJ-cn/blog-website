@@ -30,10 +30,17 @@ h1 span { color: #7787a8; }
 .principles-section > p { color: #8e9bb8; line-height: 1.7; max-width: 360px; }
 .page-heading { border-bottom: 1px solid #27334e; padding-bottom: 45px; }
 .page-heading h1 { font-size: clamp(44px, 7vw, 72px); margin-bottom: 18px; }
-.category-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); padding-top: 32px; }
-.category-card { background: #111a2e; border: 1px solid #263453; border-radius: 8px; min-height: 170px; padding: 22px; }
-.category-card h2 { font-size: 20px; margin: 38px 0 10px; }
-.category-card p { color: #7787a8; font-size: 13px; margin: 0; }
+.playground-layout { display: grid; gap: 32px; grid-template-columns: 220px minmax(0, 1fr); padding-top: 32px; }
+.playground-sidebar { align-self: start; border-right: 1px solid #27334e; padding-right: 24px; position: sticky; top: 24px; }
+.playground-nav { display: grid; gap: 6px; }
+.playground-nav a { border-left: 2px solid transparent; color: #8e9bb8; padding: 12px 14px; transition: background .2s ease, color .2s ease, border-color .2s ease; }
+.playground-nav a:hover, .playground-nav a.router-link-active { background: #111a2e; border-left-color: #62e6b5; color: #f4f7ff; }
+.playground-content-area { min-height: 560px; min-width: 0; }
+.playground-content h2 { font-size: clamp(32px, 5vw, 56px); letter-spacing: -.05em; margin: 0 0 18px; }
+.playground-description { color: #9aa7c0; font-size: 18px; line-height: 1.7; max-width: 620px; }
+.playground-placeholder { align-items: flex-start; background: #111a2e; border: 1px solid #263453; border-radius: 8px; display: flex; gap: 16px; margin-top: 48px; max-width: 760px; padding: 28px; }
+.playground-placeholder h3 { font-size: 18px; margin: 0 0 8px; }
+.playground-placeholder p { color: #7787a8; line-height: 1.7; margin: 0; }
 .status-dot { background: #7787a8; border-radius: 50%; display: block; height: 8px; width: 8px; }
 .empty-page { padding: 100px 0; text-align: center; }
 .empty-page h1 { font-size: 56px; }
@@ -43,4 +50,7 @@ h1 span { color: #7787a8; }
   .app-main { padding: 45px 24px; }
   .hero-section { padding: 35px 0 90px; }
   .principles-section { grid-template-columns: 1fr; }
+  .playground-layout { grid-template-columns: 1fr; }
+  .playground-sidebar { border-bottom: 1px solid #27334e; border-right: 0; padding: 0 0 16px; position: static; }
+  .playground-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

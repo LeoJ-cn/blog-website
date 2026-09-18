@@ -1,24 +1,39 @@
 <script setup lang="ts">
+import { RouterLink, RouterView } from 'vue-router'
 import Scheduler from '../components/scheduler/demo.vue'
 import '../components/scheduler/test-ua'
-import { EmptyState } from '@blog/ui'
 
-const categories = ['Performance', 'Engineering', 'Architecture', 'Network', 'Browser']
+const categories = [
+  { name: 'Performance', slug: 'performance' },
+  { name: 'Engineering', slug: 'engineering' },
+  { name: 'Architecture', slug: 'architecture' },
+  { name: 'Network', slug: 'network' },
+  { name: 'Browser', slug: 'browser' },
+]
 </script>
 
 <template>
   <section class="page-heading">
     <p class="eyebrow">DEVELOPER PLAYGROUND</p>
     <h1>技术 Playground</h1>
-    <p>选择一个方向，后续将逐步加入可运行的技术 Demo。</p>
+    <p>从左侧选择技术方向，在右侧查看对应内容。</p>
   </section>
 
-  <section class="category-grid" aria-label="技术分类">
-    <article v-for="category in categories" :key="category" class="category-card">
-      <span class="status-dot" aria-hidden="true"></span>
-      <h2>{{ category }}</h2>
-      <p>功能待开发</p>
-    </article>
+  <section class="playground-layout">
+    <aside class="playground-sidebar" aria-label="技术点导航">
+      <nav class="playground-nav">
+        <RouterLink
+          v-for="category in categories"
+          :key="category.slug"
+          :to="`/playground/${category.slug}`"
+        >
+          {{ category.name }}
+        </RouterLink>
+      </nav>
+    </aside>
+    <main class="playground-content-area">
+      <RouterView />
+    </main>
   </section>
 
   <Scheduler />
@@ -30,9 +45,4 @@ const categories = ['Performance', 'Engineering', 'Architecture', 'Network', 'Br
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
   ></iframe>
   <div id="test-ua" style="width: 100%; height: 500px; margin-top: 2rem" />
-
-  <EmptyState
-    title="更多技术 Demo 正在准备中"
-    description="后续会逐步加入原理说明、交互实验和性能指标。"
-  />
 </template>
