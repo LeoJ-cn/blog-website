@@ -3,11 +3,17 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "baseUrl": ".",
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
-    "allowImportingTsExtensions": false
+    "allowImportingTsExtensions": false,
+    "paths": {
+      "@blog/config": ["packages/config/src/index.ts"],
+      "@blog/types": ["packages/types/src/index.ts"],
+      "@blog/shared": ["packages/shared/src/index.ts"]
+    }
   }
 }
