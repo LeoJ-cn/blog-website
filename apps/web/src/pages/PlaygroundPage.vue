@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Scheduler from '../components/scheduler/scheduler.vue'
 import { EmptyState } from '@blog/ui'
 
 const categories = ['Performance', 'Engineering', 'Architecture', 'Network', 'Browser']
@@ -18,5 +19,11 @@ const categories = ['Performance', 'Engineering', 'Architecture', 'Network', 'Br
       <p>功能待开发</p>
     </article>
   </section>
-  <EmptyState title="更多技术 Demo 正在准备中" description="后续会逐步加入原理说明、交互实验和性能指标。" />
+
+  <Scheduler />
+
+  <EmptyState
+    title="更多技术 Demo 正在准备中"
+    description="后续会逐步加入原理说明、交互实验和性能指标。"
+  />
 </template>

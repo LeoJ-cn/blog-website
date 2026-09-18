@@ -10,6 +10,17 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...eslintPluginVue.configs['flat/essential'],
+   {
+    files: ['**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        parser: tseslint.parser,
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        extraFileExtensions: ['.vue'],
+      },
+    },
+  },
   {
     files: ['**/*.{js,mjs,ts,vue}'],
     languageOptions: {
