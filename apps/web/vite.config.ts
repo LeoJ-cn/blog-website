@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: '../../dist-vite',
+      emptyOutDir: true,
       sourcemap: mode === 'staging',
       cssCodeSplit: true,
       rollupOptions: {
@@ -30,6 +31,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      host: '127.0.0.1',
       port: 4173,
       strictPort: true,
     },
