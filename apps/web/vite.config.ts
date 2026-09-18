@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
       cssCodeSplit: true,
       rollupOptions: {
         output: {
+          chunkFileNames: 'assets/chunk-[hash].js',
           manualChunks: {
             framework: ['vue', 'vue-router', 'pinia'],
           },
