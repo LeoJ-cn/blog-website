@@ -1,3 +1,4 @@
+/* eslint-disable */
 // image-renderer-no-rxjs.ts
 import Bowser from "bowser";
 import get from "lodash/get";

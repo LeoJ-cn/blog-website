@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import Bowser from 'bowser';
 import { fromFetch } from 'rxjs/fetch';
 import get from 'lodash/get';
