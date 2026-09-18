@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
 
   return {
-    base: env.VITE_BASE_PATH || '/',
+    base: env.VITE_BASE_PATH || './',
     plugins: [
       vue(),
       ...(mode === 'production' ? [legacy({ targets: ['defaults', 'not IE 11'], modernPolyfills: true })] : []),
