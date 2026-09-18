@@ -2,6 +2,9 @@ name: Build and Deploy
 
 on:
   push:
+    branches:
+      - feature/v2-blog-website
+  workflow_dispatch:
 
 permissions:
   contents: write

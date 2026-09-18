@@ -7,20 +7,12 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import CssMinimizerPlugin from 'css-minimizer-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+import { createModuleRules } from './build/webpack/loaders.mjs'
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 const require = createRequire(import.meta.url)
 const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('production')
 const isAnalyze = process.env.ANALYZE === 'true'
-const babelLoader = {
-  loader: 'babel-loader',
-  options: {
-    presets: [
-      ['@babel/preset-env', { targets: 'defaults, not IE 11' }],
-      ['@babel/preset-typescript', { allExtensions: true, isTSX: false }],
-    ],
-  },
-}
 
 export default {
   mode: isProduction ? 'production' : 'development',
@@ -33,26 +25,33 @@ export default {
   },
   resolve: {
     extensions: ['.ts', '.js', '.vue'],
-    alias: { '@': path.resolve(root, 'src'), vue$: require.resolve('vue/dist/vue.runtime.esm-bundler.js') },
+    alias: {
+      '@': path.resolve(root, 'src'),
+      vue$: require.resolve('vue/dist/vue.runtime.esm-bundler.js'),
+    },
   },
   module: {
-    rules: [
-      { test: /\.vue$/, loader: 'vue-loader', options: { babelParserPlugins: ['typescript'] } },
-      {
-        test: /\.tsx?$/,
-        exclude: /node_modules/,
-        use: ['thread-loader', babelLoader],
-      },
-      { test: /\.s[ac]ss$/i, use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader', 'postcss-loader', 'sass-loader'] },
-      { test: /\.css$/i, use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader', 'postcss-loader'] },
-      { test: /\.(png|jpe?g|gif|svg|webp)$/i, type: 'asset' },
-    ],
+    rules: createModuleRules({
+      isProduction,
+      cssLoader: MiniCssExtractPlugin.loader,
+      sassLoader: 'sass-loader',
+    }),
   },
   plugins: [
     new VueLoaderPlugin(),
     new HtmlWebpackPlugin({ template: path.resolve(root, 'index.html') }),
-    ...(isProduction ? [new MiniCssExtractPlugin({ filename: 'assets/[name].[contenthash:8].css' })] : []),
-    ...(isAnalyze ? [new BundleAnalyzerPlugin({ analyzerMode: 'static', openAnalyzer: false, reportFilename: 'webpack-report.html' })] : []),
+    ...(isProduction
+      ? [new MiniCssExtractPlugin({ filename: 'assets/[name].[contenthash:8].css' })]
+      : []),
+    ...(isAnalyze
+      ? [
+          new BundleAnalyzerPlugin({
+            analyzerMode: 'static',
+            openAnalyzer: false,
+            reportFilename: 'webpack-report.html',
+          }),
+        ]
+      : []),
   ],
   devtool: isProduction ? 'source-map' : 'eval-cheap-module-source-map',
   cache: { type: 'filesystem', buildDependencies: { config: [import.meta.url] } },

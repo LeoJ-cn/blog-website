@@ -1,49 +1,13 @@
-import { fileURLToPath, URL } from 'node:url'
-
-import vue from '@vitejs/plugin-vue'
-import legacy from '@vitejs/plugin-legacy'
-import { defineConfig, loadEnv } from 'vite'
-import { visualizer } from 'rollup-plugin-visualizer'
+import { defineConfig, loadEnv, mergeConfig } from 'vite'
+import { createViteCommonConfig } from './build/vite/common'
+import { createViteDevelopmentConfig } from './build/vite/development'
+import { createViteProductionConfig } from './build/vite/production'
 
 export default defineConfig(({ mode }) => {
+  // 仅读取 VITE_ 前缀变量，避免服务端环境变量进入浏览器。
   const env = loadEnv(mode, process.cwd(), 'VITE_')
 
-  return {
-    base: env.VITE_BASE_PATH || './',
-    plugins: [
-      vue(),
-      ...(mode === 'production' ? [legacy({ targets: ['defaults', 'not IE 11'], modernPolyfills: true })] : []),
-      ...(process.env.ANALYZE === 'true'
-        ? [visualizer({ filename: '../../dist-vite/vite-report.html', open: false, gzipSize: true, brotliSize: true })]
-        : []),
-    ],
-    resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-      },
-    },
-    css: {
-      devSourcemap: mode !== 'production',
-    },
-    build: {
-      outDir: '../../dist-vite',
-      emptyOutDir: true,
-      sourcemap: mode === 'staging',
-      cssCodeSplit: true,
-      rollupOptions: {
-        output: {
-          chunkFileNames: 'assets/chunk-[hash].js',
-          manualChunks: {
-            framework: ['vue', 'vue-router', 'pinia'],
-          },
-        },
-      },
-    },
-    server: {
-      host: '127.0.0.1',
-      open: true,
-      port: 4173,
-      strictPort: true,
-    },
-  }
+  // 先合并通用配置，再叠加开发或生产配置。
+  const environment = mode === 'production' ? createViteProductionConfig(process.env.ANALYZE === 'true') : createViteDevelopmentConfig()
+  return mergeConfig(mergeConfig(createViteCommonConfig(), environment), { base: env.VITE_BASE_PATH || './' })
 })
