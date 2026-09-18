@@ -1,0 +1,28 @@
+{
+  "name": "@blog/web",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@vitejs/plugin-vue": "5.2.1",
+    "sass": "1.83.4",
+    "typescript": "5.7.3",
+    "vite": "6.0.11",
+    "vue-tsc": "2.2.0"
+  },
+  "dependencies": {
+    "@blog/config": "workspace:*",
+    "@blog/ui": "workspace:*",
+    "element-plus": "2.9.5",
+    "pinia": "3.0.1",
+    "vue": "3.5.13",
+    "vue-router": "4.5.0"
+  },
+  "scripts": {
+    "dev:vite": "vite --mode development",
+    "dev:webpack": "echo 'Webpack application will be added in Phase 5.'",
+    "build:vite": "vite build --mode production",
+    "build:webpack": "echo 'Webpack build will be added in Phase 5.'",
+    "typecheck": "vue-tsc --noEmit"
+  }
+}
