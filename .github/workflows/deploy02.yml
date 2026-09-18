@@ -1,23 +1,49 @@
 name: Build and Deploy
-on: [push]
+
+on:
+  push:
+
 permissions:
   contents: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout 🛎️
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install and Build 🔧 # This example project is built using npm and outputs the result to the 'build' folder. Replace with the commands required to build your project, or remove this step entirely if your site is pre-built.
-        run: |
-          yarn run cusBuild && ls
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.5
+          run_install: false
 
-      - name: Deploy 🚀
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Build Vite production bundle
+        run: pnpm build:vite
+
+      - name: Verify Webpack production bundle
+        run: pnpm build:webpack
+
+      - name: Deploy Vite bundle
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          # 项目配置的打包目录名称
-          # folder: .
-          folder: vue2web/dist
-          # 提交分支名
+          folder: dist-vite
           branch: static-pages
