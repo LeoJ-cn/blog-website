@@ -4,7 +4,7 @@ import type { MonitoringOptions } from './types'
 
 export function startMonitoring(options: MonitoringOptions = {}) {
   const reporter = options.reporter ?? new ConsoleReporter()
-  const onError = (event: ErrorEvent) => reporter.report({ name: 'jsError', value: 1, unit: 'count', timestamp: Date.now() })
+  const onError = () => reporter.report({ name: 'jsError', value: 1, unit: 'count', timestamp: Date.now() })
   const onRejection = () => reporter.report({ name: 'unhandledRejection', value: 1, unit: 'count', timestamp: Date.now() })
 
   if (options.captureErrors !== false && typeof window !== 'undefined') {

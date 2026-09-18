@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import { buildInfo } from '@blog/config'
+</script>
+
 <template>
   <section class="hero-section">
     <p class="eyebrow">FRONTEND ENGINEERING LAB</p>
@@ -6,6 +10,9 @@
       一个持续演进的前端工程实验场，用真实代码、可交互 Demo 和性能数据记录技术实践。
     </p>
     <RouterLink class="primary-action" to="/playground">进入技术 Playground <span>→</span></RouterLink>
+    <p class="build-info" aria-label="构建信息">
+      {{ buildInfo.mode }} · {{ buildInfo.buildTool }} · v{{ buildInfo.version }} · {{ buildInfo.commit }}
+    </p>
   </section>
 
   <section class="principles-section" aria-labelledby="principles-title">

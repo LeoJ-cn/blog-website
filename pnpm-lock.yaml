@@ -35,9 +35,18 @@ importers:
       '@blog/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@blog/http':
+        specifier: workspace:^
+        version: link:../../packages/http
+      '@blog/monitoring':
+        specifier: workspace:^
+        version: link:../../packages/monitoring
       '@blog/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@blog/websocket':
+        specifier: workspace:^
+        version: link:../../packages/websocket
       element-plus:
         specifier: 2.9.5
         version: 2.9.5(vue@3.5.13(typescript@5.6.3))

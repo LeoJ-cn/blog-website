@@ -27,6 +27,8 @@
     "analyze:webpack": "pnpm --filter @blog/web analyze:webpack",
     "analyze:vite": "pnpm --filter @blog/web analyze:vite",
     "benchmark:build": "node scripts/build-benchmark/index.mjs",
+    "build:docker": "node scripts/docker-build.mjs",
+    "verify:ci:docker": "node scripts/ci-docker-check.mjs",
     "typecheck": "pnpm --filter @blog/web typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
