@@ -1,23 +1,23 @@
-name: Build and Deploy
-on: [push]
-permissions:
-  contents: write
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v4
+# name: Build and Deploy
+# on: [push]
+# permissions:
+#   contents: write
+# jobs:
+#   build-and-deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout 🛎️
+#         uses: actions/checkout@v4
 
-      - name: Install and Build 🔧 # This example project is built using npm and outputs the result to the 'build' folder. Replace with the commands required to build your project, or remove this step entirely if your site is pre-built.
-        run: |
-          yarn run cusBuild && ls
+#       - name: Install and Build 🔧 # This example project is built using npm and outputs the result to the 'build' folder. Replace with the commands required to build your project, or remove this step entirely if your site is pre-built.
+#         run: |
+#           yarn run cusBuild && ls
 
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          # 项目配置的打包目录名称
-          # folder: .
-          folder: vue2web/dist
-          # 提交分支名
-          branch: static-pages
+#       - name: Deploy 🚀
+#         uses: JamesIves/github-pages-deploy-action@v4
+#         with:
+#           # 项目配置的打包目录名称
+#           # folder: .
+#           folder: vue2web/dist
+#           # 提交分支名
+#           branch: static-pages
