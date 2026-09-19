@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
 
   // 先合并通用配置，再叠加开发或生产配置。
-  const environment = mode === 'production' ? createViteProductionConfig(process.env.ANALYZE === 'true') : createViteDevelopmentConfig()
-  return mergeConfig(mergeConfig(createViteCommonConfig(), environment), { base: env.VITE_BASE_PATH || './' })
+  const environment =
+    mode === 'production'
+      ? createViteProductionConfig(process.env.ANALYZE === 'true')
+      : createViteDevelopmentConfig()
+  return mergeConfig(mergeConfig(createViteCommonConfig(), environment), {
+    base: env.VITE_BASE_PATH || './',
+  })
 })

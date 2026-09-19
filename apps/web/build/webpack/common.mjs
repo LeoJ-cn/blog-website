@@ -26,14 +26,31 @@ export function createWebpackCommonConfig() {
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.vue', '.json'],
       symlinks: true,
-      alias: { '@': path.resolve(root, 'src'), vue$: require.resolve('vue/dist/vue.runtime.esm-bundler.js') },
+      alias: {
+        '@': path.resolve(root, 'src'),
+        vue$: require.resolve('vue/dist/vue.runtime.esm-bundler.js'),
+      },
       modules: ['node_modules'],
     },
     // Loader 规则由开发/生产层覆盖，避免重复注册 CSS loader。
-    module: { strictExportPresence: true, rules: createModuleRules({ isProduction: false, cssLoader: 'style-loader', sassLoader: 'sass-loader' }) },
+    module: {
+      strictExportPresence: true,
+      rules: createModuleRules({
+        isProduction: false,
+        cssLoader: 'style-loader',
+        sassLoader: 'sass-loader',
+      }),
+    },
     // Vue、HTML、缓存、日志和性能预算等通用插件/能力。
-    plugins: [new VueLoaderPlugin(), new HtmlWebpackPlugin({ template: path.resolve(root, 'index.html'), scriptLoading: 'defer' })],
-    cache: { type: 'filesystem', cacheDirectory: path.resolve(root, '../../node_modules/.cache/webpack'), buildDependencies: { config: [import.meta.url] } },
+    plugins: [
+      new VueLoaderPlugin(),
+      new HtmlWebpackPlugin({ template: path.resolve(root, 'index.html'), scriptLoading: 'defer' }),
+    ],
+    cache: {
+      type: 'filesystem',
+      cacheDirectory: path.resolve(root, '../../node_modules/.cache/webpack'),
+      buildDependencies: { config: [import.meta.url] },
+    },
     infrastructureLogging: { level: 'warn' },
     stats: 'errors-warnings',
     performance: { hints: 'warning', maxAssetSize: 512000, maxEntrypointSize: 512000 },

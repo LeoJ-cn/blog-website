@@ -1,10 +1,13 @@
 # 一、使用说明
+
 1. 安装 @idg/gui-cli
+
 ```
 yarn add @idg/gui-cli  --registry=https://npm.oneitfarm.com
 ```
 
 2. 查看安装
+
 ```
 gui -h
 
@@ -21,11 +24,13 @@ Commands:
 ```
 
 3. 准备工作：查看需要分析的组件
+
 ```
 注意： 目标组件所在的仓库，需已经完成“yarn install”的安装，分析过程存在获取三方依赖
 ```
 
 4. 执行分析
+
 ```
 gui tsx2json -c ${file_absolute_path}
 
@@ -36,12 +41,12 @@ out files(4): 输出的文件在分析目录下
 4.<原子组件-交互树>      ${Component_Class_Name}.jsonSchemaToOperationTree.schema.json
 ```
 
-
-
-
 # 二、其他说明
+
 ## Analyze the schema of the vue.tsx component
+
 ## The current version only analyzes @Prop and @Emit
+
 ## Cli
 
 ```
@@ -62,8 +67,8 @@ Options:
  tsx2json( ${file_absolute_path} )
 ```
 
-
 # 字段说明
+
 ```
   /**
    * 字段说明：
@@ -87,7 +92,9 @@ Options:
    *
    */
 ```
+
 ## 最小方法-远端配置
+
 ```
   {
     "path": {
@@ -101,6 +108,7 @@ Options:
 ```
 
 ## 最小方法-依赖配置
+
 ```
 [
   {
@@ -120,16 +128,17 @@ Options:
 ```
 
 ## 组件Demo Url
+
 ```
 http://${remote}/${package-name}/0.0.1/
 
 ```
 
-
-
 # 三 .tsx 组件注意事项
-1. prop属性使用 @Prop ， emit事件使用 @Emit 
+
+1. prop属性使用 @Prop ， emit事件使用 @Emit
 2. Ts Type定义相关: 所有字段添加“块注释”， 第一行注释会被指定成 description
+
 ```
 File: some-type.ts
 
@@ -148,6 +157,7 @@ export interface DateRange {
 2. 外部引入的ts定义文件，只能 import from .ts 文件， 不允许 import from .tsx文件
 
 3. 设置prop的交互树（通过ts注释「@additionalProperties.gui_render_comp "some-comp"」来指定）
+
 ```
 Demo：
 export interface DateRange {

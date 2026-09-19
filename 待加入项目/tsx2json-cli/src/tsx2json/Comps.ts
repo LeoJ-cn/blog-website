@@ -33,4 +33,4 @@ export const OperationList = [
   'AdvanceVariableSelect',
   'GoRatio',
   'GoNone',
-];
+]

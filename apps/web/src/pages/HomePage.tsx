@@ -1,34 +1,9 @@
 import { defineComponent } from 'vue'
 import { RouterLink } from 'vue-router'
 import { buildInfo } from '@blog/config'
+import { projects } from '../data/projects'
 
-const featuredProjects = [
-  {
-    eyebrow: 'PERFORMANCE',
-    title: 'Scheduler',
-    description: '观察任务切片、优先级调度与主线程响应之间的关系。',
-    to: '/playground/performance',
-    featured: true,
-  },
-  {
-    eyebrow: 'BROWSER',
-    title: 'Advanced Image Loader',
-    description: '探索渐进加载、并发控制和资源调度。',
-    to: '/playground/browser',
-  },
-  {
-    eyebrow: 'NETWORK',
-    title: 'HTTP Client',
-    description: '展示请求生命周期、错误模型与拦截器设计。',
-    to: '/playground/network',
-  },
-  {
-    eyebrow: 'ENGINEERING',
-    title: 'Build Benchmark',
-    description: '对比 Vite 与 Webpack 的构建过程和产物表现。',
-    to: '/playground/engineering',
-  },
-]
+const featuredProjects = projects.filter((project) => project.featured)
 
 export default defineComponent({
   name: 'HomePage',
@@ -65,10 +40,10 @@ export default defineComponent({
           <div class="project-grid">
             {featuredProjects.map((project) => (
               <RouterLink
-                class={['project-card', project.featured && 'project-card--featured']}
-                to={project.to}
+                class={['project-card', project.slug === 'scheduler' && 'project-card--featured']}
+                to={`/playground/${project.category}`}
               >
-                <p class="project-card__eyebrow">{project.eyebrow}</p>
+                <p class="project-card__eyebrow">{project.category.toUpperCase()}</p>
                 <h3>{project.title}</h3>
                 <p>{project.description}</p>
                 <span class="project-card__link">查看项目 →</span>

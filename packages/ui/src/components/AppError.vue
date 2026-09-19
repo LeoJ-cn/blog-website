@@ -15,7 +15,23 @@ const props = defineProps({
 </script>
 
 <style scoped>
-.app-error { background: #2b1b2a; border: 1px solid #713d5d; border-radius: 6px; color: #f2c5d9; padding: 16px; }
-.app-error p { color: #d6a7bd; margin: 8px 0 12px; }
-button { background: transparent; border: 1px solid #d6a7bd; border-radius: 4px; color: inherit; cursor: pointer; padding: 5px 10px; }
+.app-error {
+  background: #2b1b2a;
+  border: 1px solid #713d5d;
+  border-radius: 6px;
+  color: #f2c5d9;
+  padding: 16px;
+}
+.app-error p {
+  color: #d6a7bd;
+  margin: 8px 0 12px;
+}
+button {
+  background: transparent;
+  border: 1px solid #d6a7bd;
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  padding: 5px 10px;
+}
 </style>

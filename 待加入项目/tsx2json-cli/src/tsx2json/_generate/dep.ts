@@ -1,28 +1,25 @@
-import { parse } from "@babel/parser"
-import traverse from "@babel/traverse"
-import generator from "@babel/generator"
+import { parse } from '@babel/parser'
+import traverse from '@babel/traverse'
+import generator from '@babel/generator'
 import { cusLog } from '../utils'
 
 const _ = require('lodash')
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs')
+const path = require('path')
 
 // 类型声明
 type DepRelation = { filePath: string; deps: string[]; code: string }
 
 interface PathCWD_Interface {
-  importFilePath: string;
+  importFilePath: string
   folderPath: string
 }
-
 
 export class CombineMultiFiles {
   /**
    * 忽略的npm包
    */
-  readonly ignoreNpmList = [
-    'vue-property-decorator'
-  ]
+  readonly ignoreNpmList = ['vue-property-decorator']
 
   // 符合解析规则的文件
   readonly validSuffix = ['.ts', '.tsx']
@@ -30,7 +27,7 @@ export class CombineMultiFiles {
   /**
    * 分析依赖后的代码
    */
-  mergedCode = '';
+  mergedCode = ''
 
   /**
    * 初始化一个空的 depRelation，用于收集依赖
@@ -43,17 +40,14 @@ export class CombineMultiFiles {
   rootFolderPath = ''
 
   constructor(filePath: string) {
-
     // 入口文件分析
     const ff_path = path.resolve(filePath)
 
     this.rootFolderPath = path.dirname(ff_path)
 
-
     // this.collectCodeAndDeps(ff_path) // 手动收集依赖
-    
-    this.autoCollectCodeAndDeps(ff_path)
 
+    this.autoCollectCodeAndDeps(ff_path)
 
     // // 测试代码
     // console.log('depRelation', JSON.stringify(this.depRelation, null, 4), '\n')
@@ -69,16 +63,13 @@ export class CombineMultiFiles {
    */
   getRequirePathsList(folderPath: string) {
     const nodeModulesResolvePathList: string[] = []
-    const pathSplitList = folderPath.split(path.sep);
+    const pathSplitList = folderPath.split(path.sep)
 
-    pathSplitList.reduce(
-      (preResult: string, curItem: string) => {
-        const newPath = path.join(preResult || path.sep, curItem)
-        nodeModulesResolvePathList.push(newPath)
-        return newPath
-      },
-      ''
-    )
+    pathSplitList.reduce((preResult: string, curItem: string) => {
+      const newPath = path.join(preResult || path.sep, curItem)
+      nodeModulesResolvePathList.push(newPath)
+      return newPath
+    }, '')
 
     // node_modules 由近及远查找
     return nodeModulesResolvePathList.reverse()
@@ -94,9 +85,9 @@ export class CombineMultiFiles {
      */
     let validPath = ''
     if (path.isAbsolute(importFilePath)) {
-      validPath = path.resolve(importFilePath);
+      validPath = path.resolve(importFilePath)
     } else if (importFilePath.charAt(0) === '.') {
-      validPath = path.resolve(folderPath, importFilePath);
+      validPath = path.resolve(folderPath, importFilePath)
     }
 
     // npm包名
@@ -104,7 +95,7 @@ export class CombineMultiFiles {
       try {
         const maybeList = this.getRequirePathsList(folderPath)
         // hack: require打包后不可使用
-        const _require = eval("require")
+        const _require = eval('require')
         validPath = _require.resolve(importFilePath, {
           paths: maybeList,
         })
@@ -121,7 +112,7 @@ export class CombineMultiFiles {
      * 判断文件夹还是文件: 如果是文件夹，后缀自动加上路径“/index”
      */
     try {
-      const stat = fs.statSync(validPath);
+      const stat = fs.statSync(validPath)
       if (stat.isDirectory()) {
         validPath = path.resolve(validPath, 'index')
       }
@@ -130,10 +121,7 @@ export class CombineMultiFiles {
     }
 
     // 路径已完全的直接返回
-    if (
-      this.validSuffix.indexOf(path.extname(validPath)) !== -1 &&
-      fs.existsSync(validPath)
-    ) {
+    if (this.validSuffix.indexOf(path.extname(validPath)) !== -1 && fs.existsSync(validPath)) {
       return validPath
     }
 
@@ -155,8 +143,8 @@ export class CombineMultiFiles {
   collectCodeAndDeps(fatherAbsoulteDepPath: string) {
     const classThis = this
     const currentFileFolderPath = path.dirname(fatherAbsoulteDepPath)
-    if (!fatherAbsoulteDepPath) return;
-    cusLog("依赖加载", '加载资源: ' + fatherAbsoulteDepPath)
+    if (!fatherAbsoulteDepPath) return
+    cusLog('依赖加载', '加载资源: ' + fatherAbsoulteDepPath)
     const code = fs.readFileSync(fatherAbsoulteDepPath, 'utf8').toString()
     let curDep = _.find(this.depRelation, { filePath: fatherAbsoulteDepPath }) as any
     if (!curDep) {
@@ -168,19 +156,16 @@ export class CombineMultiFiles {
       this.depRelation.push(curDep)
 
       // 将代码转为 AST
-      const ast = parse(
-        code,
-        {
-          sourceType: 'module',
-          plugins: [
-            "jsx",
-            "typescript",
-            // "exportDefaultFrom",
-            // ["decorators", { decoratorsBeforeExport: true }]
-            "decorators-legacy"
-          ]
-        }
-      )
+      const ast = parse(code, {
+        sourceType: 'module',
+        plugins: [
+          'jsx',
+          'typescript',
+          // "exportDefaultFrom",
+          // ["decorators", { decoratorsBeforeExport: true }]
+          'decorators-legacy',
+        ],
+      })
 
       // 分析文件依赖，将内容放至 depRelation
       traverse(ast, {
@@ -191,28 +176,29 @@ export class CombineMultiFiles {
         ImportDeclaration(path) {
           const childDepAbsolutePath = classThis.getAbsolutePath({
             importFilePath: path.node.source.value,
-            folderPath: currentFileFolderPath
+            folderPath: currentFileFolderPath,
           })
 
-          path.remove(); // 移除所有import语句
+          path.remove() // 移除所有import语句
           if (!childDepAbsolutePath) return
           curDep.deps.push(childDepAbsolutePath)
           classThis.collectCodeAndDeps(childDepAbsolutePath)
-        }
+        },
       })
 
-      const {
-        code: geCode = ''
-      } = generator(ast, {
-        concise: false,
-        decoratorsBeforeExport: true,
-        retainLines: true,
-        compact: false, // 避免格式化空格导致输出ts文件出现问题
-      }, code)
+      const { code: geCode = '' } = generator(
+        ast,
+        {
+          concise: false,
+          decoratorsBeforeExport: true,
+          retainLines: true,
+          compact: false, // 避免格式化空格导致输出ts文件出现问题
+        },
+        code,
+      )
 
       const fileComment = `// file: ${fatherAbsoulteDepPath}`
       this.mergedCode += `\n\n${fileComment}\n${geCode}`
-
     }
   }
 
@@ -221,7 +207,7 @@ export class CombineMultiFiles {
    */
   autoCollectCodeAndDeps(fatherAbsoulteDepPath: string) {
     const classThis = this
-    cusLog("依赖加载", '加载资源: ' + fatherAbsoulteDepPath)
+    cusLog('依赖加载', '加载资源: ' + fatherAbsoulteDepPath)
     const code = fs.readFileSync(fatherAbsoulteDepPath, 'utf8').toString()
     let curDep = _.find(this.depRelation, { filePath: fatherAbsoulteDepPath }) as any
     if (!curDep) {
@@ -233,40 +219,37 @@ export class CombineMultiFiles {
       this.depRelation.push(curDep)
 
       // 将代码转为 AST
-      const ast = parse(
-        code,
-        {
-          sourceType: 'module',
-          plugins: [
-            "jsx",
-            "typescript",
-            // "exportDefaultFrom",
-            // ["decorators", { decoratorsBeforeExport: true }]
-            "decorators-legacy"
-          ]
-        }
-      )
+      const ast = parse(code, {
+        sourceType: 'module',
+        plugins: [
+          'jsx',
+          'typescript',
+          // "exportDefaultFrom",
+          // ["decorators", { decoratorsBeforeExport: true }]
+          'decorators-legacy',
+        ],
+      })
 
       // 分析文件依赖，将内容放至 depRelation
       traverse(ast, {
         ImportDeclaration(path) {
-          if(classThis.ignoreNpmList.indexOf(path.node.source.value) !== -1){
-            path.remove(); // 移除忽略import语句
+          if (classThis.ignoreNpmList.indexOf(path.node.source.value) !== -1) {
+            path.remove() // 移除忽略import语句
           }
-        }
+        },
       })
-      const {
-        code: geCode = ''
-      } = generator(ast, {
-        concise: false,
-        decoratorsBeforeExport: true,
-        retainLines: true,
-        compact: false, // 避免格式化空格导致输出ts文件出现问题
-      }, code)
+      const { code: geCode = '' } = generator(
+        ast,
+        {
+          concise: false,
+          decoratorsBeforeExport: true,
+          retainLines: true,
+          compact: false, // 避免格式化空格导致输出ts文件出现问题
+        },
+        code,
+      )
       const fileComment = `// file: ${fatherAbsoulteDepPath}`
       this.mergedCode += `\n\n${fileComment}\n${geCode}`
     }
   }
 }
-
-

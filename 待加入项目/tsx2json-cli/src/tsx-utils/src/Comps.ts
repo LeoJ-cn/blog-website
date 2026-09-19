@@ -36,4 +36,4 @@ export const OperationList = [
 
   // fix data
   'HourMinuteSelect',
-];
+]

@@ -2,7 +2,7 @@ export type LooseObject = {
   [key: string]: any
 }
 
- // TODO:zm schema类型定义
+// TODO:zm schema类型定义
 export interface SchemaJson {
   // type: DataType; // 基本类型
   // key?: string;
@@ -15,13 +15,11 @@ export interface SchemaJson {
   // additionalProperties?: {
   //   gui_render_comp: string; 枚举  交互树：使用哪一种组件渲染
   //   [key: string]: any;
-  // }; 
-  
+  // };
+
   [key: string]: any
 }
 
-export * from "./compilerVersions.generated";
+export * from './compilerVersions.generated'
 // export * as constants from "./constants";
-export * from "./types";
-
-
+export * from './types'

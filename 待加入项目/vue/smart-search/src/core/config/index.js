@@ -1,8 +1,4 @@
-
-import {
-  map,
-  concat
-} from 'lodash';
+import { map, concat } from 'lodash'
 
 import {
   SEARCH_FIELDS, // 搜索字段
@@ -12,27 +8,85 @@ import {
   DEFAULT_SYNTAX_VALUES,
   RANGE_SAMPLE,
   RANGE_SAMPLE_SHORT,
-  DATE_SAMPLE
-} from './fieldConfig'; // 搜索字段和分析字段
-import {
-  SYNTAX_VALUES
-} from './syntaxValueConfig';
+  DATE_SAMPLE,
+} from './fieldConfig' // 搜索字段和分析字段
+import { SYNTAX_VALUES } from './syntaxValueConfig'
 
-const FIELDS_LIST = getFieldList(); // 合并搜索字段和分析字段用于检测字段合法性
-const SUPPORT_KEYWORDS_FIELDS = ['TTL', 'ABST', 'CLMS', 'ICLMS', 'DESC', 'TAC', 'TA', 'TACD', 'TTL_ENTRANS', 'ABST_ENTRANS', 'CLMS_ENTRANS', 'TTL_CNTRANS', 'ABST_CNTRANS', 'CLMS_CNTRANS', 'TTL_ALL', 'ABST_ALL', 'CLMS_ALL', 'DESC_ALL', 'TA_ALL', 'TAC_ALL', 'TACD_ALL']; // 提示关键字字段
-const DATE_TYPE_FIELDS = ['PBD', 'APD', 'PRIORITY_DATE', 'ISD', 'EXDT', 'PCTENTRY_DATE', 'VERDICT_DATE', 'HEARING_DATE', 'LIC_EFDT', 'RIDDT', 'PLE_EFDT', 'LIT_FILEDT', 'LIT_CLOSEDT', 'EXAMINE_DATE']; // 时间范围字段
-const RANGE_TYPE_FIELDS = ['PV', 'CLAIM_COUNT', 'CITES_COUNT', 'CITEDBY_COUNT', 'FAM_COUNT', 'IFAM_COUNT', 'EFAM_COUNT', 'AN_COUNT', 'ANC_COUNT', 'PAGE_COUNT', 'EXAMINE_PERIOD']; // 数字范围字段,目前只有pv需要1 to 50000
-const SUPPORT_GNAME_FIELDS = ['GNAME'];
+const FIELDS_LIST = getFieldList() // 合并搜索字段和分析字段用于检测字段合法性
+const SUPPORT_KEYWORDS_FIELDS = [
+  'TTL',
+  'ABST',
+  'CLMS',
+  'ICLMS',
+  'DESC',
+  'TAC',
+  'TA',
+  'TACD',
+  'TTL_ENTRANS',
+  'ABST_ENTRANS',
+  'CLMS_ENTRANS',
+  'TTL_CNTRANS',
+  'ABST_CNTRANS',
+  'CLMS_CNTRANS',
+  'TTL_ALL',
+  'ABST_ALL',
+  'CLMS_ALL',
+  'DESC_ALL',
+  'TA_ALL',
+  'TAC_ALL',
+  'TACD_ALL',
+] // 提示关键字字段
+const DATE_TYPE_FIELDS = [
+  'PBD',
+  'APD',
+  'PRIORITY_DATE',
+  'ISD',
+  'EXDT',
+  'PCTENTRY_DATE',
+  'VERDICT_DATE',
+  'HEARING_DATE',
+  'LIC_EFDT',
+  'RIDDT',
+  'PLE_EFDT',
+  'LIT_FILEDT',
+  'LIT_CLOSEDT',
+  'EXAMINE_DATE',
+] // 时间范围字段
+const RANGE_TYPE_FIELDS = [
+  'PV',
+  'CLAIM_COUNT',
+  'CITES_COUNT',
+  'CITEDBY_COUNT',
+  'FAM_COUNT',
+  'IFAM_COUNT',
+  'EFAM_COUNT',
+  'AN_COUNT',
+  'ANC_COUNT',
+  'PAGE_COUNT',
+  'EXAMINE_PERIOD',
+] // 数字范围字段,目前只有pv需要1 to 50000
+const SUPPORT_GNAME_FIELDS = ['GNAME']
 // 虽然是RANGE_TYPE_FIELDS中的子类，但是需要不同的推荐示例.需要同时在父级和子级中同时配置
-const RANGE_TYPE_FIELDS_SHORT = ['CLAIM_COUNT', 'CITES_COUNT', 'CITEDBY_COUNT', 'FAM_COUNT', 'IFAM_COUNT', 'EFAM_COUNT', 'AN_COUNT', 'ANC_COUNT', 'PAGE_COUNT', 'EXAMINE_PERIOD'];
+const RANGE_TYPE_FIELDS_SHORT = [
+  'CLAIM_COUNT',
+  'CITES_COUNT',
+  'CITEDBY_COUNT',
+  'FAM_COUNT',
+  'IFAM_COUNT',
+  'EFAM_COUNT',
+  'AN_COUNT',
+  'ANC_COUNT',
+  'PAGE_COUNT',
+  'EXAMINE_PERIOD',
+]
 
 function getFieldList() {
-  let fieldList = concat(SEARCH_FIELDS, ANALYSIS_FIELDS);
-  let fieldArr = map(fieldList, item => {
-    return item.name;
-  });
-  return fieldArr;
-};
+  let fieldList = concat(SEARCH_FIELDS, ANALYSIS_FIELDS)
+  let fieldArr = map(fieldList, (item) => {
+    return item.name
+  })
+  return fieldArr
+}
 
 export {
   SEARCH_FIELDS,
@@ -48,5 +102,5 @@ export {
   RANGE_SAMPLE_SHORT,
   DATE_SAMPLE,
   SYNTAX_VALUES,
-  RANGE_TYPE_FIELDS_SHORT
-};
+  RANGE_TYPE_FIELDS_SHORT,
+}

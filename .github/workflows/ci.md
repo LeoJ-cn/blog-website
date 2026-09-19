@@ -1,22 +1,20 @@
 name: CI
 
 on:
-  pull_request:
-  push:
-    branches:
-      - master
-      - feature/v2-blog-website
+pull_request:
+push:
+branches: - master - feature/v2-blog-website
 
 permissions:
-  contents: read
+contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+group: ci-${{ github.workflow }}-${{ github.ref }}
+cancel-in-progress: true
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
+validate:
+runs-on: ubuntu-latest
 
     steps:
       - name: Checkout

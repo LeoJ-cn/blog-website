@@ -1,6 +1,6 @@
 // 金额以及其他数字格式化
-const splitRegExp = spLength => new RegExp(`(\\d{${spLength}})(?=(\\d)+)`, 'img')
-const numReverse = num =>
+const splitRegExp = (spLength) => new RegExp(`(\\d{${spLength}})(?=(\\d)+)`, 'img')
+const numReverse = (num) =>
   String(num || '')
     .split('')
     .reverse()
@@ -11,9 +11,9 @@ export const commonNumberFormat = (config = {}) => {
   const {
     toFixedLength = 2, // 精确小数位
     splitLength = 0, // 数字分隔符长度， 举例 splitLength=3 ： 67,888,888.89
-    splitChar = ',' // 分隔符字符
+    splitChar = ',', // 分隔符字符
   } = config
-  return number => {
+  return (number) => {
     const num = Number(number)
     const isUnValid = String(num) === 'NaN' || String(num) === '0'
     if (isUnValid) return '0'

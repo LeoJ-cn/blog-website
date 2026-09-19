@@ -8,7 +8,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 function collectFiles(directory) {
   if (!statSync(directory, { throwIfNoEntry: false })) return []
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    if (entry.name === 'webpack-report.html' || entry.name === 'vite-report.html' || entry.name.endsWith('.map')) return []
+    if (
+      entry.name === 'webpack-report.html' ||
+      entry.name === 'vite-report.html' ||
+      entry.name.endsWith('.map')
+    )
+      return []
     const file = path.join(directory, entry.name)
     return entry.isDirectory() ? collectFiles(file) : [file]
   })

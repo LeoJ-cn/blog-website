@@ -9,7 +9,25 @@ export const createViteProductionConfig = (analyze: boolean): UserConfig => ({
   mode: 'production',
   // 生产构建移除调试器和许可证注释，减小产物体积。
   esbuild: { legalComments: 'none', drop: ['debugger'] },
-  build: { sourcemap: false, minify: 'esbuild', cssMinify: 'esbuild', reportCompressedSize: true, emptyOutDir: true, rollupOptions: { plugins: analyze ? [visualizer({ filename: '../../dist-vite/vite-report.html', open: false, gzipSize: true, brotliSize: true })] : [] } },
+  build: {
+    sourcemap: false,
+    minify: 'esbuild',
+    cssMinify: 'esbuild',
+    reportCompressedSize: true,
+    emptyOutDir: true,
+    rollupOptions: {
+      plugins: analyze
+        ? [
+            visualizer({
+              filename: '../../dist-vite/vite-report.html',
+              open: false,
+              gzipSize: true,
+              brotliSize: true,
+            }),
+          ]
+        : [],
+    },
+  },
   // CI 中保留构建日志。
   clearScreen: false,
   logLevel: 'info',

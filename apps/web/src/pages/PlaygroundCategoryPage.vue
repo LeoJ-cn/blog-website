@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import CodeBlock from '../components/CodeBlock.vue'
+import DemoControls from '../components/DemoControls.vue'
+import MetricsPanel from '../components/MetricsPanel.vue'
+import { categoryMetadata, getProjectsByCategory } from '../data/projects'
+import type { DemoControlDefinition, MetricSnapshot, ProjectCategory } from '../types/project'
 
 const route = useRoute()
-const categories = {
-  performance: { title: 'Performance', description: '记录页面加载、运行时性能和资源表现。' },
-  engineering: { title: 'Engineering', description: '展示工程化工具链、构建流程和质量保障。' },
-  architecture: { title: 'Architecture', description: '探索模块边界、状态组织和可扩展架构。' },
-  network: { title: 'Network', description: '展示 HTTP、WebSocket 和网络请求行为。' },
-  browser: { title: 'Browser', description: '记录浏览器 API、渲染机制和运行时能力。' },
-} as const
-const category = computed(() => categories[route.params.category as keyof typeof categories] ?? categories.performance)
 const tabs = [
   { id: 'demo', label: 'Demo' },
   { id: 'principle', label: '实现原理' },
@@ -19,38 +15,161 @@ const tabs = [
   { id: 'metrics', label: '性能指标' },
   { id: 'compatibility', label: '兼容性' },
 ] as const
+const schedulerControls: DemoControlDefinition[] = [
+  { key: 'taskCount', label: '任务数量', type: 'number', min: 1000, max: 1000000, step: 1000 },
+  { key: 'chunkDuration', label: '单片时长', type: 'range', min: 1, max: 20, step: 1 },
+  {
+    key: 'priority',
+    label: '调度策略',
+    type: 'select',
+    options: [
+      { label: '普通优先级', value: 'normal' },
+      { label: '高优先级', value: 'high' },
+      { label: '低优先级', value: 'low' },
+    ],
+  },
+]
+
 const activeTab = ref<(typeof tabs)[number]['id']>('demo')
-const sourceCode = `export function schedule(task: () => void) {
-  queueMicrotask(() => {
-    task()
-  })
+const activeSourceIndex = ref(0)
+const settings = reactive<Record<string, string | number | boolean>>({
+  taskCount: 100000,
+  chunkDuration: 5,
+  priority: 'normal',
+})
+const processed = ref(0)
+const elapsed = ref(0)
+const isRunning = ref(false)
+let experimentTimer: number | undefined
+let startedAt = 0
+
+const categorySlug = computed<ProjectCategory>(() => {
+  const value = route.params.category as ProjectCategory
+  return value in categoryMetadata ? value : 'performance'
+})
+const category = computed(() => categoryMetadata[categorySlug.value])
+const project = computed(() => getProjectsByCategory(categorySlug.value)[0])
+const activeSource = computed(() => project.value?.sources[activeSourceIndex.value])
+const progress = computed(() =>
+  Math.min(100, Math.round((processed.value / Number(settings.taskCount)) * 100)),
+)
+const metrics = computed<MetricSnapshot[]>(() => [
+  {
+    label: '处理进度',
+    value: progress.value,
+    unit: '%',
+    tone: progress.value === 100 ? 'positive' : 'neutral',
+  },
+  { label: '已处理任务', value: processed.value.toLocaleString(), tone: 'neutral' },
+  {
+    label: '运行耗时',
+    value: elapsed.value.toFixed(1),
+    unit: 'ms',
+    tone: elapsed.value > 1000 ? 'warning' : 'neutral',
+  },
+  {
+    label: '处理速度',
+    value: elapsed.value
+      ? Math.round(processed.value / (elapsed.value / 1000)).toLocaleString()
+      : '0',
+    unit: '/s',
+    tone: 'positive',
+  },
+])
+
+function stopExperiment() {
+  if (experimentTimer !== undefined) window.clearTimeout(experimentTimer)
+  experimentTimer = undefined
+  isRunning.value = false
 }
 
-schedule(() => {
-  console.log('ready')
-})`
+function runExperiment() {
+  stopExperiment()
+  processed.value = 0
+  elapsed.value = 0
+  isRunning.value = true
+  startedAt = performance.now()
+  const total = Number(settings.taskCount)
+  const runChunk = () => {
+    const chunkStartedAt = performance.now()
+    const duration = Number(settings.chunkDuration)
+    while (processed.value < total && performance.now() - chunkStartedAt < duration) {
+      processed.value += Math.min(250, total - processed.value)
+    }
+    elapsed.value = performance.now() - startedAt
+    const delayByPriority = { high: 0, normal: 4, low: 12 }
+    const delay = delayByPriority[String(settings.priority) as keyof typeof delayByPriority] ?? 4
+    if (processed.value < total) experimentTimer = window.setTimeout(runChunk, delay)
+    else stopExperiment()
+  }
+  runChunk()
+}
+
+function updateSettings(nextSettings: Record<string, string | number | boolean>) {
+  Object.assign(settings, nextSettings)
+}
+
+watch(categorySlug, () => {
+  activeTab.value = 'demo'
+  activeSourceIndex.value = 0
+  stopExperiment()
+  processed.value = 0
+  elapsed.value = 0
+})
+onBeforeUnmount(stopExperiment)
 </script>
 
 <template>
   <article class="playground-content">
-    <p class="eyebrow">TECHNICAL PLAYGROUND</p>
-    <h2>{{ category.title }}</h2>
-    <p class="playground-description">{{ category.description }}</p>
+    <p class="eyebrow">{{ category.title.toUpperCase() }} · {{ project?.status ?? 'planned' }}</p>
+    <h2>{{ project?.title ?? category.title }}</h2>
+    <p class="playground-description">{{ project?.description ?? category.description }}</p>
+    <div v-if="project" class="project-meta">
+      <span>{{ project.difficulty }}</span
+      ><span v-for="tag in project.tags" :key="tag">{{ tag }}</span
+      ><span>更新于 {{ project.updatedAt }}</span>
+    </div>
+
     <div class="demo-stage">
       <div class="demo-stage__header">
-        <div>
-          <span class="status-dot" aria-hidden="true"></span>
-          <span>INTERACTIVE DEMO</span>
-        </div>
-        <span>功能待开发</span>
+        <div><span class="status-dot" aria-hidden="true"></span><span>INTERACTIVE DEMO</span></div>
+        <span>{{
+          project?.status === 'active' ? (isRunning ? '运行中' : '可以运行') : '计划中'
+        }}</span>
       </div>
-      <div class="demo-stage__body">
+      <div v-if="project?.slug === 'scheduler'" class="demo-workbench">
+        <aside class="demo-workbench__controls">
+          <h3>实验参数</h3>
+          <DemoControls
+            :model-value="settings"
+            :controls="schedulerControls"
+            @update:model-value="updateSettings"
+          />
+          <button
+            class="experiment-action"
+            type="button"
+            :disabled="isRunning"
+            @click="runExperiment"
+          >
+            {{ isRunning ? '运行中…' : '运行实验' }}
+          </button>
+        </aside>
+        <div class="demo-workbench__result">
+          <div class="experiment-summary">
+            <span>实时进度</span><strong>{{ progress }}%</strong>
+          </div>
+          <div class="experiment-progress"><span :style="{ width: `${progress}%` }" /></div>
+          <MetricsPanel :metrics="metrics" />
+        </div>
+      </div>
+      <div v-else class="demo-stage__body">
         <div>
-          <h3>在这里运行和观察实验</h3>
-          <p>交互界面、运行结果和实时指标将优先占据这个区域。</p>
+          <h3>实验正在准备中</h3>
+          <p>项目元数据已经建立，后续可直接接入对应的参数、结果和指标。</p>
         </div>
       </div>
     </div>
+
     <nav class="content-tabs" aria-label="技术内容" role="tablist">
       <button
         v-for="tab in tabs"
@@ -64,32 +183,49 @@ schedule(() => {
         {{ tab.label }}
       </button>
     </nav>
+
     <section v-if="activeTab === 'source'" class="tab-panel tab-panel--source" role="tabpanel">
-      <CodeBlock :code="sourceCode" language="typescript" filename="scheduler.ts" />
+      <div v-if="project?.sources.length" class="source-viewer">
+        <nav class="source-files" aria-label="源码文件">
+          <button
+            v-for="(source, index) in project.sources"
+            :key="source.path"
+            type="button"
+            :class="{ 'is-active': activeSourceIndex === index }"
+            @click="activeSourceIndex = index"
+          >
+            <span>{{ source.label }}</span
+            ><small>{{ source.path }}</small>
+          </button>
+        </nav>
+        <CodeBlock
+          v-if="activeSource"
+          :code="activeSource.content"
+          :language="activeSource.language"
+          :filename="activeSource.label"
+        />
+      </div>
+      <div v-else class="empty-source">该项目的真实源码映射将在实现 Demo 时加入。</div>
     </section>
-    <section v-else-if="activeTab !== 'demo'" class="tab-panel" role="tabpanel">
-      <p class="eyebrow">{{ tabs.find((tab) => tab.id === activeTab)?.label }}</p>
-      <h3>{{
-          activeTab === 'principle'
-            ? '把实现过程拆成可以验证的步骤。'
-            : activeTab === 'metrics'
-              ? '用数据观察方案的实际表现。'
-              : '明确运行环境与能力边界。'
-      }}</h3>
-      <p>
-        {{
-          activeTab === 'principle'
-            ? '这里将展示核心流程、关键决策和浏览器 API 的协作方式。'
-            : activeTab === 'metrics'
-              ? '这里将展示加载耗时、运行时开销、资源体积和对比结果。'
-              : '这里将记录浏览器版本、降级策略和已知限制。'
-        }}
-      </p>
+    <section v-else-if="activeTab === 'metrics'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">PERFORMANCE METRICS</p>
+      <h3>最近一次实验结果</h3>
+      <MetricsPanel :metrics="metrics" />
+    </section>
+    <section v-else-if="activeTab === 'principle'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">实现原理</p>
+      <h3>把实现过程拆成可以验证的步骤。</h3>
+      <p>任务被拆分成短时间片，每个时间片结束后主动归还主线程，再通过消息队列继续执行。</p>
+    </section>
+    <section v-else-if="activeTab === 'compatibility'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">兼容性</p>
+      <h3>明确运行环境与能力边界。</h3>
+      <p>实验依赖 MessageChannel 和 Performance API；不支持时需要回退到定时器调度。</p>
     </section>
     <section v-else class="tab-panel tab-panel--demo" role="tabpanel">
       <p class="eyebrow">DEMO OVERVIEW</p>
-      <h3>在上方直接运行实验。</h3>
-      <p>Demo 区域保持固定，下面可以继续补充操作说明、输入参数和结果解读。</p>
+      <h3>修改参数，然后运行实验。</h3>
+      <p>上方 Demo 始终保留，下方用于说明输入参数、观察方式和实验结论。</p>
     </section>
   </article>
 </template>

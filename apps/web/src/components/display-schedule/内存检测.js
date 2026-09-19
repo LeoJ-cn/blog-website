@@ -7,7 +7,7 @@ class MemoryMonitor {
   constructor(options = {}) {
     this.options = {
       sampleInterval: options.sampleInterval || 2000,
-      ...options
+      ...options,
     }
 
     // ============ JS 堆内存数据 ============
@@ -16,7 +16,7 @@ class MemoryMonitor {
       peak: 0,
       initial: 0,
       limit: 0,
-      history: []
+      history: [],
     }
 
     // ============ 网页总内存数据（估算） ============
@@ -24,7 +24,7 @@ class MemoryMonitor {
       current: 0,
       peak: 0,
       initial: 0,
-      history: []
+      history: [],
     }
 
     // ============ 运行状态 ============
@@ -52,7 +52,7 @@ class MemoryMonitor {
       return {
         used: 0,
         total: 0,
-        limit: 0
+        limit: 0,
       }
     }
 
@@ -61,7 +61,7 @@ class MemoryMonitor {
       return {
         used: Math.round(mem.usedJSHeapSize / (1024 * 1024)),
         total: Math.round(mem.totalJSHeapSize / (1024 * 1024)),
-        limit: Math.round(mem.jsHeapSizeLimit / (1024 * 1024))
+        limit: Math.round(mem.jsHeapSizeLimit / (1024 * 1024)),
       }
     } catch (e) {
       return { used: 0, total: 0, limit: 0 }
@@ -81,9 +81,9 @@ class MemoryMonitor {
       try {
         const result = await performance.measureUserAgentSpecificMemory()
         total = Math.round(result.bytes / (1024 * 1024))
-        breakdown = result.breakdown.map(item => ({
+        breakdown = result.breakdown.map((item) => ({
           type: item.types.join(','),
-          size: Math.round(item.bytes / (1024 * 1024))
+          size: Math.round(item.bytes / (1024 * 1024)),
         }))
         return { total, breakdown, source: 'detailed' }
       } catch (e) {
@@ -126,17 +126,20 @@ class MemoryMonitor {
         total,
         breakdown: [
           { type: 'JS Heap', size: jsHeap.used },
-          { type: `DOM (${this.domCount} elements)`, size: Math.round(jsHeap.used * (multiplier - 1) * 0.5) },
+          {
+            type: `DOM (${this.domCount} elements)`,
+            size: Math.round(jsHeap.used * (multiplier - 1) * 0.5),
+          },
           { type: `Images/Resources`, size: Math.round(jsHeap.used * (multiplier - 1) * 0.3) },
-          { type: 'Other', size: Math.round(jsHeap.used * (multiplier - 1) * 0.2) }
+          { type: 'Other', size: Math.round(jsHeap.used * (multiplier - 1) * 0.2) },
         ],
         source: 'estimated',
         details: {
           domCount: this.domCount,
           imageCount,
           canvasCount,
-          multiplier
-        }
+          multiplier,
+        },
       }
     }
 
@@ -169,7 +172,7 @@ class MemoryMonitor {
     this.jsHeap.limit = jsHeapData.limit
     this.jsHeap.history.push({
       timestamp: Date.now(),
-      memory: jsHeapData.used
+      memory: jsHeapData.used,
     })
     if (this.jsHeap.history.length > 30) {
       this.jsHeap.history.shift()
@@ -190,7 +193,7 @@ class MemoryMonitor {
     this.totalMemory.history.push({
       timestamp: Date.now(),
       memory: totalData.total,
-      breakdown: totalData.breakdown
+      breakdown: totalData.breakdown,
     })
     if (this.totalMemory.history.length > 30) {
       this.totalMemory.history.shift()
@@ -206,7 +209,9 @@ class MemoryMonitor {
 
     // ===== 5. 控制台输出调试信息 =====
     if (this.options.debug) {
-      console.log(`📊 [采样] JS堆: ${this.jsHeap.current}MB | 总内存: ${this.totalMemory.current}MB | DOM: ${this.domCount}`)
+      console.log(
+        `📊 [采样] JS堆: ${this.jsHeap.current}MB | 总内存: ${this.totalMemory.current}MB | DOM: ${this.domCount}`,
+      )
     }
   }
 
@@ -275,10 +280,11 @@ class MemoryMonitor {
         totalMemoryUsed: this.totalMemory.current,
         jsHeapPeak: this.jsHeap.peak,
         totalMemoryPeak: this.totalMemory.peak,
-        memoryRatio: this.totalMemory.current > 0
-          ? Math.round((this.jsHeap.current / this.totalMemory.current) * 100)
-          : 0,
-      }
+        memoryRatio:
+          this.totalMemory.current > 0
+            ? Math.round((this.jsHeap.current / this.totalMemory.current) * 100)
+            : 0,
+      },
     }
   }
 
@@ -300,11 +306,10 @@ class MemoryMonitor {
   }
 }
 
-
 // 创建监控器
 const monitor = new MemoryMonitor({
   sampleInterval: 2000,
-  debug: true
+  debug: true,
 })
 
 // 设置更新回调

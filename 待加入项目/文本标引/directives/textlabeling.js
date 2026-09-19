@@ -1,4 +1,4 @@
-import TextLabeing from '@/lib/TextLabeling';
+import TextLabeing from '@/lib/TextLabeling'
 //TODO: 1. 保持高亮/化学同步更新   2.work_space接口更新【serch模块和patent-view模块同步更新】  3.初始打开标引模式，检索标引的字段并重新渲染
 
 //用法demo：<div v-textlabeling="{config:testConfig}">...</div>
@@ -77,48 +77,48 @@ import TextLabeing from '@/lib/TextLabeling';
             },
  */
 export default {
-    inserted(el, bind) {
-        var _config;
-        if (!bind.value) {
-            _config = {
-                container: el
-            };
-        } else {
-            var _setting = bind.value.config;
-            if (_setting) {
-                _config = {
-                    container: el,
-                    callback: _setting.callback,
-                    useMenu: _setting.useMenu
-                };
-            } else {
-                _config = {
-                    container: el
-                };
-            }
+  inserted(el, bind) {
+    var _config
+    if (!bind.value) {
+      _config = {
+        container: el,
+      }
+    } else {
+      var _setting = bind.value.config
+      if (_setting) {
+        _config = {
+          container: el,
+          callback: _setting.callback,
+          useMenu: _setting.useMenu,
         }
-        el.labelingInstance = new TextLabeing(_config);
-        el.labelingInstance.init();
-    },
-    // componentUpdated(el, b, c, d, e) {
-    //     // debugger;
-    // },
-    unbind(el) {
-        el.labelingInstance.destroy();
-    },
-    CommonApi: (function() {
-        var _instance = new TextLabeing({ container: 'GetTextLabelingApi' });
-        return {
-            add: function(addCfg) {
-                _instance.addApi(addCfg);
-                _instance.hideMenu();
-            },
-            remove: function() {
-                _instance.removeLabeling();
-            }
-        };
-    })()
-    // bind: function(el, binding) {
+      } else {
+        _config = {
+          container: el,
+        }
+      }
+    }
+    el.labelingInstance = new TextLabeing(_config)
+    el.labelingInstance.init()
+  },
+  // componentUpdated(el, b, c, d, e) {
+  //     // debugger;
+  // },
+  unbind(el) {
+    el.labelingInstance.destroy()
+  },
+  CommonApi: (function () {
+    var _instance = new TextLabeing({ container: 'GetTextLabelingApi' })
+    return {
+      add: function (addCfg) {
+        _instance.addApi(addCfg)
+        _instance.hideMenu()
+      },
+      remove: function () {
+        _instance.removeLabeling()
+      },
+    }
+  })(),
+  // bind: function(el, binding) {
 
-    // }
-};
+  // }
+}

@@ -1,11 +1,7 @@
-
-import {
-  CompilerApi,
-  SourceFile,
-} from "../compiler";
-import OPTION_CONFIG from "../Option.config";
-import { getChildrenFunction } from "../compiler";
-import { getSyntaxKindName } from "../utils";
+import { CompilerApi, SourceFile } from '../compiler'
+import OPTION_CONFIG from '../Option.config'
+import { getChildrenFunction } from '../compiler'
+import { getSyntaxKindName } from '../utils'
 import { geAttrs } from './generateComponentAttrs'
 import { getRootApi, getRootSourceFile, getRootBindingTools } from '../store'
 
@@ -16,8 +12,8 @@ interface LooseObject {
 let rootSourceFile: SourceFile
 let rootApi: CompilerApi
 function getTargetDataTree(api: any, tsNode: any, getChildren: any) {
-  const children = getChildren(tsNode);
-  const kindName = getSyntaxKindName(api, tsNode.kind);
+  const children = getChildren(tsNode)
+  const kindName = getSyntaxKindName(api, tsNode.kind)
 
   // TODO:zm 换掉‘魔字符串’的逻辑
   if (kindName === 'ClassDeclaration') {
@@ -32,12 +28,11 @@ function getTargetDataTree(api: any, tsNode: any, getChildren: any) {
     return treeResult
   }
 
-
   if (children.length === 0) {
     // 叶子结点
-    return null;
+    return null
   } else {
-    let iResult: any;
+    let iResult: any
     for (let i = 0; i < children.length - 1; i++) {
       const iNode = children[i]
       iResult = getTargetDataTree(api, iNode, getChildren)
@@ -50,10 +45,13 @@ function getTargetDataTree(api: any, tsNode: any, getChildren: any) {
 }
 
 function transformData(currentObj: any, api: any, tsNode: any, getChildren: any) {
-  const children = getChildren(tsNode);
-  const kindName = getSyntaxKindName(api, tsNode.kind);
+  const children = getChildren(tsNode)
+  const kindName = getSyntaxKindName(api, tsNode.kind)
 
-  const fileText: string = rootSourceFile.text.substring(tsNode.getStart(rootSourceFile), tsNode.getEnd())
+  const fileText: string = rootSourceFile.text.substring(
+    tsNode.getStart(rootSourceFile),
+    tsNode.getEnd(),
+  )
 
   // ***定义解析数据结构***
   const tsDescMap = {
@@ -63,41 +61,45 @@ function transformData(currentObj: any, api: any, tsNode: any, getChildren: any)
     schema: {
       tag: '', // 组件tag
       props: {}, // prop
-      events: {} // @Emit事件
+      events: {}, // @Emit事件
     },
     __SchemaWordbook: {} as LooseObject, // 所有的数据类型(生成模拟文件，分析数据类型)
     PropList: [],
-    MethodList: []
-}
-
-let tChildren = []
-if (children.length === 0) {
-  // 叶子结点
-  return {
-    children: [],
-    kindName,
-    tsNode,
-    tsDescMap
-  };
-} else {
-  for (let i = 0; i < children.length; i++) {
-    const childObject = {}
-    const iNode = children[i]
-    // TODO:zm 这里是否有必要深度遍历，class下面一层即可
-    tChildren.push(transformData(childObject, api, iNode, getChildren))
+    MethodList: [],
   }
-}
-currentObj.children = tChildren
-currentObj.kindName = kindName
-currentObj.tsNode = tsNode
-currentObj.tsDescMap = tsDescMap
-return currentObj
+
+  let tChildren = []
+  if (children.length === 0) {
+    // 叶子结点
+    return {
+      children: [],
+      kindName,
+      tsNode,
+      tsDescMap,
+    }
+  } else {
+    for (let i = 0; i < children.length; i++) {
+      const childObject = {}
+      const iNode = children[i]
+      // TODO:zm 这里是否有必要深度遍历，class下面一层即可
+      tChildren.push(transformData(childObject, api, iNode, getChildren))
+    }
+  }
+  currentObj.children = tChildren
+  currentObj.kindName = kindName
+  currentObj.tsNode = tsNode
+  currentObj.tsDescMap = tsDescMap
+  return currentObj
 }
 
 export function geTarget() {
   rootSourceFile = getRootSourceFile()
   rootApi = getRootApi()
-  const treeData = getTargetDataTree(rootApi, rootSourceFile, getChildrenFunction(OPTION_CONFIG.treeMode, rootSourceFile))
+  const treeData = getTargetDataTree(
+    rootApi,
+    rootSourceFile,
+    getChildrenFunction(OPTION_CONFIG.treeMode, rootSourceFile),
+  )
   if (!treeData) {
     throw new Error('请检查组件：「tsx文件」没有匹配到 「@component」')
   }

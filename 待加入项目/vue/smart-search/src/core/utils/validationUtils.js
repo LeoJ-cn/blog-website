@@ -1,7 +1,4 @@
-import {
-  isNaN,
-  isInteger
-} from 'lodash';
+import { isNaN, isInteger } from 'lodash'
 /**
  * 判断值是否为时间类型
  * @param {*} str
@@ -9,17 +6,17 @@ import {
 function isDateValue(str) {
   return (
     /^[1-2]\d{3}(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])$/.test(str) ||
-        /^[1-2]\d{3}$/.test(str) ||
-        /^[1-2]\d{3}(0[1-9]|1[0-2])$/.test(str)
-  );
+    /^[1-2]\d{3}$/.test(str) ||
+    /^[1-2]\d{3}(0[1-9]|1[0-2])$/.test(str)
+  )
 }
 /**
  * 判断值是否为数值类型
  * @param {*} str
  */
 function isIntegerValue(str) {
-  var strNum = Number(str);
-  return !isNaN(strNum) && isInteger(strNum);
+  var strNum = Number(str)
+  return !isNaN(strNum) && isInteger(strNum)
 }
 
 /**
@@ -28,11 +25,11 @@ function isIntegerValue(str) {
  * @param {*} rangeEnd 结束值
  */
 function isCorrectRange(rangeStart, rangeEnd) {
-  let isCorrect = false;
+  let isCorrect = false
   if (_formateDate(rangeStart) <= _formateDate(rangeEnd)) {
-    isCorrect = true;
+    isCorrect = true
   }
-  return isCorrect;
+  return isCorrect
 }
 /**
  * 将时间格式统一格式为8位时间格式
@@ -41,21 +38,16 @@ function isCorrectRange(rangeStart, rangeEnd) {
 function _formateDate(time) {
   switch (time.length) {
     case 4:
-      time = parseInt(time + '0101', 10);
-      break;
+      time = parseInt(time + '0101', 10)
+      break
     case 6:
-      time = parseInt(time + '01', 10);
-      break;
+      time = parseInt(time + '01', 10)
+      break
     default:
-      time = parseInt(time, 10);
-      break;
+      time = parseInt(time, 10)
+      break
   }
-  return time;
+  return time
 }
 
-export {
-  isDateValue,
-  isIntegerValue,
-  isCorrectRange
-}
-;
+export { isDateValue, isIntegerValue, isCorrectRange }

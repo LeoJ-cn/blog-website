@@ -1,7 +1,7 @@
 {
-  "compilerOptions": {
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
+"compilerOptions": {
+"emitDecoratorMetadata": true,
+"experimentalDecorators": true,
 
     "allowJs": true /* 是否允许js代码 */,
     "checkJs": true /* 检查js代码错误 */,
@@ -25,7 +25,8 @@
       "@": ["src"]
     },
     "lib": ["esnext", "dom", "dom.iterable", "scripthost"]
-  },
-  "include": ["src/main.ts"],
-  "exclude": ["node_modules", "dist"]
+
+},
+"include": ["src/main.ts"],
+"exclude": ["node_modules", "dist"]
 }

@@ -487,7 +487,6 @@ function renderPerformanceReport(result) {
   // =========================
   // 主容器
   // =========================
-  ;
   const container = document.querySelector('#test-ua') || document.createElement('div')
 
   // 容器参数
@@ -835,7 +834,6 @@ function renderPerformanceReport(result) {
 // ============================================================
 
 setTimeout(() => {
-
   detectPerformanceTier().then((result) => {
     const { tier, tierLabel, score, performanceDetails, deviceDetails } = result
 

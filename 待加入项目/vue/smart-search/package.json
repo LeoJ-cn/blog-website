@@ -8,7 +8,6 @@
     "component"
   ],
   "main": "./lib/index.js",
-   
   "license": "MIT",
   "dependencies": {}
 }

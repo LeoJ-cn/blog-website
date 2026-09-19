@@ -2,7 +2,6 @@
  * TODO:ts类型完善，目前逻辑还在一直调整
  */
 
-
 import {
   Utils_JsonSchemaToOperationTreeReturn_Type,
   Utils_PropBoxList_Type,
@@ -14,36 +13,34 @@ import {
   Cli_ComponentJsonschema_Interface,
   LooseObject,
   getExportsList,
-  getUuid
+  getUuid,
 } from './shared/index'
 import { OperationList } from './Comps'
 import _ from 'lodash'
 
-
-export const jsonSchemaToOperationTree = function (JsonData: Cli_ComponentJsonschema_Interface): Utils_JsonSchemaToOperationTreeReturn_Type {
-  return [
-    getCommonConfig(),
-    getComponentPropConfig(JsonData)
-  ]
+export const jsonSchemaToOperationTree = function (
+  JsonData: Cli_ComponentJsonschema_Interface,
+): Utils_JsonSchemaToOperationTreeReturn_Type {
+  return [getCommonConfig(), getComponentPropConfig(JsonData)]
 }
 
 /**
  * TODO: base 通用设置里面节点的最大id
  * 设置 10000 的原因： 防止交互树二次编辑后，前面的节点和生成的节点id存在重复
  */
-let editDomId = 10000;
+let editDomId = 10000
 let FlatAttrList: any[] = []
 let AttrListWithEditing: any[] = []
 let CompJsonSchema: LooseObject = {}
-let RootExportsList: Utils_ExportList_Type = []; // prop & emit
+let RootExportsList: Utils_ExportList_Type = [] // prop & emit
 
 const GuiEditorType: LooseObject = {
   boolean: 'GoChecker',
   number: 'GoNumberInput',
   string: 'GoTextInput',
-  enum: "GoItemSelect" // 枚举类型：强制使用下拉框
+  enum: 'GoItemSelect', // 枚举类型：强制使用下拉框
 }
-const getSimpleKeyLabel = (str: string) => str.replace(/.*\.(.+)/img, '$1')
+const getSimpleKeyLabel = (str: string) => str.replace(/.*\.(.+)/gim, '$1')
 const generateDomId = () => editDomId++
 const generateOpUuid = () => getUuid('op_tree')
 const getValEvil = (type: string) => {
@@ -65,7 +62,6 @@ function updateAttrListWithEditing(arr: any[]) {
 
 // 属性设置：prop和 emit 设置
 function getComponentPropConfig(JsonData: Cli_ComponentJsonschema_Interface) {
-
   initData()
   CompJsonSchema = JsonData
   RootExportsList = getExportsList(JsonData)
@@ -74,24 +70,22 @@ function getComponentPropConfig(JsonData: Cli_ComponentJsonschema_Interface) {
   addPropBoxForEditor()
 
   return {
-    "id": 116,
-    "parentId": 0,
-    "ins_id": generateOpUuid(),
-    "mini_method_uuid": "",
-    "tag": "PropBox",
-    "data": {
-      "title": "属性配置",
-      "layout": "vertical",
-      "name": "hook",
-      "selectArrow": true,
-      "$style": [],
-      "$exports": [
-        ...RootExportsList
-      ],
-      "$exportState": true
+    id: 116,
+    parentId: 0,
+    ins_id: generateOpUuid(),
+    mini_method_uuid: '',
+    tag: 'PropBox',
+    data: {
+      title: '属性配置',
+      layout: 'vertical',
+      name: 'hook',
+      selectArrow: true,
+      $style: [],
+      $exports: [...RootExportsList],
+      $exportState: true,
     },
-    "$complexInfo": {
-      "edit_page_uuid": "sal20000_org_key210630eaeq4q6dcb", //  固定不可变
+    $complexInfo: {
+      edit_page_uuid: 'sal20000_org_key210630eaeq4q6dcb', //  固定不可变
 
       // "id": 70632,
       // "atom_ins": {
@@ -99,37 +93,33 @@ function getComponentPropConfig(JsonData: Cli_ComponentJsonschema_Interface) {
       //   "origin_page_uuid": "sal20000_org_key2112065s57cr77w1"
       // }
     },
-    "locales": {
-      "en-US": {
-        "title": "Component Setting"
-      }
+    locales: {
+      'en-US': {
+        title: 'Component Setting',
+      },
     },
-    "children": [
-      ...AttrListWithEditing
-    ]
+    children: [...AttrListWithEditing],
   }
 }
 
 function setAttrEditorList() {
-  FlatAttrList.forEach(iAttr => {
+  FlatAttrList.forEach((iAttr) => {
     switch (iAttr.guiBox) {
       case Utils_BoxSymbol_Enum.arrayEditor:
-        setArrayEditorData(iAttr);
+        setArrayEditorData(iAttr)
         break
 
       case Utils_BoxSymbol_Enum.attrEditorItem:
       default:
         setBaseEditor(iAttr)
-        break;
+        break
     }
   })
 }
 
 function processDataSeparately(JsonData: Cli_ComponentJsonschema_Interface) {
   const rootParentId = 116
-  const {
-    props = {}
-  } = JsonData
+  const { props = {} } = JsonData
 
   /**
    * TODO: 默认文本，button会使用，考虑放开方式（走注释配置）
@@ -147,15 +137,14 @@ function processDataSeparately(JsonData: Cli_ComponentJsonschema_Interface) {
   // }
   // FlatAttrList.push(arrayEditItem)
 
-  Object.keys(props).forEach(key => {
+  Object.keys(props).forEach((key) => {
     const propInfo = props[key]
     deepProcessDataSeparately({
       parentId: rootParentId,
       propSchema: propInfo.schema,
-      renderTreeKey: key
+      renderTreeKey: key,
     })
   })
-
 }
 
 function deepProcessDataSeparately({ parentId, propSchema, renderTreeKey }: LooseObject) {
@@ -170,19 +159,17 @@ function deepProcessDataSeparately({ parentId, propSchema, renderTreeKey }: Loos
    */
   switch (propSchema.type) {
     case Cli_DataType_Enum.Object: {
-      const {
-        properties = {}
-      } = propSchema
-      Object.keys(properties).forEach(key => {
+      const { properties = {} } = propSchema
+      Object.keys(properties).forEach((key) => {
         const pSchema = properties[key]
         const curKey = `${renderTreeKey}.${key}`
         deepProcessDataSeparately({
           parentId,
           propSchema: pSchema,
-          renderTreeKey: curKey
+          renderTreeKey: curKey,
         })
       })
-      break;
+      break
     }
     case Cli_DataType_Enum.Array: {
       const arrayEditItem = {
@@ -192,7 +179,7 @@ function deepProcessDataSeparately({ parentId, propSchema, renderTreeKey }: Loos
         propSchema,
       }
       FlatAttrList.push(arrayEditItem)
-      break;
+      break
     }
     case Cli_DataType_Enum.String:
     case Cli_DataType_Enum.Number:
@@ -205,17 +192,13 @@ function deepProcessDataSeparately({ parentId, propSchema, renderTreeKey }: Loos
         propSchema: propSchema,
       }
       FlatAttrList.push(baseEditItem)
-      break;
+      break
     }
   }
 }
 
 function setBaseEditor(iAttr: LooseObject) {
-  const {
-    parentId,
-    renderTreeKey,
-    propSchema
-  } = iAttr
+  const { parentId, renderTreeKey, propSchema } = iAttr
 
   const singleAttr = getSingleAttrConfig({
     ...propSchema,
@@ -226,7 +209,7 @@ function setBaseEditor(iAttr: LooseObject) {
     parentId,
     renderTreeKey,
     guiEditorType,
-    singleAttr
+    singleAttr,
   })
   updateAttrListWithEditing([attrItem])
 }
@@ -237,15 +220,16 @@ function setBaseEditor(iAttr: LooseObject) {
  *item的对象：所有key必须是基本类型，不允许出现嵌套数据
  */
 function setArrayEditorData({ parentId, propSchema, renderTreeKey }: LooseObject) {
-
   const type = _.get(propSchema, 'items.type')
 
   if (!type) {
     // 二维数组以及其他数据类型，当成绑定prop处理
     setBaseEditor({
-      parentId, propSchema, renderTreeKey
+      parentId,
+      propSchema,
+      renderTreeKey,
     })
-    return;
+    return
   }
 
   const sinKey = getSimpleKeyLabel(renderTreeKey)
@@ -257,7 +241,7 @@ function setArrayEditorData({ parentId, propSchema, renderTreeKey }: LooseObject
     subTitle: `选项`,
     name: `${sinKey}-name`,
     defaultData: null,
-    nodeConfigs: null
+    nodeConfigs: null,
   })
 
   // 修改defaultData以及nodeConfigs
@@ -266,12 +250,11 @@ function setArrayEditorData({ parentId, propSchema, renderTreeKey }: LooseObject
     _prePath: '',
     _isComeFromArray: true,
 
-
     parentId,
     propSchema: {
-      ...propSchema.items
+      ...propSchema.items,
     },
-    renderTreeKey
+    renderTreeKey,
   })
 
   updateAttrListWithEditing([rootArrayEditor])
@@ -284,13 +267,11 @@ function generateArrayEditorData({
 
   parentId,
   propSchema,
-  renderTreeKey
+  renderTreeKey,
 }: LooseObject) {
-
   const _loopType = propSchema.type
   switch (_loopType) {
     case Cli_DataType_Enum.Array: {
-
       const sinKey = getSimpleKeyLabel(renderTreeKey)
 
       const curId = generateDomId()
@@ -302,7 +283,7 @@ function generateArrayEditorData({
         subTitle: `选项`,
         name: `${sinKey}-name`,
         defaultData: null,
-        nodeConfigs: null
+        nodeConfigs: null,
       })
 
       // 修改defaultData以及nodeConfigs
@@ -314,7 +295,7 @@ function generateArrayEditorData({
 
         parentId: curId,
         propSchema: propSchema.items,
-        renderTreeKey
+        renderTreeKey,
       })
 
       if (!_arraryEditorInfo.data.defaultData) {
@@ -328,36 +309,37 @@ function generateArrayEditorData({
       }
 
       const {
-        data: {
-          defaultData,
-          nodeConfigs
-        }
+        data: { defaultData, nodeConfigs },
       } = _arraryEditorInfo
 
       _.set(defaultData, renderTreeKey, [])
 
       defaultData.$exports.push({
-        "attrKey": renderTreeKey,
-        "sortIdx": -1
+        attrKey: renderTreeKey,
+        sortIdx: -1,
       })
 
-      const pickData = _.pick(
-        itemRootArrayEditor.data,
-        ['title', 'subTitle', 'bottomLine', 'minSize', 'nodeConfigs', 'defaultData']
-      )
+      const pickData = _.pick(itemRootArrayEditor.data, [
+        'title',
+        'subTitle',
+        'bottomLine',
+        'minSize',
+        'nodeConfigs',
+        'defaultData',
+      ])
       nodeConfigs.push({
-        "id": curId,
-        "label": propSchema.description || `nc-${renderTreeKey}`,
-        "type": 'ArrayEdit',
-        "key": renderTreeKey,
+        id: curId,
+        label: propSchema.description || `nc-${renderTreeKey}`,
+        type: 'ArrayEdit',
+        key: renderTreeKey,
         isHalf,
-        assignObject: pickData
+        assignObject: pickData,
       })
-      break;
+      break
     }
     case Cli_DataType_Enum.Object: {
       const properties: LooseObject = propSchema.properties
-      Object.keys(properties).forEach(arrItemObjKey => {
+      Object.keys(properties).forEach((arrItemObjKey) => {
         const curPropSchema = properties[arrItemObjKey]
         const curRenderTreeKey = _prePath ? `${_prePath}.${arrItemObjKey}` : arrItemObjKey
         generateArrayEditorData({
@@ -367,10 +349,10 @@ function generateArrayEditorData({
 
           parentId,
           propSchema: curPropSchema,
-          renderTreeKey: curRenderTreeKey
+          renderTreeKey: curRenderTreeKey,
         })
       })
-      break;
+      break
     }
     case Cli_DataType_Enum.String:
     case Cli_DataType_Enum.Number:
@@ -391,18 +373,17 @@ function generateArrayEditorData({
         const defaultData: any = getValEvil(_loopType)
         const nodeConfigs: any[] = [
           {
-            "id": generateDomId(),
-            "type": guiEditorType,
+            id: generateDomId(),
+            type: guiEditorType,
             isHalf,
-            "key": "",
+            key: '',
             ...singleAttr,
-            label: `${_loopType}`
-          }
+            label: `${_loopType}`,
+          },
         ]
         _arraryEditorInfo.data.defaultData = defaultData
         _arraryEditorInfo.data.nodeConfigs = nodeConfigs
       } else {
-
         if (!_arraryEditorInfo.data.defaultData) {
           _arraryEditorInfo.data.defaultData = {}
         }
@@ -414,34 +395,30 @@ function generateArrayEditorData({
         }
 
         const {
-          data: {
-            defaultData,
-            nodeConfigs
-          }
+          data: { defaultData, nodeConfigs },
         } = _arraryEditorInfo
 
         _.set(defaultData, renderTreeKey, getValEvil(_loopType))
 
         defaultData.$exports.push({
-          "attrKey": renderTreeKey,
-          "sortIdx": -1
+          attrKey: renderTreeKey,
+          sortIdx: -1,
         })
-
 
         const sinKey = getSimpleKeyLabel(renderTreeKey)
 
         nodeConfigs.push({
-          "id": generateDomId(),
-          "type": guiEditorType,
-          "key": renderTreeKey,
+          id: generateDomId(),
+          type: guiEditorType,
+          key: renderTreeKey,
           isHalf,
           ...singleAttr,
 
-          label: propSchema.description || sinKey
+          label: propSchema.description || sinKey,
         })
       }
 
-      break;
+      break
     }
   }
 }
@@ -453,23 +430,23 @@ function getArrayEditTpl({
   subTitle,
   name,
   defaultData,
-  nodeConfigs
+  nodeConfigs,
 }: LooseObject) {
   return {
-    "id": generateDomId(),
+    id: generateDomId(),
     parentId,
-    "ins_id": generateOpUuid(),
-    "mini_method_uuid": "",
-    "tag": "ArrayEdit",
-    "render_tree_node": {
-      "key": renderTreeKey
+    ins_id: generateOpUuid(),
+    mini_method_uuid: '',
+    tag: 'ArrayEdit',
+    render_tree_node: {
+      key: renderTreeKey,
     },
-    "data": {
-      "bottomLine": false, // arrayedit不显示下划线
+    data: {
+      bottomLine: false, // arrayedit不显示下划线
 
-      "title": title, // ？？？
-      "subTitle": subTitle, // ？？？
-      "name": name, // ？？？
+      title: title, // ？？？
+      subTitle: subTitle, // ？？？
+      name: name, // ？？？
 
       /**
        * TODO-item各种类型的场景:
@@ -477,23 +454,21 @@ function getArrayEditTpl({
        * 对象的时候: {field1:'', filed2:0, $exports:[]}
        * 数组: 参考基本类型，等于 []
        */
-      "defaultData": defaultData,
+      defaultData: defaultData,
 
-      "nodeConfigs": nodeConfigs,
+      nodeConfigs: nodeConfigs,
 
-      "$style": {},
-      "$exports": [
-        ...RootExportsList
-      ],
+      $style: {},
+      $exports: [...RootExportsList],
 
-      "tag": "", // nodeConfigs不需要设置，需要设置的场景在 “交互树页面” 去制作
+      tag: '', // nodeConfigs不需要设置，需要设置的场景在 “交互树页面” 去制作
       // "factPath": "children", 已废弃
-      "defaultChildren": [],
-      "$exportState": true,
-      "selectArrow": true,
+      defaultChildren: [],
+      $exportState: true,
+      selectArrow: true,
     },
-    "$complexInfo": {
-      "edit_page_uuid": "sal20000_org_key210705eaejvo6d3w",
+    $complexInfo: {
+      edit_page_uuid: 'sal20000_org_key210705eaejvo6d3w',
 
       // "id": 70791,
       // "atom_ins": {
@@ -501,12 +476,12 @@ function getArrayEditTpl({
       //   "origin_page_uuid": "sal20000_org_key210709eaemff6dot"
       // }
     },
-    "locales": {
-      "en-US": {
+    locales: {
+      'en-US': {
         // "title": "---",
-      }
+      },
     },
-    "children": []
+    children: [],
   }
 }
 
@@ -514,68 +489,68 @@ function getAttrEditorItemTpl({ parentId, renderTreeKey, guiEditorType, singleAt
   return {
     id: generateDomId(),
     parentId,
-    "ins_id": generateOpUuid(),
-    "mini_method_uuid": "",
-    "tag": "AttrEditorItem",
-    "data": {
-      "type": guiEditorType,
-      "$style": {},
-      "$exports": [
+    ins_id: generateOpUuid(),
+    mini_method_uuid: '',
+    tag: 'AttrEditorItem',
+    data: {
+      type: guiEditorType,
+      $style: {},
+      $exports: [
         {
-          "attrKey": "type",
-          "sortIdx": -1
+          attrKey: 'type',
+          sortIdx: -1,
         },
         {
-          "attrKey": "singleAttr",
-          "sortIdx": -1
+          attrKey: 'singleAttr',
+          sortIdx: -1,
         },
         {
-          "eventKey": "on-change",
-          "sortIdx": -1,
-          "task": {
-            "label": "当内容改变时",
-            "process": {
-              "type": "bind_method",
-              "defaultMethods": [],
-              "custom_access": true
-            }
-          }
+          eventKey: 'on-change',
+          sortIdx: -1,
+          task: {
+            label: '当内容改变时',
+            process: {
+              type: 'bind_method',
+              defaultMethods: [],
+              custom_access: true,
+            },
+          },
         },
         {
-          "eventKey": "beforeRender",
-          "sortIdx": -1,
-          "task": {
-            "label": "当组件渲染前",
-            "process": {
-              "type": "bind_method",
-              "defaultMethods": [],
-              "custom_access": true
-            }
-          }
-        }
+          eventKey: 'beforeRender',
+          sortIdx: -1,
+          task: {
+            label: '当组件渲染前',
+            process: {
+              type: 'bind_method',
+              defaultMethods: [],
+              custom_access: true,
+            },
+          },
+        },
       ],
-      "$exportState": true,
-      singleAttr
+      $exportState: true,
+      singleAttr,
     },
     render_tree_node: {
-      key: renderTreeKey
+      key: renderTreeKey,
     },
     // 固定配置
-    "$complexInfo": {
-      "edit_page_uuid": "sal20000_org_key210701eaejqn6d2t",
+    $complexInfo: {
+      edit_page_uuid: 'sal20000_org_key210701eaejqn6d2t',
       // "atom_ins": {
       //   "uuid": "9402c95f6df44cac952471b6b98f627f",
       //   "origin_page_uuid": "sal20000_org_key2208121wrqhzd5ft"
       // }
     },
-    "version": "0.0.1",
-    "children": []
+    version: '0.0.1',
+    children: [],
   }
 }
 
 function getPropAttrRenderComp(schema: Schema_Interface) {
   // 注释中指定的组件
-  const assignCompFromComment = _.get(schema, 'additionalProperties.gui_render_comp', '');
+  const assignCompFromComment = _.get(schema, 'additionalProperties.gui_render_comp', '')
   if (assignCompFromComment && OperationList.indexOf(assignCompFromComment) !== -1) {
     return assignCompFromComment
   }
@@ -585,7 +560,6 @@ function getPropAttrRenderComp(schema: Schema_Interface) {
   }
   // 推论schema类型组件
   return GuiEditorType[schema.type] || GuiEditorType.string
-
 }
 
 function getSingleAttrConfig(schema: Schema_Interface) {
@@ -593,15 +567,15 @@ function getSingleAttrConfig(schema: Schema_Interface) {
   if (schema.enum) {
     return {
       label: schema.label,
-      enumList: _.map(schema.enum, item => ({
+      enumList: _.map(schema.enum, (item) => ({
         value: item,
         label: `${item}`,
-        id: generateDomId()
-      }))
+        id: generateDomId(),
+      })),
     }
   }
   return {
-    label: schema.label
+    label: schema.label,
   }
 }
 
@@ -613,18 +587,19 @@ function addPropBoxForEditor() {
   // AttrListWithEditing
   const propBoxList: Utils_PropBoxList_Type = []
   const boxStyle = {
-    "width": "99%",
-    "float": "left",
-    "padding-right": "4px"
+    width: '99%',
+    float: 'left',
+    'padding-right': '4px',
   }
-  AttrListWithEditing.forEach(attrTree => {
-    const fatherRenderKey =
-      _.get(attrTree, 'render_tree_node.key', '')
-        .split('.').shift()
+  AttrListWithEditing.forEach((attrTree) => {
+    const fatherRenderKey = _.get(attrTree, 'render_tree_node.key', '').split('.').shift()
     const fatherPropbox = _.find(propBoxList, { __rootPropKey: fatherRenderKey }) as LooseObject
     if (!fatherPropbox) {
-
-      const rootCommentLabel = _.get(CompJsonSchema, `props.${fatherRenderKey}.label`, fatherRenderKey)
+      const rootCommentLabel = _.get(
+        CompJsonSchema,
+        `props.${fatherRenderKey}.label`,
+        fatherRenderKey,
+      )
       const propBoxId = generateDomId()
       const propBoxParentId = attrTree.parentId
 
@@ -637,9 +612,7 @@ function addPropBoxForEditor() {
         id: propBoxId,
         parentId: propBoxParentId,
         locales: {},
-        children: [
-          attrTree
-        ]
+        children: [attrTree],
       })
 
       propBoxList.push(propBox)
@@ -650,7 +623,7 @@ function addPropBoxForEditor() {
     }
   })
 
-  propBoxList.forEach(dd => delete dd.__rootPropKey)
+  propBoxList.forEach((dd) => delete dd.__rootPropKey)
   AttrListWithEditing = propBoxList
 }
 
@@ -660,88 +633,86 @@ function getPropBoxConfig({
   id,
   parentId,
   locales,
-  children
+  children,
 }: Utils_PropBoxParams_Interface) {
-  const titleHtml = title.replace(/([\s\S]{5})/img, '<div>$1</div>')
+  const titleHtml = title.replace(/([\s\S]{5})/gim, '<div>$1</div>')
 
   return {
     __rootPropKey, // 临时变量
     id,
     parentId,
-    "ins_id": generateOpUuid(),
-    "mini_method_uuid": "",
-    "tag": "PropBox",
-    "data": {
+    ins_id: generateOpUuid(),
+    mini_method_uuid: '',
+    tag: 'PropBox',
+    data: {
       // titleHtml,
       // title: title.length > 4 ? title.slice(0, 4) + '...' : title, //最多显示4个中文；8个英文
       title: titleHtml,
-      "layout": "horizontal",
-      "name": "common",
-      "selectArrow": false, // 箭头
-      "$style": [],
-      "$exports": [
+      layout: 'horizontal',
+      name: 'common',
+      selectArrow: false, // 箭头
+      $style: [],
+      $exports: [
         {
-          "attrKey": "title",
-          "sortIdx": -1
+          attrKey: 'title',
+          sortIdx: -1,
         },
         {
-          "attrKey": "name",
-          "sortIdx": -1
+          attrKey: 'name',
+          sortIdx: -1,
         },
         {
-          "attrKey": "selectArrow",
-          "sortIdx": -1
+          attrKey: 'selectArrow',
+          sortIdx: -1,
         },
         {
-          "attrKey": "layout",
-          "sortIdx": -1
+          attrKey: 'layout',
+          sortIdx: -1,
         },
         {
-          "eventKey": "on-change",
-          "sortIdx": -1,
-          "task": {
-            "label": "当内容改变时",
-            "process": {
-              "type": "bind_method",
-              "defaultMethods": [],
-              "custom_access": true
-            }
-          }
+          eventKey: 'on-change',
+          sortIdx: -1,
+          task: {
+            label: '当内容改变时',
+            process: {
+              type: 'bind_method',
+              defaultMethods: [],
+              custom_access: true,
+            },
+          },
         },
         {
-          "eventKey": "beforeRender",
-          "sortIdx": -1,
-          "task": {
-            "label": "当内容渲染前",
-            "process": {
-              "type": "bind_method",
-              "defaultMethods": [],
-              "custom_access": true
-            }
-          }
+          eventKey: 'beforeRender',
+          sortIdx: -1,
+          task: {
+            label: '当内容渲染前',
+            process: {
+              type: 'bind_method',
+              defaultMethods: [],
+              custom_access: true,
+            },
+          },
         },
         {
-          "eventKey": "isShow",
-          "sortIdx": -1,
-          "task": {
-            "label": "控制内容是否显示",
-            "process": {
-              "type": "bind_method",
-              "defaultMethods": [],
-              "custom_access": true
-            }
-          }
-        }
+          eventKey: 'isShow',
+          sortIdx: -1,
+          task: {
+            label: '控制内容是否显示',
+            process: {
+              type: 'bind_method',
+              defaultMethods: [],
+              custom_access: true,
+            },
+          },
+        },
       ],
-      "$exportState": true
+      $exportState: true,
     },
-    "$complexInfo": {
-      "edit_page_uuid": "sal20000_org_key210630eaeq4q6dcb"
+    $complexInfo: {
+      edit_page_uuid: 'sal20000_org_key210630eaeq4q6dcb',
     },
-    "locales": locales,
-    children: [
-      ...children
-    ]
+    locales: locales,
+    children: [...children],
   }
 }
 
@@ -751,75 +722,75 @@ function getPropBoxConfig({
  */
 function getCommonConfig() {
   return {
-    "id": 2,
-    "parentId": 0,
-    "ins_id": generateOpUuid(),
-    "mini_method_uuid": "",
-    "tag": "PropBox",
-    "data": {
-      "title": "通用设置",
-      "layout": "vertical",
-      "name": "common",
-      "selectArrow": true,
-      "$style": [],
-      "$exports": [
+    id: 2,
+    parentId: 0,
+    ins_id: generateOpUuid(),
+    mini_method_uuid: '',
+    tag: 'PropBox',
+    data: {
+      title: '通用设置',
+      layout: 'vertical',
+      name: 'common',
+      selectArrow: true,
+      $style: [],
+      $exports: [
         {
-          "attrKey": "title",
-          "sortIdx": -1
+          attrKey: 'title',
+          sortIdx: -1,
         },
         {
-          "attrKey": "name",
-          "sortIdx": -1
+          attrKey: 'name',
+          sortIdx: -1,
         },
         {
-          "attrKey": "selectArrow",
-          "sortIdx": -1
+          attrKey: 'selectArrow',
+          sortIdx: -1,
         },
         {
-          "attrKey": "layout",
-          "sortIdx": -1
+          attrKey: 'layout',
+          sortIdx: -1,
         },
         {
-          "eventKey": "on-change",
-          "sortIdx": -1,
-          "task": {
-            "label": "当内容改变时",
-            "process": {
-              "type": "bind_method",
-              "defaultMethods": [],
-              "custom_access": true
-            }
-          }
+          eventKey: 'on-change',
+          sortIdx: -1,
+          task: {
+            label: '当内容改变时',
+            process: {
+              type: 'bind_method',
+              defaultMethods: [],
+              custom_access: true,
+            },
+          },
         },
         {
-          "eventKey": "beforeRender",
-          "sortIdx": -1,
-          "task": {
-            "label": "当内容渲染前",
-            "process": {
-              "type": "bind_method",
-              "defaultMethods": [],
-              "custom_access": true
-            }
-          }
+          eventKey: 'beforeRender',
+          sortIdx: -1,
+          task: {
+            label: '当内容渲染前',
+            process: {
+              type: 'bind_method',
+              defaultMethods: [],
+              custom_access: true,
+            },
+          },
         },
         {
-          "eventKey": "isShow",
-          "sortIdx": -1,
-          "task": {
-            "label": "控制内容是否显示",
-            "process": {
-              "type": "bind_method",
-              "defaultMethods": [],
-              "custom_access": true
-            }
-          }
-        }
+          eventKey: 'isShow',
+          sortIdx: -1,
+          task: {
+            label: '控制内容是否显示',
+            process: {
+              type: 'bind_method',
+              defaultMethods: [],
+              custom_access: true,
+            },
+          },
+        },
       ],
-      "$exportState": true
+      $exportState: true,
     },
-    "$complexInfo": {
-      "edit_page_uuid": "sal20000_org_key210630eaeq4q6dcb",
+    $complexInfo: {
+      edit_page_uuid: 'sal20000_org_key210630eaeq4q6dcb',
 
       // "id": 70632,
       // "atom_ins": {
@@ -827,250 +798,247 @@ function getCommonConfig() {
       //   "origin_page_uuid": "sal20000_org_key210705eaeiww6dom"
       // }
     },
-    "locales": {
-      "en-US": {
-        "title": "General Setting"
-      }
+    locales: {
+      'en-US': {
+        title: 'General Setting',
+      },
     },
-    "children": [
+    children: [
       {
-        "id": 3,
-        "parentId": 2,
-        "ins_id": generateOpUuid(),
-        "mini_method_uuid": "",
-        "tag": "PropSize",
-        "data": {
-          "$style": [],
-          "$exports": [
+        id: 3,
+        parentId: 2,
+        ins_id: generateOpUuid(),
+        mini_method_uuid: '',
+        tag: 'PropSize',
+        data: {
+          $style: [],
+          $exports: [
             {
-              "attrKey": "disabled",
-              "sortIdx": -1
+              attrKey: 'disabled',
+              sortIdx: -1,
             },
             {
-              "eventKey": "on-change",
-              "sortIdx": -1,
-              "task": {
-                "label": "当内容改变时",
-                "process": {
-                  "type": "bind_method",
-                  "defaultMethods": [],
-                  "custom_access": true
-                }
-              }
+              eventKey: 'on-change',
+              sortIdx: -1,
+              task: {
+                label: '当内容改变时',
+                process: {
+                  type: 'bind_method',
+                  defaultMethods: [],
+                  custom_access: true,
+                },
+              },
             },
             {
-              "eventKey": "beforeRender",
-              "sortIdx": -1,
-              "task": {
-                "label": "当组件渲染前",
-                "process": {
-                  "type": "bind_method",
-                  "defaultMethods": [],
-                  "custom_access": true
-                }
-              }
-            }
+              eventKey: 'beforeRender',
+              sortIdx: -1,
+              task: {
+                label: '当组件渲染前',
+                process: {
+                  type: 'bind_method',
+                  defaultMethods: [],
+                  custom_access: true,
+                },
+              },
+            },
           ],
-          "$exportState": true,
-          "$on": {
-            "change": ""
-          }
+          $exportState: true,
+          $on: {
+            change: '',
+          },
         },
-        "$complexInfo": {
-          "id": 70638,
-          "edit_page_uuid": "sal20000_org_key210701eaepse6did",
-          "atom_ins": {
-            "uuid": "cab29671f076487ea97e1f1bc23db470",
-            "origin_page_uuid": "sal20000_org_key210705eaeiww6dom"
-          }
+        $complexInfo: {
+          id: 70638,
+          edit_page_uuid: 'sal20000_org_key210701eaepse6did',
+          atom_ins: {
+            uuid: 'cab29671f076487ea97e1f1bc23db470',
+            origin_page_uuid: 'sal20000_org_key210705eaeiww6dom',
+          },
         },
-        "alias": "",
-        "children": []
+        alias: '',
+        children: [],
       },
       {
-        "id": 4,
-        "parentId": 2,
-        "ins_id": generateOpUuid(),
-        "mini_method_uuid": "",
-        "tag": "PropOpacity",
-        "data": {
-          "$style": [],
-          "$exports": [
+        id: 4,
+        parentId: 2,
+        ins_id: generateOpUuid(),
+        mini_method_uuid: '',
+        tag: 'PropOpacity',
+        data: {
+          $style: [],
+          $exports: [
             {
-              "attrKey": "disabled",
-              "sortIdx": -1
-            }
+              attrKey: 'disabled',
+              sortIdx: -1,
+            },
           ],
-          "$exportState": true,
-          "disabled": false
+          $exportState: true,
+          disabled: false,
         },
-        "$complexInfo": {
-          "id": 70640,
-          "edit_page_uuid": "sal20000_org_key210701eaej2u6dh0",
-          "atom_ins": {
-            "uuid": "38561daa1b08493fb5bfbe9970cfbeb5",
-            "origin_page_uuid": "sal20000_org_key210705eaeiww6dom"
-          }
+        $complexInfo: {
+          id: 70640,
+          edit_page_uuid: 'sal20000_org_key210701eaej2u6dh0',
+          atom_ins: {
+            uuid: '38561daa1b08493fb5bfbe9970cfbeb5',
+            origin_page_uuid: 'sal20000_org_key210705eaeiww6dom',
+          },
         },
-        "children": []
+        children: [],
       },
       {
-        "id": 5,
-        "parentId": 2,
-        "ins_id": generateOpUuid(),
-        "mini_method_uuid": "",
-        "tag": "PropBorder",
-        "data": {
-          "$style": [],
-          "$exports": [
+        id: 5,
+        parentId: 2,
+        ins_id: generateOpUuid(),
+        mini_method_uuid: '',
+        tag: 'PropBorder',
+        data: {
+          $style: [],
+          $exports: [
             {
-              "attrKey": "disabled",
-              "sortIdx": -1
-            }
+              attrKey: 'disabled',
+              sortIdx: -1,
+            },
           ],
-          "$exportState": true,
-          "disabled": false
+          $exportState: true,
+          disabled: false,
         },
-        "$complexInfo": {
-          "id": 70641,
-          "edit_page_uuid": "sal20000_org_key210701eaenam6dl0",
-          "atom_ins": {
-            "uuid": "228d8c75879d477698d11e96f26ab251",
-            "origin_page_uuid": "sal20000_org_key210705eaeiww6dom"
-          }
+        $complexInfo: {
+          id: 70641,
+          edit_page_uuid: 'sal20000_org_key210701eaenam6dl0',
+          atom_ins: {
+            uuid: '228d8c75879d477698d11e96f26ab251',
+            origin_page_uuid: 'sal20000_org_key210705eaeiww6dom',
+          },
         },
-        "children": []
+        children: [],
       },
       {
-        "id": 7,
-        "parentId": 2,
-        "ins_id": generateOpUuid(),
-        "mini_method_uuid": "",
-        "tag": "PropShadow",
-        "data": {
-          "$style": [],
-          "$exports": [
+        id: 7,
+        parentId: 2,
+        ins_id: generateOpUuid(),
+        mini_method_uuid: '',
+        tag: 'PropShadow',
+        data: {
+          $style: [],
+          $exports: [
             {
-              "attrKey": "disabled",
-              "sortIdx": -1
-            }
+              attrKey: 'disabled',
+              sortIdx: -1,
+            },
           ],
-          "$exportState": true,
-          "disabled": false
+          $exportState: true,
+          disabled: false,
         },
-        "$complexInfo": {
-          "id": 70643,
-          "edit_page_uuid": "sal20000_org_key210701eaeper6dd5",
-          "atom_ins": {
-            "uuid": "925cc35b3d3c4b44b03631836fe1c167",
-            "origin_page_uuid": "sal20000_org_key210705eaeiww6dom"
-          }
+        $complexInfo: {
+          id: 70643,
+          edit_page_uuid: 'sal20000_org_key210701eaeper6dd5',
+          atom_ins: {
+            uuid: '925cc35b3d3c4b44b03631836fe1c167',
+            origin_page_uuid: 'sal20000_org_key210705eaeiww6dom',
+          },
         },
-        "children": []
+        children: [],
       },
       {
-        "id": 6,
-        "parentId": 2,
-        "ins_id": generateOpUuid(),
-        "mini_method_uuid": "",
-        "tag": "PropRadius",
-        "data": {
-          "$style": [],
-          "$exports": [],
-          "$exportState": true
+        id: 6,
+        parentId: 2,
+        ins_id: generateOpUuid(),
+        mini_method_uuid: '',
+        tag: 'PropRadius',
+        data: {
+          $style: [],
+          $exports: [],
+          $exportState: true,
         },
-        "$complexInfo": {
-          "id": 70642,
-          "edit_page_uuid": "sal20000_org_key210701eaeo0s6d56",
-          "atom_ins": {
-            "uuid": "82b0734db0d84f01a6c9f36de0e7dc44",
-            "origin_page_uuid": "sal20000_org_key210705eaeiww6dom"
-          }
+        $complexInfo: {
+          id: 70642,
+          edit_page_uuid: 'sal20000_org_key210701eaeo0s6d56',
+          atom_ins: {
+            uuid: '82b0734db0d84f01a6c9f36de0e7dc44',
+            origin_page_uuid: 'sal20000_org_key210705eaeiww6dom',
+          },
         },
-        "children": []
+        children: [],
       },
       {
-        "id": 8,
-        "parentId": 2,
-        "ins_id": generateOpUuid(),
-        "mini_method_uuid": "",
-        "tag": "PropBackGround",
-        "data": {
-          "$style": [],
-          "$exports": [
+        id: 8,
+        parentId: 2,
+        ins_id: generateOpUuid(),
+        mini_method_uuid: '',
+        tag: 'PropBackGround',
+        data: {
+          $style: [],
+          $exports: [
             {
-              "eventKey": "on-change",
-              "sortIdx": -1,
-              "task": {
-                "label": "当内容改变时",
-                "process": {
-                  "type": "bind_method",
-                  "defaultMethods": [],
-                  "custom_access": true
-                }
-              }
-            }
+              eventKey: 'on-change',
+              sortIdx: -1,
+              task: {
+                label: '当内容改变时',
+                process: {
+                  type: 'bind_method',
+                  defaultMethods: [],
+                  custom_access: true,
+                },
+              },
+            },
           ],
-          "$exportState": true
+          $exportState: true,
         },
-        "$complexInfo": {
-          "id": 70644,
-          "edit_page_uuid": "sal20000_org_key210701eaejd86dsi",
-          "atom_ins": {
-            "uuid": "2e65de28d30d4362a5e9943d8756b9c8",
-            "origin_page_uuid": "sal20000_org_key210705eaeiww6dom"
-          }
+        $complexInfo: {
+          id: 70644,
+          edit_page_uuid: 'sal20000_org_key210701eaejd86dsi',
+          atom_ins: {
+            uuid: '2e65de28d30d4362a5e9943d8756b9c8',
+            origin_page_uuid: 'sal20000_org_key210705eaeiww6dom',
+          },
         },
-        "children": []
+        children: [],
       },
       {
-        "id": 9,
-        "parentId": 2,
-        "ins_id": generateOpUuid(),
-        "mini_method_uuid": "",
-        "tag": "PropMarginPadding",
-        "data": {
-          "$style": [],
-          "$exports": [],
-          "$exportState": true,
-          "type": "margin"
+        id: 9,
+        parentId: 2,
+        ins_id: generateOpUuid(),
+        mini_method_uuid: '',
+        tag: 'PropMarginPadding',
+        data: {
+          $style: [],
+          $exports: [],
+          $exportState: true,
+          type: 'margin',
         },
-        "$complexInfo": {
-          "id": 70645,
-          "edit_page_uuid": "sal20000_org_key210701eaemsd6dwp",
-          "atom_ins": {
-            "uuid": "b2aa2aab6d1a4aa4b32718fe3a96e025",
-            "origin_page_uuid": "sal20000_org_key210705eaeiww6dom"
-          }
+        $complexInfo: {
+          id: 70645,
+          edit_page_uuid: 'sal20000_org_key210701eaemsd6dwp',
+          atom_ins: {
+            uuid: 'b2aa2aab6d1a4aa4b32718fe3a96e025',
+            origin_page_uuid: 'sal20000_org_key210705eaeiww6dom',
+          },
         },
-        "children": []
+        children: [],
       },
       {
-        "id": 15,
-        "parentId": 2,
-        "ins_id": generateOpUuid(),
-        "mini_method_uuid": "",
-        "tag": "PropMarginPadding",
-        "data": {
-          "$style": [],
-          "$exports": [],
-          "$exportState": true,
-          "type": "padding",
-          "disabled": false
+        id: 15,
+        parentId: 2,
+        ins_id: generateOpUuid(),
+        mini_method_uuid: '',
+        tag: 'PropMarginPadding',
+        data: {
+          $style: [],
+          $exports: [],
+          $exportState: true,
+          type: 'padding',
+          disabled: false,
         },
-        "$complexInfo": {
-          "id": 70645,
-          "edit_page_uuid": "sal20000_org_key210701eaemsd6dwp",
-          "atom_ins": {
-            "uuid": "1b0b5515716d455c9475998ae110e0cf",
-            "origin_page_uuid": "sal20000_org_key210707eaeom06dgi"
-          }
+        $complexInfo: {
+          id: 70645,
+          edit_page_uuid: 'sal20000_org_key210701eaemsd6dwp',
+          atom_ins: {
+            uuid: '1b0b5515716d455c9475998ae110e0cf',
+            origin_page_uuid: 'sal20000_org_key210707eaeom06dgi',
+          },
         },
-        "children": []
-      }
-    ]
+        children: [],
+      },
+    ],
   }
 }
-
-
-

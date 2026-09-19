@@ -1,17 +1,13 @@
-import {
-  CompilerApi,
-  PublicApiInfo,
-  SourceFile,
-} from "./compiler";
+import { CompilerApi, PublicApiInfo, SourceFile } from './compiler'
 
 type LooseObject = {
   [key: string]: any
 }
 interface StoreData {
-  isInited?: boolean,
-  rootSourceFile?: SourceFile,
-  rootApi?: CompilerApi,
-  rootPublicApiInfo?: PublicApiInfo,
+  isInited?: boolean
+  rootSourceFile?: SourceFile
+  rootApi?: CompilerApi
+  rootPublicApiInfo?: PublicApiInfo
   rootBindingTools?: LooseObject
 }
 

@@ -7,7 +7,11 @@ export class HttpError extends Error {
   readonly details?: unknown
 
   constructor(message: string, payload: ApiErrorPayload = {}, status?: number) {
-    super(message); this.name = 'HttpError'; this.status = status; this.code = payload.code; this.details = payload.details
+    super(message)
+    this.name = 'HttpError'
+    this.status = status
+    this.code = payload.code
+    this.details = payload.details
   }
 }
 

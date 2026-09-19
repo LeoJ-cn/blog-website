@@ -16,8 +16,22 @@ const props = defineProps({
 </script>
 
 <style scoped>
-.empty-state { color: #8e9bb8; padding: 40px 20px; text-align: center; }
-.empty-state__icon { color: #62e6b5; font-size: 34px; line-height: 1; }
-.empty-state h3 { color: #e8edf7; font-size: 18px; margin: 14px 0 8px; }
-.empty-state p { margin: 0; }
+.empty-state {
+  color: #8e9bb8;
+  padding: 40px 20px;
+  text-align: center;
+}
+.empty-state__icon {
+  color: #62e6b5;
+  font-size: 34px;
+  line-height: 1;
+}
+.empty-state h3 {
+  color: #e8edf7;
+  font-size: 18px;
+  margin: 14px 0 8px;
+}
+.empty-state p {
+  margin: 0;
+}
 </style>

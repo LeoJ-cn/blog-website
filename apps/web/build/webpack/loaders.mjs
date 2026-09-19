@@ -15,7 +15,13 @@ export function createBabelLoader() {
 export function createModuleRules({ isProduction, cssLoader, sassLoader }) {
   // Loader 顺序遵循 Webpack 从右到左：预处理器 -> PostCSS -> CSS -> 注入/提取。
   return [
-    { test: /\.vue$/, loader: 'vue-loader', options: { babelParserPlugins: ['typescript'] } },
+    { resourceQuery: /raw/, type: 'asset/source' },
+    {
+      test: /\.vue$/,
+      resourceQuery: { not: [/raw/] },
+      loader: 'vue-loader',
+      options: { babelParserPlugins: ['typescript'] },
+    },
     {
       test: /\.tsx?$/,
       exclude: /node_modules/,

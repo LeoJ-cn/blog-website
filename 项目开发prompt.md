@@ -10,29 +10,29 @@
 
 项目主要用于展示个人完整的前端技术能力和可运行技术 Demo，例如 (这些tab不要都实现，留一个入口就好，等框架搭完后，一个一个添加，前期不要把实现这些功能，只提供一个tab入口切换就好了，显示“功能待开发”)：
 
-* 大列表性能优化
-* 虚拟列表
-* 浏览器渲染性能
-* Event Loop
-* Web Worker
-* WebSocket
-* SSE 前端能力
-* HTTP 请求治理
-* 微前端
-* Module Federation
-* 前端缓存
-* 浏览器存储
-* 浏览器兼容与降级
-* Vue 工程实践
-* Vite 工程化
-* Webpack 5 工程化
-* Bundle 优化
-* 构建性能优化
-* 运行时性能监控
-* 低代码
-* AST
-* 前端基建
-* 其他后续技术 Demo
+- 大列表性能优化
+- 虚拟列表
+- 浏览器渲染性能
+- Event Loop
+- Web Worker
+- WebSocket
+- SSE 前端能力
+- HTTP 请求治理
+- 微前端
+- Module Federation
+- 前端缓存
+- 浏览器存储
+- 浏览器兼容与降级
+- Vue 工程实践
+- Vite 工程化
+- Webpack 5 工程化
+- Bundle 优化
+- 构建性能优化
+- 运行时性能监控
+- 低代码
+- AST
+- 前端基建
+- 其他后续技术 Demo
 
 页面更接近：
 
@@ -96,19 +96,19 @@ Engineering Showcase
 
 不得因为：
 
-* 当前只是个人项目
-* 当前只是 Blog
-* 当前代码量较少
-* 当前某项能力暂时用不到
+- 当前只是个人项目
+- 当前只是 Blog
+- 当前代码量较少
+- 当前某项能力暂时用不到
 
 而擅自删除已经规划的大型项目工程能力。
 
 对于暂时没有实际业务需求但已经确定需要存在的工程能力：
 
-* 可以提供最小真实实现；
-* 可以通过 Feature Flag 控制；
-* 可以提供独立执行命令；
-* 可以暂时不默认启用；
+- 可以提供最小真实实现；
+- 可以通过 Feature Flag 控制；
+- 可以提供独立执行命令；
+- 可以暂时不默认启用；
 
 但不得直接删除。
 
@@ -147,12 +147,12 @@ blog-web
 
 不考虑：
 
-* FastAPI
-* Python
-* MySQL
-* Redis
-* 后端 Docker Compose
-* AI Backend
+- FastAPI
+- Python
+- MySQL
+- Redis
+- 后端 Docker Compose
+- AI Backend
 
 前后端未来通过：
 
@@ -253,9 +253,9 @@ latest
 
 暂时不启用：
 
-* Renovate
-* Dependabot
-* 自动依赖升级
+- Renovate
+- Dependabot
+- 自动依赖升级
 
 所有依赖升级由人工控制。
 
@@ -304,13 +304,13 @@ Webpack 5
 
 两套系统：
 
-* 必须共享同一份业务源码；
-* 必须都可以启动开发环境；
-* 必须都可以完成生产构建；
-* 必须都可以生成可部署 SPA；
-* 必须都考虑大型项目性能优化；
-* 不允许 Webpack 只是 Demo 配置；
-* 不允许 Vite 只是默认模板配置。
+- 必须共享同一份业务源码；
+- 必须都可以启动开发环境；
+- 必须都可以完成生产构建；
+- 必须都可以生成可部署 SPA；
+- 必须都考虑大型项目性能优化；
+- 不允许 Webpack 只是 Demo 配置；
+- 不允许 Vite 只是默认模板配置。
 
 禁止：
 
@@ -780,10 +780,10 @@ exclude
 
 避免：
 
-* Loader 扫描整个项目；
-* Loader 扫描无关 node_modules；
-* resolve.extensions 配置过多；
-* 无意义模块查找。
+- Loader 扫描整个项目；
+- Loader 扫描无关 node_modules；
+- resolve.extensions 配置过多；
+- 无意义模块查找。
 
 ---
 

@@ -7,9 +7,13 @@ function metric(name: string, value: number, unit: PerformanceMetric['unit']): P
 export function collectPerformanceMetrics(): PerformanceMetric[] {
   if (typeof performance === 'undefined') return []
   const metrics: PerformanceMetric[] = []
-  const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+  const navigation = performance.getEntriesByType('navigation')[0] as
+    | PerformanceNavigationTiming
+    | undefined
   if (navigation) {
-    metrics.push(metric('domContentLoaded', navigation.domContentLoadedEventEnd - navigation.startTime, 'ms'))
+    metrics.push(
+      metric('domContentLoaded', navigation.domContentLoadedEventEnd - navigation.startTime, 'ms'),
+    )
     metrics.push(metric('loadEvent', navigation.loadEventEnd - navigation.startTime, 'ms'))
   }
   const paints = performance.getEntriesByType('paint')

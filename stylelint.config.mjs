@@ -1,10 +1,6 @@
 export default {
   extends: ['stylelint-config-standard-scss'],
-  ignoreFiles: [
-    '**/node_modules/**',
-    '**/dist*/**',
-    'apps/web/src/components/**',
-  ],
+  ignoreFiles: ['**/node_modules/**', '**/dist*/**', 'apps/web/src/components/**'],
   overrides: [
     {
       files: ['**/*.vue'],

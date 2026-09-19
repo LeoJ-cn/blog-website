@@ -1,9 +1,7 @@
+const ProgressBar = require('progress')
 
-const ProgressBar = require('progress');
-
-
-export * from "./assertNever";
-export * from "./getSyntaxKindName";
+export * from './assertNever'
+export * from './getSyntaxKindName'
 
 export const cliModuleName = '[TsxToSchema]'
 
@@ -19,29 +17,29 @@ export interface ProcessPayload_Interface {
   /**
    * 总项
    */
-  total: number;
+  total: number
   /**
    * 名称
    */
-  title?: string;
+  title?: string
   /**
    * 进度条宽度
    */
-  width?: number;
+  width?: number
   /**
    * 已完成的字符
    */
-  complete?: string;
+  complete?: string
   /**
    * 未完成的字符
    */
-  incomplete?: string;
+  incomplete?: string
 }
 export class CustomProcess {
-  instance: any;
-  total: number;
-  title: string;
-  width: number;
+  instance: any
+  total: number
+  title: string
+  width: number
 
   constructor(process_payload: ProcessPayload_Interface) {
     const {
@@ -49,22 +47,22 @@ export class CustomProcess {
       width = 100,
       title = 'process',
       complete = '+',
-      incomplete = '-'
-    } = process_payload;
+      incomplete = '-',
+    } = process_payload
     this.total = total
     this.title = title
     this.width = width
-    this.instance = new ProgressBar(":title [:bar] :percent/[:total]", {
+    this.instance = new ProgressBar(':title [:bar] :percent/[:total]', {
       complete,
       incomplete,
       width,
-      total
-    });
+      total,
+    })
   }
   tick(num: number = 1, title: string = this.title) {
-    this.instance.tick(num, { title: `${cliModuleName}-[${title}]` });
+    this.instance.tick(num, { title: `${cliModuleName}-[${title}]` })
     if (this.instance.curr > this.total) {
-      this.instance.terminate();
+      this.instance.terminate()
     }
   }
   end() {

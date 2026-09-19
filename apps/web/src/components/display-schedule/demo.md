@@ -16,6 +16,7 @@
      <!-- <Left />
       <Right />  -->
     </div>
+
   </div>
 </template>
 
