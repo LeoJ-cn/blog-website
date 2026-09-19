@@ -24,7 +24,7 @@
     "name": "projects"
   },
   "index-legacy.html": {
-    "file": "assets/entry-index-legacy-DAGVudjT.js",
+    "file": "assets/entry-index-legacy-D3Xdpx8S.js",
     "name": "index",
     "src": "index-legacy.html",
     "isEntry": true,
@@ -39,7 +39,7 @@
     ]
   },
   "index.html": {
-    "file": "assets/entry-index-c77hLU5i.js",
+    "file": "assets/entry-index-DsfC9qTR.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -53,7 +53,7 @@
       "src/pages/NotFoundPage.vue"
     ],
     "css": [
-      "assets/index-COktls3A.css"
+      "assets/index-D7WaAeuN.css"
     ]
   },
   "src/pages/HomePage-legacy.tsx": {
