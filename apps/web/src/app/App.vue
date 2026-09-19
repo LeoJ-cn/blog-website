@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+
+const route = useRoute()
+const isPlayground = computed(() => route.path.startsWith('/playground'))
 </script>
 
 <template>
@@ -15,7 +19,7 @@ import { RouterLink, RouterView } from 'vue-router'
       </nav>
     </header>
 
-    <main class="app-main">
+    <main class="app-main" :class="{ 'app-main--wide': isPlayground }">
       <RouterView />
     </main>
   </div>

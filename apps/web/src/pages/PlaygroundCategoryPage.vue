@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -11,6 +11,14 @@ const categories = {
   browser: { title: 'Browser', description: '记录浏览器 API、渲染机制和运行时能力。' },
 } as const
 const category = computed(() => categories[route.params.category as keyof typeof categories] ?? categories.performance)
+const tabs = [
+  { id: 'demo', label: 'Demo' },
+  { id: 'principle', label: '实现原理' },
+  { id: 'source', label: '源码' },
+  { id: 'metrics', label: '性能指标' },
+  { id: 'compatibility', label: '兼容性' },
+] as const
+const activeTab = ref<(typeof tabs)[number]['id']>('demo')
 </script>
 
 <template>
@@ -18,12 +26,61 @@ const category = computed(() => categories[route.params.category as keyof typeof
     <p class="eyebrow">TECHNICAL PLAYGROUND</p>
     <h2>{{ category.title }}</h2>
     <p class="playground-description">{{ category.description }}</p>
-    <div class="playground-placeholder">
-      <span class="status-dot" aria-hidden="true"></span>
-      <div>
-        <h3>功能待开发</h3>
-        <p>这里将展示该技术点的原理、交互实验、源码入口和性能指标。</p>
+    <div class="demo-stage">
+      <div class="demo-stage__header">
+        <div>
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>INTERACTIVE DEMO</span>
+        </div>
+        <span>功能待开发</span>
+      </div>
+      <div class="demo-stage__body">
+        <div>
+          <h3>在这里运行和观察实验</h3>
+          <p>交互界面、运行结果和实时指标将优先占据这个区域。</p>
+        </div>
       </div>
     </div>
+    <nav class="content-tabs" aria-label="技术内容" role="tablist">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        type="button"
+        :class="{ 'is-active': activeTab === tab.id }"
+        :aria-selected="activeTab === tab.id"
+        role="tab"
+        @click="activeTab = tab.id"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
+    <section v-if="activeTab !== 'demo'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">{{ tabs.find((tab) => tab.id === activeTab)?.label }}</p>
+      <h3>{{
+        activeTab === 'principle'
+          ? '把实现过程拆成可以验证的步骤。'
+          : activeTab === 'source'
+            ? '从源码入口开始阅读。'
+            : activeTab === 'metrics'
+              ? '用数据观察方案的实际表现。'
+              : '明确运行环境与能力边界。'
+      }}</h3>
+      <p>
+        {{
+          activeTab === 'principle'
+            ? '这里将展示核心流程、关键决策和浏览器 API 的协作方式。'
+            : activeTab === 'source'
+              ? '这里将提供相关文件、关键函数和可继续阅读的代码路径。'
+              : activeTab === 'metrics'
+                ? '这里将展示加载耗时、运行时开销、资源体积和对比结果。'
+                : '这里将记录浏览器版本、降级策略和已知限制。'
+        }}
+      </p>
+    </section>
+    <section v-else class="tab-panel tab-panel--demo" role="tabpanel">
+      <p class="eyebrow">DEMO OVERVIEW</p>
+      <h3>在上方直接运行实验。</h3>
+      <p>Demo 区域保持固定，下面可以继续补充操作说明、输入参数和结果解读。</p>
+    </section>
   </article>
 </template>
