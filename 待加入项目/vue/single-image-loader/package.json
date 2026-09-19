@@ -1,0 +1,13 @@
+{
+  "name": "element-image-loader",
+  "version": "0.0.0",
+  "description": "A image-loader component for pat.",
+  "keywords": [
+    "pat",
+    "vue",
+    "component"
+  ],
+  "main": "./lib/index.js",
+  "license": "MIT",
+  "dependencies": {}
+}

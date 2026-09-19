@@ -1,0 +1,14 @@
+{
+  "name": "element-smart-search",
+  "version": "0.0.0",
+  "description": "A smart-search component for pat.",
+  "keywords": [
+    "pat",
+    "vue",
+    "component"
+  ],
+  "main": "./lib/index.js",
+   
+  "license": "MIT",
+  "dependencies": {}
+}

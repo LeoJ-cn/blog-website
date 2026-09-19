@@ -31,8 +31,6 @@
 </template>
 
 <script>
-/* eslint-disable */
-
 import { get } from 'lodash'
 import { drawImageToCanvas, drawImageToHTMLNode } from './stream-loader'
 import { IMAGE_TYPE_OFFICIAL } from '../../utils/image-format'
@@ -112,7 +110,7 @@ export default {
   mounted() {
     this.drawImage()
   },
-  unmounted() {
+  destroyed() {
     this.$_abort()
   },
   methods: {

@@ -1,0 +1,13 @@
+{
+  "name": "element-lazy",
+  "version": "0.0.0",
+  "description": "A lazy component for Vue.js.",
+  "keywords": [
+    "element",
+    "vue",
+    "component"
+  ],
+  "main": "./lib/index.js",
+  "license": "MIT",
+  "dependencies": {}
+}
