@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import CodeBlock from '../components/CodeBlock.vue'
 
 const route = useRoute()
 const categories = {
@@ -19,6 +20,15 @@ const tabs = [
   { id: 'compatibility', label: '兼容性' },
 ] as const
 const activeTab = ref<(typeof tabs)[number]['id']>('demo')
+const sourceCode = `export function schedule(task: () => void) {
+  queueMicrotask(() => {
+    task()
+  })
+}
+
+schedule(() => {
+  console.log('ready')
+})`
 </script>
 
 <template>
@@ -54,13 +64,14 @@ const activeTab = ref<(typeof tabs)[number]['id']>('demo')
         {{ tab.label }}
       </button>
     </nav>
-    <section v-if="activeTab !== 'demo'" class="tab-panel" role="tabpanel">
+    <section v-if="activeTab === 'source'" class="tab-panel tab-panel--source" role="tabpanel">
+      <CodeBlock :code="sourceCode" language="typescript" filename="scheduler.ts" />
+    </section>
+    <section v-else-if="activeTab !== 'demo'" class="tab-panel" role="tabpanel">
       <p class="eyebrow">{{ tabs.find((tab) => tab.id === activeTab)?.label }}</p>
       <h3>{{
-        activeTab === 'principle'
-          ? '把实现过程拆成可以验证的步骤。'
-          : activeTab === 'source'
-            ? '从源码入口开始阅读。'
+          activeTab === 'principle'
+            ? '把实现过程拆成可以验证的步骤。'
             : activeTab === 'metrics'
               ? '用数据观察方案的实际表现。'
               : '明确运行环境与能力边界。'
@@ -69,11 +80,9 @@ const activeTab = ref<(typeof tabs)[number]['id']>('demo')
         {{
           activeTab === 'principle'
             ? '这里将展示核心流程、关键决策和浏览器 API 的协作方式。'
-            : activeTab === 'source'
-              ? '这里将提供相关文件、关键函数和可继续阅读的代码路径。'
-              : activeTab === 'metrics'
-                ? '这里将展示加载耗时、运行时开销、资源体积和对比结果。'
-                : '这里将记录浏览器版本、降级策略和已知限制。'
+            : activeTab === 'metrics'
+              ? '这里将展示加载耗时、运行时开销、资源体积和对比结果。'
+              : '这里将记录浏览器版本、降级策略和已知限制。'
         }}
       </p>
     </section>
