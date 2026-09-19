@@ -9,5 +9,4 @@ const command = (name, files) => {
 
 export default {
   '*.{js,mjs,cjs,ts,vue}': (files) => command('eslint', files),
-  '*.{css,scss,vue}': (files) => command('stylelint', files),
 }
