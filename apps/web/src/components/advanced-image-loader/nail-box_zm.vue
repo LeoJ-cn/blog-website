@@ -2,9 +2,10 @@
   <a class="nail-box" target="_blank">
     <div v-show="status === LOADING" class="nail-box__loading">loading...</div>
 
-    <div
-      v-show="type === IMAGE_TYPE_OFFICIAL && status === FAILURE"
-      key="no-image"
+    <img
+      v-show="status === FAILURE"
+      :src="noImage"
+      alt="图片加载失败"
       class="no-image-placeholder"
     />
 
@@ -16,7 +17,7 @@
 
     <div
       v-if="type !== IMAGE_TYPE_OFFICIAL"
-      v-show="status !== LOADING"
+      v-show="status === DONE"
       :style="cvsStyle"
       class="nail-box__img nail-box__img--pt"
     >
@@ -279,10 +280,9 @@ $corner-size: 24px;
   }
 
   .no-image-placeholder {
+    display: block;
+    object-fit: contain;
     position: absolute;
-    user-select: none;
-    background-repeat: no-repeat;
-    background-position: 50% 38%;
     user-select: none;
     top: 50%;
     left: 50%;

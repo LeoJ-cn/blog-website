@@ -5,8 +5,7 @@
     :selected-index="dropData.selectIndex"
     @update-selected-index="updateSelectedIndex"
     @select="({ index }) => selectOption(SELECT_OPTIONS_SELECTED, index)"
-  >
-  </SuggestionBoard>
+  ></SuggestionBoard>
 </template>
 
 <script>

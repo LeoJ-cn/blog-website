@@ -13,8 +13,7 @@
     <div class="error-conent__container" v-show="errorModalData.htmlStr && showErrorContent">
       <div v-html="errorModalData.htmlStr" :class="[CLASS_NAME_ERROR_CONTENT]"></div>
     </div>
-    <error-tip v-if="errorTipData && errorTipData.errorCode" :error-data="errorTipData">
-    </error-tip>
+    <error-tip v-if="errorTipData && errorTipData.errorCode" :error-data="errorTipData"></error-tip>
   </div>
 </template>
 

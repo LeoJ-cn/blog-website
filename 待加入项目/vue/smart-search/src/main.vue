@@ -57,27 +57,23 @@
       @preview-option="previewOption"
       @update-selected-index="baseMixin__updateSelectedIndex"
       class="suggestion-modal"
-    >
-    </suggestion-modal>
+    ></suggestion-modal>
     <field-list
       v-if="fieldList.length > 0"
       :field-list="fieldList"
       :style="fieldListPos"
       @select-field="divModeMixin__clearFieldList"
-    >
-    </field-list>
+    ></field-list>
     <error-modal
       v-if="inputModeMixin__errorModalData.count > 0 && !divMode && errorVisible"
       :error-modal-data="inputModeMixin__errorModalData"
       :editor-status="baseMixin__editorStatus"
       :config="config"
-    >
-    </error-modal>
+    ></error-modal>
     <error-tip
       v-if="divModeMixin__errorTipData && divModeMixin__errorTipData.errorCode"
       :error-data="divModeMixin__errorTipData"
-    >
-    </error-tip>
+    ></error-tip>
   </div>
 </template>
 

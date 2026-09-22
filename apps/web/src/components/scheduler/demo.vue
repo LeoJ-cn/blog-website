@@ -1096,13 +1096,13 @@ onBeforeUnmount(() => {
 
       <div ref="logContainer" class="log-container">
         <div class="log-entry">
-          <span class="time"> [系统] </span>
+          <span class="time">[系统]</span>
 
-          <span class="msg-info"> Scheduler 已就绪（Vue 3 自实现版） </span>
+          <span class="msg-info">Scheduler 已就绪（Vue 3 自实现版）</span>
         </div>
 
         <div v-for="entry in logs" :key="entry.id" class="log-entry">
-          <span class="time"> [{{ entry.time }}] </span>
+          <span class="time">[{{ entry.time }}]</span>
 
           <span :class="getLogClass(entry.type)">
             {{ getLogEmoji(entry.type) }}

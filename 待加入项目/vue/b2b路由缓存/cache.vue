@@ -11,7 +11,8 @@
               :class="{ active: isActive(children) }"
               @click="changeTab(children)"
             >
-              <i class="bt" :class="children.icon"></i>{{ children.label }}
+              <i class="bt" :class="children.icon"></i>
+              {{ children.label }}
             </div>
           </div>
         </q-scroll-area>
@@ -27,7 +28,7 @@
             :label="item.label"
             :name="item.name"
           >
-            <span slot="label" :title="item.hoverName"> {{ item.label }}</span>
+            <span slot="label" :title="item.hoverName">{{ item.label }}</span>
           </el-tab-pane>
         </el-tabs>
 

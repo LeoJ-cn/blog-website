@@ -77,9 +77,9 @@
     />
 
     <div v-if="defaultStatus" class="ai-common-suggestion-board__syntax-helper">
-      <a href="javascript:void(0)" @mousedown="goSearchHelper">{{
-        $t('smartSearch.syntaxHelper')
-      }}</a>
+      <a href="javascript:void(0)" @mousedown="goSearchHelper">
+        {{ $t('smartSearch.syntaxHelper') }}
+      </a>
     </div>
   </div>
 </template>

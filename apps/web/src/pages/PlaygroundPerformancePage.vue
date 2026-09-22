@@ -21,7 +21,10 @@ const activeTab = ref<(typeof tabs)[number]['id']>('demo')
 
     <div class="demo-stage">
       <div class="demo-stage__header">
-        <div><span class="status-dot" aria-hidden="true"></span><span>INTERACTIVE DEMO</span></div>
+        <div>
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>INTERACTIVE DEMO</span>
+        </div>
         <span>待接入</span>
       </div>
       <div class="demo-workbench">

@@ -46,14 +46,14 @@
       </div>
       <div class="ai-common-image-panel__info">{{ currentIndex + 1 + '/' + imageCount }}</div>
       <div class="ai-common-image-panel__tab" v-if="imagePanelData.type != 'image'">
-        <label class="ai-common-image-panel__thumb-tab" @click="updateImgTab('image')"
-          ><span class="check-btn" :class="{ 'check-btn-active': imageType === 'image' }"></span
-          ><span>{{ localTxt[lang].image }}</span></label
-        >
-        <label class="ai-common-image-panel__thumb-tab" @click="updateImgTab('pdfImage')"
-          ><span class="check-btn" :class="{ 'check-btn-active': imageType === 'pdfImage' }"></span
-          ><span>{{ localTxt[lang].page }}</span></label
-        >
+        <label class="ai-common-image-panel__thumb-tab" @click="updateImgTab('image')">
+          <span class="check-btn" :class="{ 'check-btn-active': imageType === 'image' }"></span>
+          <span>{{ localTxt[lang].image }}</span>
+        </label>
+        <label class="ai-common-image-panel__thumb-tab" @click="updateImgTab('pdfImage')">
+          <span class="check-btn" :class="{ 'check-btn-active': imageType === 'pdfImage' }"></span>
+          <span>{{ localTxt[lang].page }}</span>
+        </label>
       </div>
     </div>
     <div class="ai-common-image-panel__banner" v-if="isStart">

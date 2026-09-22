@@ -8,7 +8,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=1600&fit=crop',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -34,7 +34,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&h=1600&fit=crop',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -60,7 +60,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&h=1600&fit=crop',
       box: [0.05, 0.1, 0.95, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -86,7 +86,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&h=1600&fit=crop',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -112,7 +112,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1511497584788-876760111969?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1511497584788-876760111969?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1511497584788-876760111969?w=1200&h=1600&fit=crop',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -122,12 +122,11 @@ let mockNailBoxList = [
   // 10：故意制造错误
   {
     type: 'other',
-    src: 'https://images.unsplash.com/invalid-thumb-10.jpg',
-    thumbSrc: 'https://images.unsplash.com/invalid-thumb-10.jpg',
-    originSrc:
-      'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=1200&h=1600&fit=crop',
+    src: 'http://test-error/error.png',
+    thumbSrc: 'http://test-error/error.png',
+    originSrc: 'http://test-error/error.png',
     model: {
-      path: 'https://images.unsplash.com/invalid-thumb-10.jpg',
+      path: 'http://test-error/error.png',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -154,7 +153,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=1200&h=1600&fit=crop',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -180,7 +179,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=1200&h=1600&fit=crop',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -206,7 +205,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1439853949127-fa647821eba0?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1439853949127-fa647821eba0?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1439853949127-fa647821eba0?w=1200&h=1600&fit=crop',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -232,7 +231,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=1600&fit=crop',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -258,9 +257,9 @@ let mockNailBoxList = [
     src: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=140&h=180&fit=crop&v=20',
     thumbSrc:
       'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=140&h=180&fit=crop&v=20',
-    originSrc: 'https://images.unsplash.com/invalid-origin-20.jpg',
+    originSrc: 'http://test-error/error.png',
     model: {
-      path: 'https://images.unsplash.com/invalid-origin-20.jpg',
+      path: 'http://test-error/error.png',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -274,7 +273,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=1600&fit=crop',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -301,7 +300,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=1200&h=1600&fit=crop',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -328,7 +327,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?w=1200&h=1600&fit=crop',
       box: [0.05, 0.1, 0.95, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -355,7 +354,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=1200&h=1600&fit=crop&v=27',
     model: {
-      path: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=140&h=180&fit=crop&v=27',
+      path: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=1200&h=1600&fit=crop&v=27',
       box: [0.1, 0.05, 0.9, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -382,7 +381,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=1200&h=1600&fit=crop',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -392,12 +391,12 @@ let mockNailBoxList = [
   // 30：故意错误
   {
     type: 'other',
-    src: 'https://images.unsplash.com/invalid-thumb-30.jpg',
-    thumbSrc: 'https://images.unsplash.com/invalid-thumb-30.jpg',
+    src: 'http://test-error/error.png',
+    thumbSrc: 'http://test-error/error.png',
     originSrc:
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=1600&fit=crop&v=30',
     model: {
-      path: 'https://images.unsplash.com/invalid-thumb-30.jpg',
+      path: 'http://test-error/error.png',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -424,7 +423,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1492724724894-7464c27d0ceb?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1492724724894-7464c27d0ceb?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1492724724894-7464c27d0ceb?w=1200&h=1600&fit=crop',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -450,7 +449,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&h=1600&fit=crop',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -476,7 +475,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1440581572325-0bea30075d9d?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1440581572325-0bea30075d9d?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1440581572325-0bea30075d9d?w=1200&h=1600&fit=crop',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -502,7 +501,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1461696114087-397271a7aedc?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1461696114087-397271a7aedc?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1461696114087-397271a7aedc?w=1200&h=1600&fit=crop',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -528,9 +527,9 @@ let mockNailBoxList = [
     src: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=140&h=180&fit=crop&v=40',
     thumbSrc:
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=140&h=180&fit=crop&v=40',
-    originSrc: 'https://images.unsplash.com/invalid-origin-40.jpg',
+    originSrc: 'http://test-error/error.png',
     model: {
-      path: 'https://images.unsplash.com/invalid-origin-40.jpg',
+      path: 'http://test-error/error.png',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -544,7 +543,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=1200&h=1600&fit=crop',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -570,7 +569,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1494475673543-6a6a27143fc8?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1494475673543-6a6a27143fc8?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1494475673543-6a6a27143fc8?w=1200&h=1600&fit=crop',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -597,7 +596,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1200&h=1600&fit=crop&v=45',
     model: {
-      path: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=140&h=180&fit=crop&v=45',
+      path: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1200&h=1600&fit=crop&v=45',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -624,7 +623,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1464822759844-d150baec0494?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1464822759844-d150baec0494?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1464822759844-d150baec0494?w=1200&h=1600&fit=crop',
       box: [0.1, 0.05, 0.9, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -651,7 +650,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=1600&fit=crop&v=49',
     model: {
-      path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=140&h=180&fit=crop&v=49',
+      path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&h=1600&fit=crop&v=49',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -661,12 +660,12 @@ let mockNailBoxList = [
   // 50：故意错误
   {
     type: 'other',
-    src: 'https://images.unsplash.com/invalid-thumb-50.jpg',
-    thumbSrc: 'https://images.unsplash.com/invalid-thumb-50.jpg',
+    src: 'http://test-error/error.png',
+    thumbSrc: 'http://test-error/error.png',
     originSrc:
       'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&h=1600&fit=crop&v=50',
     model: {
-      path: 'https://images.unsplash.com/invalid-thumb-50.jpg',
+      path: 'http://test-error/error.png',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -694,7 +693,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1200&h=1600&fit=crop&v=52',
     model: {
-      path: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=140&h=180&fit=crop&v=52',
+      path: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1200&h=1600&fit=crop&v=52',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -721,7 +720,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1486911278844-a81c5267e227?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1486911278844-a81c5267e227?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1486911278844-a81c5267e227?w=1200&h=1600&fit=crop',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -747,7 +746,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1494783367193-149034c05e8f?w=1200&h=1600&fit=crop',
     model: {
-      path: 'https://images.unsplash.com/photo-1494783367193-149034c05e8f?w=140&h=180&fit=crop',
+      path: 'https://images.unsplash.com/photo-1494783367193-149034c05e8f?w=1200&h=1600&fit=crop',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -775,7 +774,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=1200&h=1600&fit=crop&v=58',
     model: {
-      path: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=140&h=180&fit=crop&v=58',
+      path: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=1200&h=1600&fit=crop&v=58',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -802,9 +801,9 @@ let mockNailBoxList = [
     src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=140&h=180&fit=crop&v=60',
     thumbSrc:
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=140&h=180&fit=crop&v=60',
-    originSrc: 'https://images.unsplash.com/invalid-origin-60.jpg',
+    originSrc: 'http://test-error/error.png',
     model: {
-      path: 'https://images.unsplash.com/invalid-origin-60.jpg',
+      path: 'http://test-error/error.png',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -819,7 +818,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=1600&fit=crop&v=61',
     model: {
-      path: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=140&h=180&fit=crop&v=61',
+      path: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=1600&fit=crop&v=61',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -847,7 +846,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=1600&fit=crop&v=63',
     model: {
-      path: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=140&h=180&fit=crop&v=63',
+      path: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=1600&fit=crop&v=63',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -875,7 +874,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&h=1600&fit=crop&v=65',
     model: {
-      path: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=140&h=180&fit=crop&v=65',
+      path: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&h=1600&fit=crop&v=65',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -903,7 +902,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=1600&fit=crop&v=67',
     model: {
-      path: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=140&h=180&fit=crop&v=67',
+      path: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=1600&fit=crop&v=67',
       box: [0.1, 0.05, 0.9, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -931,7 +930,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=1200&h=1600&fit=crop&v=69',
     model: {
-      path: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=140&h=180&fit=crop&v=69',
+      path: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=1200&h=1600&fit=crop&v=69',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -941,12 +940,12 @@ let mockNailBoxList = [
   // 70：故意错误
   {
     type: 'other',
-    src: 'https://images.unsplash.com/invalid-thumb-70.jpg',
-    thumbSrc: 'https://images.unsplash.com/invalid-thumb-70.jpg',
+    src: 'http://test-error/error.png',
+    thumbSrc: 'http://test-error/error.png',
     originSrc:
       'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=1200&h=1600&fit=crop&v=70',
     model: {
-      path: 'https://images.unsplash.com/invalid-thumb-70.jpg',
+      path: 'http://test-error/error.png',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -975,7 +974,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1458966480358-a0ac42de0a7a?w=1200&h=1600&fit=crop&v=72',
     model: {
-      path: 'https://images.unsplash.com/photo-1458966480358-a0ac42de0a7a?w=140&h=180&fit=crop&v=72',
+      path: 'https://images.unsplash.com/photo-1458966480358-a0ac42de0a7a?w=1200&h=1600&fit=crop&v=72',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1003,7 +1002,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=1200&h=1600&fit=crop&v=74',
     model: {
-      path: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=140&h=180&fit=crop&v=74',
+      path: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=1200&h=1600&fit=crop&v=74',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1031,7 +1030,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1494475673543-6a6a27143fc8?w=1200&h=1600&fit=crop&v=76',
     model: {
-      path: 'https://images.unsplash.com/photo-1494475673543-6a6a27143fc8?w=140&h=180&fit=crop&v=76',
+      path: 'https://images.unsplash.com/photo-1494475673543-6a6a27143fc8?w=1200&h=1600&fit=crop&v=76',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1059,7 +1058,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1464822759844-d150baec0494?w=1200&h=1600&fit=crop&v=78',
     model: {
-      path: 'https://images.unsplash.com/photo-1464822759844-d150baec0494?w=140&h=180&fit=crop&v=78',
+      path: 'https://images.unsplash.com/photo-1464822759844-d150baec0494?w=1200&h=1600&fit=crop&v=78',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1086,9 +1085,9 @@ let mockNailBoxList = [
     src: 'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=140&h=180&fit=crop&v=80',
     thumbSrc:
       'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=140&h=180&fit=crop&v=80',
-    originSrc: 'https://images.unsplash.com/invalid-origin-80.jpg',
+    originSrc: 'http://test-error/error.png',
     model: {
-      path: 'https://images.unsplash.com/invalid-origin-80.jpg',
+      path: 'http://test-error/error.png',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1103,7 +1102,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1486911278844-a81c5267e227?w=1200&h=1600&fit=crop&v=81',
     model: {
-      path: 'https://images.unsplash.com/photo-1486911278844-a81c5267e227?w=140&h=180&fit=crop&v=81',
+      path: 'https://images.unsplash.com/photo-1486911278844-a81c5267e227?w=1200&h=1600&fit=crop&v=81',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1131,7 +1130,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1494783367193-149034c05e8f?w=1200&h=1600&fit=crop&v=83',
     model: {
-      path: 'https://images.unsplash.com/photo-1494783367193-149034c05e8f?w=140&h=180&fit=crop&v=83',
+      path: 'https://images.unsplash.com/photo-1494783367193-149034c05e8f?w=1200&h=1600&fit=crop&v=83',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1159,7 +1158,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&h=1600&fit=crop&v=85',
     model: {
-      path: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=140&h=180&fit=crop&v=85',
+      path: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&h=1600&fit=crop&v=85',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1187,7 +1186,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1428908728789-d2de25dbd4e2?w=1200&h=1600&fit=crop&v=87',
     model: {
-      path: 'https://images.unsplash.com/photo-1428908728789-d2de25dbd4e2?w=140&h=180&fit=crop&v=87',
+      path: 'https://images.unsplash.com/photo-1428908728789-d2de25dbd4e2?w=1200&h=1600&fit=crop&v=87',
       box: [0.1, 0.05, 0.9, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1215,7 +1214,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1511497584788-876760111969?w=1200&h=1600&fit=crop&v=89',
     model: {
-      path: 'https://images.unsplash.com/photo-1511497584788-876760111969?w=140&h=180&fit=crop&v=89',
+      path: 'https://images.unsplash.com/photo-1511497584788-876760111969?w=1200&h=1600&fit=crop&v=89',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1225,12 +1224,12 @@ let mockNailBoxList = [
   // 90：故意错误
   {
     type: 'other',
-    src: 'https://images.unsplash.com/invalid-thumb-90.jpg',
-    thumbSrc: 'https://images.unsplash.com/invalid-thumb-90.jpg',
+    src: 'http://test-error/error.png',
+    thumbSrc: 'http://test-error/error.png',
     originSrc:
       'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=1200&h=1600&fit=crop&v=90',
     model: {
-      path: 'https://images.unsplash.com/invalid-thumb-90.jpg',
+      path: 'http://test-error/error.png',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1259,7 +1258,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=1200&h=1600&fit=crop&v=92',
     model: {
-      path: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=140&h=180&fit=crop&v=92',
+      path: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=1200&h=1600&fit=crop&v=92',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1287,7 +1286,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&h=1600&fit=crop&v=94',
     model: {
-      path: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=140&h=180&fit=crop&v=94',
+      path: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&h=1600&fit=crop&v=94',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1315,7 +1314,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=1200&h=1600&fit=crop&v=96',
     model: {
-      path: 'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=140&h=180&fit=crop&v=96',
+      path: 'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=1200&h=1600&fit=crop&v=96',
       box: [0.1, 0.1, 0.9, 0.9],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1343,7 +1342,7 @@ let mockNailBoxList = [
     originSrc:
       'https://images.unsplash.com/photo-1439853949127-fa647821eba0?w=1200&h=1600&fit=crop&v=98',
     model: {
-      path: 'https://images.unsplash.com/photo-1439853949127-fa647821eba0?w=140&h=180&fit=crop&v=98',
+      path: 'https://images.unsplash.com/photo-1439853949127-fa647821eba0?w=1200&h=1600&fit=crop&v=98',
       box: [0.05, 0.05, 0.95, 0.95],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1370,9 +1369,9 @@ let mockNailBoxList = [
     src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=140&h=180&fit=crop&v=100',
     thumbSrc:
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=140&h=180&fit=crop&v=100',
-    originSrc: 'https://images.unsplash.com/invalid-origin-100.jpg',
+    originSrc: 'http://test-error/error.png',
     model: {
-      path: 'https://images.unsplash.com/invalid-origin-100.jpg',
+      path: 'http://test-error/error.png',
       box: [0, 0, 1, 1],
       oriWidth: 1200,
       oriHeight: 1600,
@@ -1410,7 +1409,7 @@ function injectRandomImageErrors(sourceList, errorCount = 5) {
     const breakThumb = Math.random() < 0.5
 
     if (breakThumb) {
-      const errorUrl = `http://test-error/thumb-${index}.jpg`
+      const errorUrl = `http://test-error/error-${index}.jpg`
 
       item.thumbSrc = errorUrl
 

@@ -142,7 +142,6 @@ export const parseSchema = async function (
     const tsAstViewerEventJsonSchema = events[eventKey] || {}
     const currentVarType = getVarSchema(tsAstViewerEventJsonSchema.schema.tsVariableName)
     tsAstViewerEventJsonSchema.schema = currentVarType
-
     ;(tsAstViewerEventJsonSchema.payload || []).forEach((payloadItem: LooseObject) => {
       const currentVarType = getVarSchema(payloadItem.schema.tsVariableName)
       payloadItem.schema = currentVarType

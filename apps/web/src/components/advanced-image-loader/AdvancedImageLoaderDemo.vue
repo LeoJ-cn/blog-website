@@ -27,7 +27,7 @@ const renderVersion = ref(0)
 
 const allImages = mockNailBoxList_Random()
 const basicImages = allImages.slice(0, 4) as NailBoxImage[]
-const stressImages = allImages.slice(0, 14) as NailBoxImage[]
+const stressImages = allImages.slice(0, 50) as NailBoxImage[]
 const images = computed(() => (dataSet.value === 'basic' ? basicImages : stressImages))
 const officialCount = computed(() => images.value.filter((item) => item.type === 'official').length)
 const canvasCount = computed(() => images.value.length - officialCount.value)
@@ -109,7 +109,9 @@ function rerender() {
 
     <div class="image-loader-demo__viewport">
       <div class="image-loader-demo__legend">
-        <span>{{ dataSet === 'basic' ? '固定样例' : '100 条随机压力数据' }}</span>
+        <span>
+          {{ dataSet === 'basic' ? '固定样例' : `${stressImages.length} 条随机压力数据` }}
+        </span>
         <span>{{ useOrigin ? 'ORIGIN MODE' : 'THUMBNAIL MODE' }}</span>
       </div>
       <div

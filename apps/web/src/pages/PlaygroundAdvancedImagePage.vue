@@ -20,18 +20,20 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
 
 <template>
   <article class="playground-content" data-page="advanced-image-loader">
-    <p class="eyebrow">BROWSER · {{ project.status }}</p>
+    <p class="eyebrow">BROWSER</p>
     <h2>{{ project.title }}</h2>
     <p class="playground-description">{{ project.description }}</p>
     <div class="project-meta">
-      <span>{{ project.difficulty }}</span
-      ><span v-for="tag in project.tags" :key="tag">{{ tag }}</span
-      ><span>更新于 {{ project.updatedAt }}</span>
+      <span v-for="tag in project.tags" :key="tag">{{ tag }}</span>
+      <span>更新于 {{ project.updatedAt }}</span>
     </div>
 
     <div class="demo-stage">
       <div class="demo-stage__header">
-        <div><span class="status-dot" aria-hidden="true"></span><span>INTERACTIVE DEMO</span></div>
+        <div>
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>INTERACTIVE DEMO</span>
+        </div>
         <span>可以运行</span>
       </div>
       <AdvancedImageLoaderDemo />
@@ -61,8 +63,8 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
             :class="{ 'is-active': activeSourceIndex === index }"
             @click="activeSourceIndex = index"
           >
-            <span>{{ source.label }}</span
-            ><small>{{ source.path }}</small>
+            <span>{{ source.label }}</span>
+            <small>{{ source.path }}</small>
           </button>
         </nav>
         <CodeBlock

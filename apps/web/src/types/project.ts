@@ -1,6 +1,5 @@
 export type ProjectCategory = 'performance' | 'browser'
 export type ProjectStatus = 'active' | 'planned' | 'archived'
-export type ProjectDifficulty = 'beginner' | 'intermediate' | 'advanced'
 
 export interface ProjectSource {
   label: string
@@ -16,7 +15,6 @@ export interface ProjectDefinition {
   description: string
   category: ProjectCategory
   status: ProjectStatus
-  difficulty: ProjectDifficulty
   tags: string[]
   featured?: boolean
   updatedAt: string
