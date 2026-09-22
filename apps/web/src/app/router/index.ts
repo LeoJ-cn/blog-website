@@ -16,9 +16,14 @@ const router = createRouter({
       redirect: '/playground/performance',
       children: [
         {
-          path: ':category',
-          name: 'playground-category',
-          component: () => import('../../pages/PlaygroundCategoryPage.vue'),
+          path: 'performance',
+          name: 'playground-performance',
+          component: () => import('../../pages/PlaygroundPerformancePage.vue'),
+        },
+        {
+          path: 'browser',
+          name: 'playground-advanced-image',
+          component: () => import('../../pages/PlaygroundAdvancedImagePage.vue'),
         },
       ],
     },

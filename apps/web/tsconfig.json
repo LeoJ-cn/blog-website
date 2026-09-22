@@ -19,5 +19,5 @@
   // 当前应用源码检查范围；未来技术组件目录暂不纳入入口扫描。
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"],
   // 生成物和未来技术清单不作为当前应用的主动检查入口。
-  "exclude": ["src/components/**", "dist-vite/**", "dist-webpack/**", "node_modules/**"]
+  "exclude": ["dist-vite/**", "dist-webpack/**", "node_modules/**"]
 }

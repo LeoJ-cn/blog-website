@@ -1,19 +1,16 @@
-/* eslint-disable */
-// image-renderer-no-rxjs.ts
 import Bowser from 'bowser'
 import get from 'lodash/get'
 import {
-  UserBlockingPriority,
-  ImmediatePriority,
+  unstable_UserBlockingPriority as UserBlockingPriority,
+  unstable_ImmediatePriority as ImmediatePriority,
   unstable_scheduleCallback as runWithPriority,
   unstable_cancelCallback as cancelCallback,
 } from 'scheduler'
 
-export { drawImageToCanvas, drawImageToHTMLNode, flushAllCache }
-
 const browser = Bowser.getParser(window.navigator.userAgent)
 const EMPTY_SRC = ''
 const LOADED_ATTR = Symbol('loaded')
+type LoadedImage = HTMLImageElement & { [LOADED_ATTR]?: boolean }
 
 const browserName = `${browser.getBrowser().name}`
 // 在 Edge 同时使用新 API 进行图片渲染会导致黑屏
@@ -159,7 +156,7 @@ function runWithScheduler<T>(
           cancelCallback(scheduler)
         }
       } catch (e) {
-        // ignore
+        console.log(e)
       }
       rejectFn(new Error('canceled'))
     }
@@ -179,7 +176,9 @@ class TaskQueue<TInput, TOutput> {
     resolve: (v: TOutput) => void
     reject: (e: any) => void
     key?: number | string
+    controller: AbortController
   }[] = []
+  private runningControllers = new Map<number | string, AbortController>()
   private worker: (input: TInput, signal: AbortSignal) => Promise<TOutput>
 
   constructor(
@@ -192,14 +191,18 @@ class TaskQueue<TInput, TOutput> {
 
   add(input: TInput, key?: number | string): { promise: Promise<TOutput>; cancel: () => void } {
     const controller = new AbortController()
-    const { signal } = controller
 
     const promise = new Promise<TOutput>((resolve, reject) => {
-      this.queue.push({ input, resolve, reject, key })
-      this.runNext(signal, controller)
+      this.queue.push({ input, resolve, reject, key, controller })
+      this.runNext()
     })
 
     const cancel = () => {
+      if (key !== undefined) {
+        this.abortByKey(key)
+        return
+      }
+
       controller.abort()
     }
 
@@ -207,43 +210,51 @@ class TaskQueue<TInput, TOutput> {
   }
 
   abortByKey(key: number | string) {
-    // 只针对队列中还未跑的任务起作用
-    this.queue = this.queue.filter((task) => task.key !== key)
+    this.queue = this.queue.filter((task) => {
+      if (task.key !== key) return true
+      task.controller.abort()
+      task.reject(new Error('aborted'))
+      return false
+    })
+    this.runningControllers.get(key)?.abort()
   }
 
-  private runNext(signal: AbortSignal, controller: AbortController) {
-    if (this.running >= this.concurrency) return
-    const task = this.queue.shift()
-    if (!task) return
+  private runNext() {
+    while (this.running < this.concurrency) {
+      const task = this.queue.shift()
+      if (!task) return
 
-    this.running += 1
+      const { controller, key } = task
+      const { signal } = controller
+      if (signal.aborted) {
+        task.reject(new Error('aborted'))
+        continue
+      }
 
-    if (signal.aborted) {
-      this.running -= 1
-      task.reject(new Error('aborted'))
-      this.runNext(signal, controller)
-      return
+      this.running += 1
+      if (key !== undefined) this.runningControllers.set(key, controller)
+
+      this.worker(task.input, signal)
+        .then((result) => {
+          if (!signal.aborted) {
+            task.resolve(result)
+          } else {
+            task.reject(new Error('aborted'))
+          }
+        })
+        .catch((err) => {
+          if (!signal.aborted) {
+            task.reject(err)
+          } else {
+            task.reject(new Error('aborted'))
+          }
+        })
+        .finally(() => {
+          this.running -= 1
+          if (key !== undefined) this.runningControllers.delete(key)
+          this.runNext()
+        })
     }
-
-    this.worker(task.input, signal)
-      .then((result) => {
-        this.running -= 1
-        if (!signal.aborted) {
-          task.resolve(result)
-        } else {
-          task.reject(new Error('aborted'))
-        }
-        this.runNext(signal, controller)
-      })
-      .catch((err) => {
-        this.running -= 1
-        if (!signal.aborted) {
-          task.reject(err)
-        } else {
-          task.reject(new Error('aborted'))
-        }
-        this.runNext(signal, controller)
-      })
   }
 }
 
@@ -252,7 +263,7 @@ class TaskQueue<TInput, TOutput> {
  */
 function loadImageByTag(imageUrl: string, signal?: AbortSignal): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const image = new Image()
+    const image: LoadedImage = new Image()
     image.src = imageUrl
 
     const onLoad = () => {
@@ -305,12 +316,8 @@ function fetchImage(imageUrl: string, signal?: AbortSignal): Promise<Response> {
       signal,
     })
 
-  return doFetch().catch((err) => {
-    // retry once
-    return doFetch().catch(() => {
-      throw err
-    })
-  })
+  // retry once
+  return doFetch().catch(() => doFetch())
 }
 
 /**
@@ -334,7 +341,7 @@ async function createImageLoader(
         // fetch 出错，降级为 img 标签，并关闭快速渲染
         SUPPORT_FASTER_RENDER = false
         const img = await loadImageByTag(url, signal)
-        return { error: null, buffer: img }
+        return { error: e, buffer: img }
       }
     } else {
       const img = await loadImageByTag(url, signal)
@@ -799,3 +806,5 @@ function drawImageToHTMLNode(
 function flushAllCache() {
   canvasCache.clear()
 }
+
+export { drawImageToCanvas, drawImageToHTMLNode, flushAllCache }

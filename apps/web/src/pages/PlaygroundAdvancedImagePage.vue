@@ -1,0 +1,112 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import AdvancedImageLoaderDemo from '../components/advanced-image-loader/AdvancedImageLoaderDemo.vue'
+import CodeBlock from '../components/CodeBlock.vue'
+import { projects } from '../data/projects'
+
+const tabs = [
+  { id: 'demo', label: 'Demo' },
+  { id: 'principle', label: '实现原理' },
+  { id: 'source', label: '源码' },
+  { id: 'metrics', label: '性能指标' },
+  { id: 'compatibility', label: '兼容性' },
+] as const
+
+const project = projects.find((item) => item.slug === 'advanced-image-loader')!
+const activeTab = ref<(typeof tabs)[number]['id']>('demo')
+const activeSourceIndex = ref(0)
+const activeSource = computed(() => project.sources[activeSourceIndex.value])
+</script>
+
+<template>
+  <article class="playground-content" data-page="advanced-image-loader">
+    <p class="eyebrow">BROWSER · {{ project.status }}</p>
+    <h2>{{ project.title }}</h2>
+    <p class="playground-description">{{ project.description }}</p>
+    <div class="project-meta">
+      <span>{{ project.difficulty }}</span
+      ><span v-for="tag in project.tags" :key="tag">{{ tag }}</span
+      ><span>更新于 {{ project.updatedAt }}</span>
+    </div>
+
+    <div class="demo-stage">
+      <div class="demo-stage__header">
+        <div><span class="status-dot" aria-hidden="true"></span><span>INTERACTIVE DEMO</span></div>
+        <span>可以运行</span>
+      </div>
+      <AdvancedImageLoaderDemo />
+    </div>
+
+    <nav class="content-tabs" aria-label="技术内容" role="tablist">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        type="button"
+        :class="{ 'is-active': activeTab === tab.id }"
+        :aria-selected="activeTab === tab.id"
+        role="tab"
+        @click="activeTab = tab.id"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
+
+    <section v-if="activeTab === 'source'" class="tab-panel tab-panel--source" role="tabpanel">
+      <div class="source-viewer">
+        <nav class="source-files" aria-label="源码文件">
+          <button
+            v-for="(source, index) in project.sources"
+            :key="source.path"
+            type="button"
+            :class="{ 'is-active': activeSourceIndex === index }"
+            @click="activeSourceIndex = index"
+          >
+            <span>{{ source.label }}</span
+            ><small>{{ source.path }}</small>
+          </button>
+        </nav>
+        <CodeBlock
+          :code="activeSource.content"
+          :language="activeSource.language"
+          :filename="activeSource.label"
+        />
+      </div>
+    </section>
+
+    <section v-else-if="activeTab === 'metrics'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">PERFORMANCE METRICS</p>
+      <h3>并发边界由加载与裁剪两条队列共同控制。</h3>
+      <p>
+        普通浏览器最多同时处理 40 个加载任务和 40 个裁剪任务；Edge 的 Canvas 裁剪并发会降为
+        1。组件当前没有向外暴露完成事件，因此这里只展示设计边界，不伪造运行耗时。
+      </p>
+    </section>
+
+    <section v-else-if="activeTab === 'principle'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">实现原理</p>
+      <h3>按图片类型选择 HTML Image 或 Canvas Crop。</h3>
+      <p>
+        official 图片通过解码后的 HTMLImageElement 插入节点；其他图片根据归一化 box
+        计算裁剪区域，再由加载队列和渲染队列生成 Canvas，并缓存最终结果。
+      </p>
+    </section>
+
+    <section v-else-if="activeTab === 'compatibility'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">兼容性</p>
+      <h3>快速路径与兼容路径同时保留。</h3>
+      <p>
+        支持 createImageBitmap 时优先使用位图裁剪；不支持或 fetch 失败时回退到
+        HTMLImageElement。Canvas 缓存根据环境使用 Blob URL 或 Data URL。
+      </p>
+    </section>
+
+    <section v-else class="tab-panel tab-panel--demo" role="tabpanel">
+      <p class="eyebrow">DEMO OVERVIEW</p>
+      <h3>同时观察直出图片、裁剪画布和错误回退。</h3>
+      <p>
+        基础样例用于对比分支；并发压力一次提交 100 条随机数据，其中包含约 30%
+        的错误地址。切换原图模式会重新挂载组件并再次执行 drawImage。
+      </p>
+    </section>
+  </article>
+</template>

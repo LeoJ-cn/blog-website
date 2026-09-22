@@ -1,4 +1,4 @@
-export type ProjectCategory = 'performance' | 'engineering' | 'architecture' | 'network' | 'browser'
+export type ProjectCategory = 'performance' | 'browser'
 export type ProjectStatus = 'active' | 'planned' | 'archived'
 export type ProjectDifficulty = 'beginner' | 'intermediate' | 'advanced'
 
