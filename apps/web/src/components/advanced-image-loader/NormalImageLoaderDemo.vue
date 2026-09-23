@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import NailBox from './nail-box_zm.vue'
+import NormalNailBox from './normal-nail-box.vue'
 // @ts-expect-error 该文件保留为可直接阅读的 JavaScript mock 源码。
 import { mockNailBoxList_Random } from './mock.js'
 
@@ -56,11 +56,11 @@ function rerender() {
 </script>
 
 <template>
-  <section class="image-loader-demo">
-    <aside class="image-loader-demo__controls">
+  <section class="normal-image-demo">
+    <aside class="normal-image-demo__controls">
       <div>
-        <span class="image-loader-demo__label">数据规模</span>
-        <div class="image-loader-demo__segmented">
+        <span class="normal-image-demo__label">数据规模</span>
+        <div class="normal-image-demo__segmented">
           <button
             type="button"
             :class="{ 'is-active': dataSet === 'basic' }"
@@ -78,16 +78,16 @@ function rerender() {
         </div>
       </div>
 
-      <label class="image-loader-demo__toggle">
+      <label class="normal-image-demo__toggle">
         <input v-model="useOrigin" type="checkbox" @change="toggleOrigin" />
         <span>使用原图尺寸</span>
       </label>
 
-      <button class="image-loader-demo__rerender" type="button" @click="rerender">
+      <button class="normal-image-demo__rerender" type="button" @click="rerender">
         重新执行加载
       </button>
 
-      <dl class="image-loader-demo__summary">
+      <dl class="normal-image-demo__summary">
         <div>
           <dt>本次提交</dt>
           <dd>{{ images.length }} 张图片</dd>
@@ -107,20 +107,16 @@ function rerender() {
       </dl>
     </aside>
 
-    <div class="image-loader-demo__viewport">
-      <div class="image-loader-demo__legend">
+    <div class="normal-image-demo__viewport">
+      <div class="normal-image-demo__legend">
         <span>
           {{ dataSet === 'basic' ? '固定样例' : `${stressImages.length} 条随机压力数据` }}
         </span>
         <span>{{ useOrigin ? 'ORIGIN MODE' : 'THUMBNAIL MODE' }}</span>
       </div>
-      <div
-        class="image-loader-demo__gallery"
-        data-testid="advanced-image-gallery"
-        :data-render-version="renderVersion"
-      >
+      <div class="normal-image-demo__gallery">
         <article v-for="(item, index) in images" :key="`${renderVersion}-${index}`">
-          <NailBox
+          <NormalNailBox
             :key="`${renderVersion}-${useOrigin}-${index}`"
             :image="item"
             :origin="useOrigin"
@@ -136,26 +132,26 @@ function rerender() {
 </template>
 
 <style scoped lang="scss">
-.image-loader-demo {
+.normal-image-demo {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr);
   min-height: 500px;
 }
 
-.image-loader-demo__controls {
+.normal-image-demo__controls {
   background: #0b1222;
   border-right: 1px solid #263453;
   padding: 24px;
 }
 
-.image-loader-demo__label {
+.normal-image-demo__label {
   color: #71809e;
   display: block;
   font-size: 11px;
   margin-bottom: 9px;
 }
 
-.image-loader-demo__segmented {
+.normal-image-demo__segmented {
   background: #111a2e;
   border: 1px solid #263453;
   border-radius: 6px;
@@ -164,7 +160,7 @@ function rerender() {
   overflow: hidden;
 }
 
-.image-loader-demo__segmented button {
+.normal-image-demo__segmented button {
   background: transparent;
   border: 0;
   color: #71809e;
@@ -173,12 +169,12 @@ function rerender() {
   padding: 9px 6px;
 }
 
-.image-loader-demo__segmented button.is-active {
+.normal-image-demo__segmented button.is-active {
   background: #263453;
   color: #f4f7ff;
 }
 
-.image-loader-demo__toggle {
+.normal-image-demo__toggle {
   align-items: center;
   color: #9aa7c0;
   cursor: pointer;
@@ -188,11 +184,11 @@ function rerender() {
   margin-top: 20px;
 }
 
-.image-loader-demo__toggle input {
+.normal-image-demo__toggle input {
   accent-color: #62e6b5;
 }
 
-.image-loader-demo__rerender {
+.normal-image-demo__rerender {
   background: #62e6b5;
   border: 0;
   border-radius: 5px;
@@ -205,7 +201,7 @@ function rerender() {
   width: 100%;
 }
 
-.image-loader-demo__summary {
+.normal-image-demo__summary {
   border-top: 1px solid #263453;
   display: grid;
   gap: 12px;
@@ -213,30 +209,30 @@ function rerender() {
   padding-top: 20px;
 }
 
-.image-loader-demo__summary div {
+.normal-image-demo__summary div {
   align-items: center;
   display: flex;
   justify-content: space-between;
 }
 
-.image-loader-demo__summary dt {
+.normal-image-demo__summary dt {
   color: #71809e;
   font-size: 10px;
 }
 
-.image-loader-demo__summary dd {
+.normal-image-demo__summary dd {
   color: #dce5f7;
   font-family: monospace;
   font-size: 11px;
   margin: 0;
 }
 
-.image-loader-demo__viewport {
+.normal-image-demo__viewport {
   min-width: 0;
   padding: 18px;
 }
 
-.image-loader-demo__legend {
+.normal-image-demo__legend {
   color: #71809e;
   display: flex;
   font-family: monospace;
@@ -246,7 +242,7 @@ function rerender() {
   margin-bottom: 14px;
 }
 
-.image-loader-demo__gallery {
+.normal-image-demo__gallery {
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(auto-fill, 138px);
@@ -256,37 +252,37 @@ function rerender() {
   padding: 2px;
 }
 
-.image-loader-demo__gallery article {
+.normal-image-demo__gallery article {
   background: #111a2e;
   border: 1px solid #263453;
   overflow: hidden;
 }
 
-.image-loader-demo__gallery footer {
+.normal-image-demo__gallery footer {
   align-items: center;
   display: flex;
   justify-content: space-between;
   padding: 9px 10px;
 }
 
-.image-loader-demo__gallery footer strong,
-.image-loader-demo__gallery footer span {
+.normal-image-demo__gallery footer strong,
+.normal-image-demo__gallery footer span {
   color: #71809e;
   font-family: monospace;
   font-size: 9px;
 }
 
-.image-loader-demo__gallery footer strong {
+.normal-image-demo__gallery footer strong {
   color: #9aa7c0;
   font-weight: 500;
 }
 
 @media (max-width: 760px) {
-  .image-loader-demo {
+  .normal-image-demo {
     grid-template-columns: 1fr;
   }
 
-  .image-loader-demo__controls {
+  .normal-image-demo__controls {
     border-bottom: 1px solid #263453;
     border-right: 0;
   }

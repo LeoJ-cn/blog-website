@@ -1,5 +1,5 @@
 <template>
-  <a class="nail-box" target="_blank">
+  <a class="nail-box" target="_blank" :debugger="imgSrc">
     <div v-show="status === LOADING" class="nail-box__loading">loading...</div>
 
     <img
@@ -12,14 +12,15 @@
     <div
       v-show="type === IMAGE_TYPE_OFFICIAL && status === DONE"
       :key="`image-wrapper_${imgSrc}`"
+      class="office-image-canvas-wrapper"
       ref="imageElementWrapper"
     />
 
     <div
       v-if="type !== IMAGE_TYPE_OFFICIAL"
-      v-show="status === DONE"
+      v-show="status !== LOADING"
       :style="cvsStyle"
-      class="nail-box__img nail-box__img--pt"
+      class="nail-box__img nail-box__img--pt other-image-canvas-wrapper"
     >
       <div
         :key="`canvas-wrapper_${JSON.stringify(model)}`"

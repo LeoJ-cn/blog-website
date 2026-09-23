@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AdvancedImageLoaderDemo from '../components/advanced-image-loader/AdvancedImageLoaderDemo.vue'
+import NormalImageLoaderDemo from '../components/advanced-image-loader/NormalImageLoaderDemo.vue'
 import CodeBlock from '../components/CodeBlock.vue'
 import { projects } from '../data/projects'
 
@@ -13,6 +14,7 @@ const tabs = [
 ] as const
 
 const project = projects.find((item) => item.slug === 'advanced-image-loader')!
+const renderMode = ref<'normal' | 'optimized'>('optimized')
 const activeTab = ref<(typeof tabs)[number]['id']>('demo')
 const activeSourceIndex = ref(0)
 const activeSource = computed(() => project.sources[activeSourceIndex.value])
@@ -34,9 +36,25 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
           <span class="status-dot" aria-hidden="true"></span>
           <span>INTERACTIVE DEMO</span>
         </div>
-        <span>可以运行</span>
+        <div class="loader-mode-switch" aria-label="渲染模式">
+          <button
+            type="button"
+            :class="{ 'is-active': renderMode === 'normal' }"
+            @click="renderMode = 'normal'"
+          >
+            普通模式
+          </button>
+          <button
+            type="button"
+            :class="{ 'is-active': renderMode === 'optimized' }"
+            @click="renderMode = 'optimized'"
+          >
+            高性能模式
+          </button>
+        </div>
       </div>
-      <AdvancedImageLoaderDemo />
+      <AdvancedImageLoaderDemo v-if="renderMode === 'optimized'" />
+      <NormalImageLoaderDemo v-else />
     </div>
 
     <nav class="content-tabs" aria-label="技术内容" role="tablist">
@@ -112,3 +130,27 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
     </section>
   </article>
 </template>
+
+<style scoped lang="scss">
+.loader-mode-switch {
+  border: 1px solid #263453;
+  border-radius: 5px;
+  display: flex;
+  overflow: hidden;
+}
+
+.loader-mode-switch button {
+  background: transparent;
+  border: 0;
+  color: #71809e;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 0;
+  padding: 6px 10px;
+}
+
+.loader-mode-switch button.is-active {
+  background: #263453;
+  color: #f4f7ff;
+}
+</style>
