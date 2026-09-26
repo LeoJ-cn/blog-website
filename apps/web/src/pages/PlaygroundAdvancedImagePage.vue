@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import AdvancedImageLoaderDemo from '../components/advanced-image-loader/AdvancedImageLoaderDemo.vue'
 import NormalImageLoaderDemo from '../components/advanced-image-loader/NormalImageLoaderDemo.vue'
+import MovingBoxPerformancePanel from '../components/advanced-image-loader/MovingBoxPerformancePanel.vue'
+import { movingBoxManager } from '../components/advanced-image-loader/moving-box-manager'
 import CodeBlock from '../components/CodeBlock.vue'
 import { projects } from '../data/projects'
 
@@ -18,10 +21,17 @@ const renderMode = ref<'normal' | 'optimized'>('optimized')
 const activeTab = ref<(typeof tabs)[number]['id']>('demo')
 const activeSourceIndex = ref(0)
 const activeSource = computed(() => project.sources[activeSourceIndex.value])
+
+onBeforeRouteLeave((to) => {
+  if (to.path === '/playground/performance') {
+    movingBoxManager.clear()
+  }
+})
 </script>
 
 <template>
   <article class="playground-content" data-page="advanced-image-loader">
+    <MovingBoxPerformancePanel />
     <p class="eyebrow">BROWSER</p>
     <h2>{{ project.title }}</h2>
     <p class="playground-description">{{ project.description }}</p>
@@ -36,21 +46,28 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
           <span class="status-dot" aria-hidden="true"></span>
           <span>INTERACTIVE DEMO</span>
         </div>
-        <div class="loader-mode-switch" aria-label="渲染模式">
-          <button
-            type="button"
-            :class="{ 'is-active': renderMode === 'normal' }"
-            @click="renderMode = 'normal'"
-          >
-            普通模式
-          </button>
-          <button
-            type="button"
-            :class="{ 'is-active': renderMode === 'optimized' }"
-            @click="renderMode = 'optimized'"
-          >
-            高性能模式
-          </button>
+        <div class="demo-stage__actions" data-testid="animation-controls">
+          <div class="animation-actions" aria-label="动画控制">
+            <button type="button" @click="movingBoxManager.create()">增加动画</button>
+            <button type="button" @click="movingBoxManager.clear()">取消所有动画</button>
+          </div>
+          <span>|</span>
+          <div class="loader-mode-switch" aria-label="渲染模式">
+            <button
+              type="button"
+              :class="{ 'is-active': renderMode === 'normal' }"
+              @click="renderMode = 'normal'"
+            >
+              原生Image模式
+            </button>
+            <button
+              type="button"
+              :class="{ 'is-active': renderMode === 'optimized' }"
+              @click="renderMode = 'optimized'"
+            >
+              调度优化模式
+            </button>
+          </div>
         </div>
       </div>
       <AdvancedImageLoaderDemo v-if="renderMode === 'optimized'" />
@@ -132,6 +149,12 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
 </template>
 
 <style scoped lang="scss">
+.demo-stage__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.animation-actions,
 .loader-mode-switch {
   border: 1px solid #263453;
   border-radius: 5px;
@@ -139,6 +162,7 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
   overflow: hidden;
 }
 
+.animation-actions button,
 .loader-mode-switch button {
   background: transparent;
   border: 0;
@@ -147,6 +171,16 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
   font: inherit;
   letter-spacing: 0;
   padding: 6px 10px;
+}
+
+.animation-actions button + button,
+.loader-mode-switch button + button {
+  border-left: 1px solid #263453;
+}
+
+.animation-actions button:hover {
+  background: #18243e;
+  color: #f4f7ff;
 }
 
 .loader-mode-switch button.is-active {

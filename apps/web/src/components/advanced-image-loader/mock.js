@@ -1379,5 +1379,5 @@ let mockNailBoxList = [
   },
 ]
 
-const mockNailBoxList_Random = () => mockNailBoxList
-export { mockNailBoxList_Random }
+const getiMockImgList = () => mockNailBoxList
+export { getiMockImgList }

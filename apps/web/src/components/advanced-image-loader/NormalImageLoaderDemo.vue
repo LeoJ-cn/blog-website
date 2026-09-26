@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import NormalNailBox from './normal-nail-box.vue'
+import { movingBoxManager } from './moving-box-manager'
 // @ts-expect-error 该文件保留为可直接阅读的 JavaScript mock 源码。
-import { mockNailBoxList_Random } from './mock.js'
+import { getiMockImgList } from './mock.js'
 
 type CropBox = [number, number, number, number]
 
@@ -24,11 +25,21 @@ type DataSet = 'basic' | 'stress'
 const dataSet = ref<DataSet>('basic')
 const useOrigin = ref(false)
 const renderVersion = ref(0)
+const cacheTimestamp = ref<number | null>(null)
 
-const allImages = mockNailBoxList_Random()
+const allImages = getiMockImgList()
 const basicImages = allImages.slice(0, 4) as NailBoxImage[]
 const stressImages = allImages.slice(0, 100) as NailBoxImage[]
-const images = computed(() => (dataSet.value === 'basic' ? basicImages : stressImages))
+const images = computed(() => {
+  const currentImages = dataSet.value === 'basic' ? basicImages : stressImages
+  const timestamp = cacheTimestamp.value
+
+  if (timestamp === null) {
+    return currentImages
+  }
+
+  return currentImages.map((image) => addCacheTimestamp(image, timestamp))
+})
 const officialCount = computed(() => images.value.filter((item) => item.type === 'official').length)
 const canvasCount = computed(() => images.value.length - officialCount.value)
 const errorCount = computed(
@@ -50,8 +61,29 @@ function toggleOrigin() {
   renderVersion.value += 1
 }
 
+function addCacheTimestamp(image: NailBoxImage, timestamp: number): NailBoxImage {
+  const withTimestamp = (url: string) => {
+    const nextUrl = new URL(url)
+    nextUrl.searchParams.set('t', String(timestamp))
+    return nextUrl.toString()
+  }
+
+  return {
+    ...image,
+    src: withTimestamp(image.src),
+    thumbSrc: withTimestamp(image.thumbSrc),
+    originSrc: withTimestamp(image.originSrc),
+    model: {
+      ...image.model,
+      path: withTimestamp(image.model.path),
+    },
+  }
+}
+
 function rerender() {
+  cacheTimestamp.value = Date.now()
   renderVersion.value += 1
+  movingBoxManager.requestPerformanceRecording()
 }
 </script>
 
@@ -84,7 +116,7 @@ function rerender() {
       </label>
 
       <button class="normal-image-demo__rerender" type="button" @click="rerender">
-        重新执行加载
+        重新执行加载(禁用缓存)
       </button>
 
       <dl class="normal-image-demo__summary">
