@@ -1,0 +1,49 @@
+/* p {
+  line-height: 1.8;
+} */
+
+/* 标引基础结构 */
+.tips-area {
+  background: rgb(255, 204, 0);
+  border-radius: 3px;
+  padding: 0 7px;
+}
+.tips-area .ta-del-button {
+  display: inline-block;
+  color: #fff;
+  background-color: rgba(10, 10, 10, 0.2);
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 12px;
+  margin: 0 -4px 0 5px;
+}
+.tips-area .ta-del-button:hover {
+  cursor: pointer;
+  background-color: rgba(10, 10, 10, 0.4);
+}
+
+/* 标引右键菜单 */
+.text-labeling-box {
+  position: fixed;
+  border: 1px solid #999999;
+  display: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  min-height: 120px;
+  background: #fff;
+  z-index: 10000;
+}
+.text-labeling-box .tlm-btn {
+  border: 1px solid;
+  background: unset;
+  color: blue;
+  margin-bottom: 10px;
+  border-radius: 3px;
+}
+.text-labeling-box .tlm-btn:hover {
+  cursor: pointer;
+  opacity: 0.7;
+}

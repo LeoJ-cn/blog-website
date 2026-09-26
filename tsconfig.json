@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    // 输出语法目标：交给 Vite/Webpack 继续做浏览器兼容转换。
+    "target": "ES2022",
+    // 使用现代 ES Module，构建工具负责最终打包。
+    "module": "ESNext",
+    // 使用适配 pnpm、exports 和 bundler 的模块解析方式。
+    "moduleResolution": "Bundler",
+    // 保留项目现有的根目录解析方式；TypeScript 7 前继续兼容。
+    "ignoreDeprecations": "5.0",
+    // 允许裸模块从此目录开始解析。
+    "baseUrl": ".",
+    // 所有源码启用严格类型检查。
+    "strict": true,
+    // 不重复检查第三方声明文件，提升大型项目检查速度。
+    "skipLibCheck": true,
+    // 当前项目由 Vite/Webpack 负责输出，不由 tsc 写文件。
+    "noEmit": true,
+    // 要求每个文件都可以被独立转译，兼容 Vite 和 Babel。
+    "isolatedModules": true,
+    // 允许导入 JSON 文件。
+    "resolveJsonModule": true,
+    // 禁止源码使用 .ts 扩展名导入，统一交给 bundler 解析。
+    "allowImportingTsExtensions": false,
+    // 检查跨平台文件名大小写问题。
+    "forceConsistentCasingInFileNames": true,
+    // catch 变量默认使用 unknown，避免隐式 any。
+    "useUnknownInCatchVariables": true,
+    // 与现代 JavaScript class 字段语义保持一致。
+    "useDefineForClassFields": true,
+    // Monorepo 包的源码路径映射；子项目需要合并维护自己的 @/*。
+    "paths": {
+      "@blog/config": ["packages/config/src/index.ts"],
+      "@blog/types": ["packages/types/src/index.ts"],
+      "@blog/shared": ["packages/shared/src/index.ts"],
+      "@blog/ui": ["packages/ui/src/index.ts"]
+    }
+  },
+  // 根配置作为共享基础配置，不直接扫描整个仓库。
+  "files": []
+}

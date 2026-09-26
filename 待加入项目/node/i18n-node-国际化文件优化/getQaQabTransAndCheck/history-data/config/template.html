@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title><%tpl-title></title>
+    <style>
+      .marking {
+        margin-bottom: 20px;
+      }
+      #shiftDisplayType,
+      #goToDiff,
+      #goToFirst,
+      #goPreDiff {
+        cursor: pointer;
+        border: none;
+        margin-left: 20px;
+        background: #666;
+        color: #fff;
+        outline: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+      }
+      #goPreDiff,
+      #goToDiff {
+        color: greenyellow;
+      }
+      #goToFirst {
+        color: blue;
+      }
+      .compared-scroll {
+        padding: 10px 48px 40px 48px;
+        overflow: auto;
+        max-width: calc(100% - 100px);
+      }
+      .compared-content {
+        white-space: nowrap;
+      }
+      .compared-qa {
+        color: green;
+      }
+      .compared-qab {
+        color: orange;
+      }
+      .compared-qab--remove {
+        color: red;
+      }
+      .compared-qa--none {
+        color: #666666;
+        opacity: 0.2;
+        cursor: not-allowed;
+      }
+      .compared-content .compared-icon--split {
+        display: inline-block;
+        margin: 0 6px;
+        width: 1px;
+        height: 30px;
+        background: #999;
+        vertical-align: middle;
+      }
+      .compared-host {
+        height: 20px;
+      }
+      .compared-host a {
+        position: fixed;
+      }
+    </style>
+  </head>
+
+  <body>
+    <section class="marking">
+      <h2>标注说明：</h2>
+      <div class="marking-item">黑色字体：表示相同的文本</div>
+      <div class="marking-item compared-qa">
+        <span>绿色字体：</span>
+        <span>表示在相同位置, qa存在的文本，但是在qab上被删除了</span>
+      </div>
+      <div class="marking-item compared-qab--remove">
+        <span>红色字体：</span>
+        <span>表示在相同位置, qa存在的文本，但是qab上被删除了</span>
+      </div>
+      <div class="marking-item compared-qa--none">
+        <span>透明字体：</span>
+        <span>表示在相同位置，qa没有的文本</span>
+      </div>
+      <div class="marking-item compared-qab">
+        <span>橙色字体：</span>
+        <span>表示在相同位置，是qab上新增的文本</span>
+      </div>
+      <hr />
+    </section>
+
+    <h1 class="tpl-title">
+      <%tpl-title>
+
+      <button class="show-compare" id="shiftDisplayType">关闭对比模式</button>
+      <button class="show-compare" id="goPreDiff">上一个Diff</button>
+      <button class="show-compare" id="goToDiff">下一个Diff</button>
+      <button class="show-compare" id="goToFirst">回到第一个</button>
+    </h1>
+    <section class="compared-scroll">
+      <section class="compared-area">
+        <h3 class="compared-host"><a href="<%url-qa>">qa</a></h3>
+        <div class="compared-content"><%text-qa></div>
+      </section>
+      <section class="compared-area qab">
+        <h3 class="compared-host"><a href="<%url-qab>">qab/ci</a></h3>
+        <div class="compared-content"><%text-qab></div>
+      </section>
+    </section>
+
+    <!-- <section>
+        <hr>
+        <%compare-result>
+    </section> -->
+
+    <script>
+      const maxIndex = '<%max-index>'
+      let compareIndex = 0
+      const nextBtn = document.querySelector('#goToDiff')
+      const nextDoms = document.querySelectorAll('.compared-area.qab .compare-control')
+      const maxLength = nextDoms.length
+
+      const goToFirstBtn = document.querySelector('#goToFirst')
+      const goPreDiffBtn = document.querySelector('#goPreDiff')
+
+      const btn = document.querySelector('#shiftDisplayType')
+      const compareDom = document.querySelectorAll('.compare-control')
+      const scrollDom = document.querySelector('.compared-scroll')
+
+      function goToNextDom(num, type) {
+        if (type) {
+          return document.querySelector(`.goto-1`)
+        } else {
+          if (compareIndex + num <= maxIndex && compareIndex + num > 0) {
+            compareIndex += num
+          }
+          const currentSelector = `.goto-${compareIndex}`
+          return document.querySelector(currentSelector)
+        }
+      }
+
+      btn.addEventListener('click', (e) => {
+        if (e.target.className.indexOf('show-compare') !== -1) {
+          btn.className = 'hide-compare'
+          btn.innerHTML = '显示对比模式'
+          ;[].forEach.call(document.querySelectorAll('.compare-control'), function (itemDom) {
+            itemDom.style.display = 'none'
+            nextBtn.style.display = 'none'
+          })
+        } else {
+          btn.className = 'show-compare'
+          btn.innerHTML = '隐藏对比模式'
+          ;[].forEach.call(document.querySelectorAll('.compare-control'), function (itemDom) {
+            itemDom.style.display = 'inline-block'
+            nextBtn.style.display = 'inline-block'
+          })
+        }
+      })
+
+      nextBtn.addEventListener('click', (e) => {
+        if (!maxIndex) return
+        //下一个
+        scrollDom.scrollTo(goToNextDom(1).offsetLeft - 100, 0)
+      })
+
+      goPreDiffBtn.addEventListener('click', (e) => {
+        if (!maxIndex) return
+        //上一个
+        scrollDom.scrollTo(goToNextDom(-1).offsetLeft - 100, 0)
+      })
+
+      goToFirstBtn.addEventListener('click', () => {
+        if (!maxIndex) return
+        compareIndex = 0
+        scrollDom.scrollTo(goToNextDom(compareIndex, 'init').offsetLeft - 100, 0)
+      })
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1058 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Scheduler 独立分片任务 Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        padding: 20px;
+        background: #f0f2f5;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      h1 {
+        font-size: 28px;
+        color: #1a1a2e;
+      }
+      .subtitle {
+        color: #6c757d;
+        margin-top: 8px;
+        font-size: 15px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin: 24px 0 16px 0;
+        flex-wrap: wrap;
+      }
+      button {
+        padding: 10px 22px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: #4f46e5;
+        color: white;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: #4338ca;
+      }
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+      .btn-danger:hover:not(:disabled) {
+        background: #dc2626;
+      }
+      .btn-success {
+        background: #22c55e;
+        color: white;
+      }
+      .btn-success:hover:not(:disabled) {
+        background: #16a34a;
+      }
+      .btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background: #d1d5db;
+      }
+      .btn-warning {
+        background: #f59e0b;
+        color: white;
+      }
+      .btn-warning:hover:not(:disabled) {
+        background: #d97706;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin: 20px 0;
+      }
+      .stat-card {
+        background: #f8fafc;
+        padding: 16px 20px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+      }
+      .stat-card .label {
+        font-size: 12px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+      .stat-card .value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+      }
+      .stat-card .value.running {
+        color: #4f46e5;
+      }
+      .stat-card .value.done {
+        color: #22c55e;
+      }
+      .stat-card .value.cancelled {
+        color: #ef4444;
+      }
+
+      .progress-section {
+        margin: 20px 0;
+      }
+      .progress-bar-wrapper {
+        height: 32px;
+        background: #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4f46e5, #818cf8);
+        transition: width 0.15s ease-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 13px;
+        border-radius: 16px;
+        min-width: 40px;
+      }
+      .progress-fill.done {
+        background: linear-gradient(90deg, #22c55e, #4ade80);
+      }
+      .progress-fill.cancelled {
+        background: linear-gradient(90deg, #ef4444, #f87171);
+      }
+
+      .log-container {
+        margin-top: 20px;
+        padding: 16px 20px;
+        background: #0f172a;
+        border-radius: 12px;
+        max-height: 350px;
+        overflow-y: auto;
+        font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+        font-size: 12px;
+        line-height: 1.8;
+        color: #e2e8f0;
+      }
+      .log-container::-webkit-scrollbar {
+        width: 6px;
+      }
+      .log-container::-webkit-scrollbar-track {
+        background: #1e293b;
+        border-radius: 3px;
+      }
+      .log-container::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 3px;
+      }
+
+      .log-entry {
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .log-entry .time {
+        color: #64748b;
+        margin-right: 12px;
+        user-select: none;
+      }
+      .log-entry .msg-info {
+        color: #93c5fd;
+      }
+      .log-entry .msg-success {
+        color: #86efac;
+      }
+      .log-entry .msg-warning {
+        color: #fcd34d;
+      }
+      .log-entry .msg-error {
+        color: #fca5a5;
+      }
+      .log-entry .msg-chunk {
+        color: #c4b5fd;
+      }
+      .log-entry .msg-priority {
+        color: #67e8f9;
+      }
+      .log-entry .msg-stat {
+        color: #f9a8d4;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .badge-idle {
+        background: #e2e8f0;
+        color: #475569;
+      }
+      .badge-running {
+        background: #c7d2fe;
+        color: #3730a3;
+      }
+      .badge-done {
+        background: #bbf7d0;
+        color: #166534;
+      }
+      .badge-cancelled {
+        background: #fecaca;
+        color: #991b1b;
+      }
+      .badge-paused {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .info-hint {
+        background: #f1f5f9;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #475569;
+        margin: 12px 0;
+        border-left: 4px solid #4f46e5;
+      }
+      .info-hint code {
+        background: #e2e8f0;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #1e293b;
+      }
+      .success-box {
+        background: #f0fdf4;
+        border-left: 4px solid #22c55e;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin: 12px 0;
+        color: #166534;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⏱️ Scheduler 分片任务 Demo</h1>
+      <p class="subtitle">
+        自实现 Scheduler API · 不依赖任何外部包 · 数据量
+        <strong id="totalDisplay">500,000</strong>
+        项
+      </p>
+
+      <div class="success-box">
+        ✅ 使用浏览器原生
+        <code>MessageChannel</code>
+        实现调度，完全独立，无需加载任何外部资源。
+      </div>
+
+      <div class="controls">
+        <button id="startBtn" class="btn-success">▶ 启动分片任务</button>
+        <button id="cancelBtn" class="btn-danger" disabled>⏹ 取消任务</button>
+        <button id="pauseBtn" class="btn-warning" disabled>⏸ 暂停/继续</button>
+        <button id="clearBtn" class="btn-secondary">🗑 清空日志</button>
+        <button id="testPriorityBtn" class="btn-primary">🎯 测试优先级</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">已处理</div>
+          <div class="value" id="processedDisplay">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">分片数</div>
+          <div class="value" id="chunkDisplay">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">总耗时</div>
+          <div class="value" id="timeDisplay">0 ms</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">处理速度</div>
+          <div class="value" id="speedDisplay">0 /s</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">状态</div>
+          <div class="value" id="statusDisplay" style="font-size: 18px">
+            <span class="badge badge-idle">空闲</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-bar-wrapper">
+          <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+        </div>
+      </div>
+
+      <div class="info-hint">
+        💡 每片约 5ms，高优先级任务会抢占低优先级。打开控制台输入
+        <code>__demo.help()</code>
+        查看调试命令。
+      </div>
+
+      <div class="log-container" id="logContainer">
+        <div class="log-entry">
+          <span class="time">[系统]</span>
+          <span class="msg-info">Scheduler 已就绪（自实现版）</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ================================================================
+      // 1. 自实现 Scheduler API（兼容 React Scheduler 接口）
+      //    使用 MessageChannel 实现宏任务调度
+      // ================================================================
+      const Scheduler = (function () {
+        // ---- 优先级常量 ----
+        const ImmediatePriority = 1
+        const UserBlockingPriority = 2
+        const NormalPriority = 3
+        const LowPriority = 4
+        const IdlePriority = 5
+
+        // ---- 任务队列 ----
+        let taskQueue = []
+        let isScheduled = false
+        let currentTask = null
+        let taskIdCounter = 0
+        let frameStartTime = 0
+        const FRAME_INTERVAL = 5 // 每片 5ms
+
+        // ---- MessageChannel 用于调度 ----
+        const channel = new MessageChannel()
+        const port = channel.port2
+
+        channel.port1.onmessage = function () {
+          isScheduled = false
+          workLoop()
+        }
+
+        // ---- 调度入口 ----
+        function scheduleCallback(priority, callback) {
+          const taskId = ++taskIdCounter
+          const task = {
+            id: taskId,
+            priority: priority,
+            callback: callback,
+            isActive: true,
+          }
+
+          // 按优先级插入队列（高优先级在前）
+          let insertIndex = taskQueue.length
+          for (let i = 0; i < taskQueue.length; i++) {
+            if (taskQueue[i].priority < priority) {
+              insertIndex = i
+              break
+            }
+          }
+          taskQueue.splice(insertIndex, 0, task)
+
+          // 触发调度
+          if (!isScheduled) {
+            isScheduled = true
+            port.postMessage(null)
+          }
+
+          return taskId
+        }
+
+        // ---- 取消任务 ----
+        function cancelCallback(taskId) {
+          for (let i = 0; i < taskQueue.length; i++) {
+            if (taskQueue[i].id === taskId) {
+              taskQueue[i].isActive = false
+              taskQueue.splice(i, 1)
+              return
+            }
+          }
+          // 检查是否是当前正在执行的任务
+          if (currentTask && currentTask.id === taskId) {
+            currentTask.isActive = false
+            currentTask = null
+          }
+        }
+
+        // ---- 检查是否该让出控制权 ----
+        function shouldYield() {
+          const now = performance.now()
+          const elapsed = now - frameStartTime
+          return elapsed >= FRAME_INTERVAL
+        }
+
+        // ---- 获取当前时间 ----
+        function now() {
+          return performance.now()
+        }
+
+        // ---- 工作循环 ----
+        function workLoop() {
+          // 重置帧开始时间
+          frameStartTime = performance.now()
+
+          while (taskQueue.length > 0) {
+            // 取出最高优先级任务
+            const task = taskQueue.shift()
+            if (!task.isActive) continue
+
+            currentTask = task
+            try {
+              const result = task.callback()
+
+              if (typeof result === 'function') {
+                // 任务未完成，返回函数表示继续
+                task.callback = result
+                // 重新插入队列头部（保持优先级）
+                taskQueue.unshift(task)
+              } else {
+                // 任务完成
+                task.isActive = false
+                currentTask = null
+              }
+            } catch (err) {
+              console.error('任务执行错误:', err)
+              task.isActive = false
+              currentTask = null
+            }
+
+            // 检查时间片是否用完
+            if (shouldYield() && taskQueue.length > 0) {
+              // 还有任务，重新调度
+              if (!isScheduled) {
+                isScheduled = true
+                port.postMessage(null)
+              }
+              return
+            }
+          }
+
+          currentTask = null
+          isScheduled = false
+        }
+
+        // ---- 重置调度器（用于测试） ----
+        function reset() {
+          taskQueue = []
+          isScheduled = false
+          currentTask = null
+        }
+
+        // ---- 导出 API ----
+        return {
+          // 优先级常量
+          ImmediatePriority,
+          UserBlockingPriority,
+          NormalPriority,
+          LowPriority,
+          IdlePriority,
+
+          // 核心 API
+          unstable_scheduleCallback: scheduleCallback,
+          unstable_cancelCallback: cancelCallback,
+          unstable_shouldYield: shouldYield,
+          unstable_now: now,
+
+          // 内部方法（用于调试）
+          _reset: reset,
+          _getQueue: () => taskQueue,
+        }
+      })()
+
+      console.log('✅ 自实现 Scheduler 已加载', Scheduler)
+
+      // ================================================================
+      // 2. 解构常用 API
+      // ================================================================
+      const {
+        unstable_scheduleCallback: scheduleCallback,
+        unstable_cancelCallback: cancelCallback,
+        unstable_shouldYield: shouldYield,
+        unstable_now: now,
+        ImmediatePriority,
+        UserBlockingPriority,
+        NormalPriority,
+        LowPriority,
+        IdlePriority,
+      } = Scheduler
+
+      // ================================================================
+      // 3. DOM 引用
+      // ================================================================
+      const $ = (id) => document.getElementById(id)
+      const startBtn = $('startBtn')
+      const cancelBtn = $('cancelBtn')
+      const pauseBtn = $('pauseBtn')
+      const clearBtn = $('clearBtn')
+      const testPriorityBtn = $('testPriorityBtn')
+      const progressFill = $('progressFill')
+      const processedDisplay = $('processedDisplay')
+      const chunkDisplay = $('chunkDisplay')
+      const timeDisplay = $('timeDisplay')
+      const speedDisplay = $('speedDisplay')
+      const statusDisplay = $('statusDisplay')
+      const totalDisplay = $('totalDisplay')
+      const logContainer = $('logContainer')
+
+      // ================================================================
+      // 4. 应用状态
+      // ================================================================
+      const state = {
+        total: 500000,
+        processed: 0,
+        chunks: 0,
+        isRunning: false,
+        isPaused: false,
+        isCancelled: false,
+        currentTaskId: null,
+        startTime: 0,
+        lastUpdateTime: 0,
+        lastUpdateProcessed: 0,
+        speed: 0,
+        data: null,
+        logThrottle: 0,
+      }
+
+      // ================================================================
+      // 5. 工具函数
+      // ================================================================
+      function formatNumber(n) {
+        return n.toLocaleString()
+      }
+
+      function formatTime(ms) {
+        if (ms < 1000) return ms.toFixed(0) + ' ms'
+        if (ms < 60000) return (ms / 1000).toFixed(2) + ' s'
+        return (ms / 60000).toFixed(2) + ' min'
+      }
+
+      function log(message, type = 'info') {
+        const time = new Date().toLocaleTimeString()
+        const entry = document.createElement('div')
+        entry.className = 'log-entry'
+
+        const msgClass =
+          {
+            info: 'msg-info',
+            success: 'msg-success',
+            warning: 'msg-warning',
+            error: 'msg-error',
+            chunk: 'msg-chunk',
+            priority: 'msg-priority',
+            stat: 'msg-stat',
+          }[type] || 'msg-info'
+
+        const emojis = {
+          info: 'ℹ️',
+          success: '✅',
+          warning: '⚠️',
+          error: '❌',
+          chunk: '🧩',
+          priority: '🎯',
+          stat: '📊',
+        }
+
+        entry.innerHTML = `
+        <span class="time">[${time}]</span>
+        <span class="${msgClass}">${emojis[type] || ''} ${message}</span>
+      `
+
+        logContainer.appendChild(entry)
+        logContainer.scrollTop = logContainer.scrollHeight
+
+        while (logContainer.children.length > 800) {
+          logContainer.removeChild(logContainer.firstChild)
+        }
+      }
+
+      function updateUI() {
+        const pct = state.total > 0 ? Math.round((state.processed / state.total) * 100) : 0
+        progressFill.style.width = Math.min(pct, 100) + '%'
+        progressFill.textContent =
+          pct + '% (' + formatNumber(state.processed) + '/' + formatNumber(state.total) + ')'
+
+        processedDisplay.textContent = formatNumber(state.processed)
+        chunkDisplay.textContent = formatNumber(state.chunks)
+
+        const nowTime = performance.now()
+        if (state.isRunning && state.processed > 0) {
+          const elapsed = (nowTime - state.startTime) / 1000
+          if (elapsed > 0.5) {
+            state.speed = Math.round(state.processed / elapsed)
+            speedDisplay.textContent = formatNumber(state.speed) + ' /s'
+          }
+        }
+
+        if (state.isRunning && state.startTime > 0) {
+          const elapsed = nowTime - state.startTime
+          timeDisplay.textContent = formatTime(elapsed)
+        }
+      }
+
+      function setStatus(text, type = 'idle') {
+        const badges = {
+          idle: '<span class="badge badge-idle">⏸ 空闲</span>',
+          running: '<span class="badge badge-running">▶ 运行中</span>',
+          done: '<span class="badge badge-done">✅ 已完成</span>',
+          cancelled: '<span class="badge badge-cancelled">⛔ 已取消</span>',
+          paused: '<span class="badge badge-paused">⏸ 已暂停</span>',
+        }
+        statusDisplay.innerHTML = badges[type] || badges.idle
+
+        progressFill.className = 'progress-fill'
+        if (type === 'done') progressFill.classList.add('done')
+        if (type === 'cancelled') progressFill.classList.add('cancelled')
+
+        const isActive = type === 'running' || type === 'paused'
+        startBtn.disabled = isActive
+        cancelBtn.disabled = !isActive
+        pauseBtn.disabled = !isActive
+        pauseBtn.textContent = type === 'paused' ? '▶ 继续' : '⏸ 暂停'
+
+        state.isRunning = isActive
+      }
+
+      function resetState() {
+        state.processed = 0
+        state.chunks = 0
+        state.isCancelled = false
+        state.isPaused = false
+        state.speed = 0
+        state.currentTaskId = null
+        state.data = null
+        state.startTime = 0
+        state.lastUpdateTime = 0
+        state.lastUpdateProcessed = 0
+        setStatus('空闲', 'idle')
+        updateUI()
+        timeDisplay.textContent = '0 ms'
+        speedDisplay.textContent = '0 /s'
+      }
+
+      // ================================================================
+      // 6. 核心任务函数
+      // ================================================================
+      function performWork(item) {
+        let result = 0
+        const iterations = 15 + Math.floor(Math.random() * 25)
+        for (let i = 0; i < iterations; i++) {
+          result += Math.sin(item.value + i * 0.1) * Math.cos(item.value - i * 0.1)
+          result += Math.sqrt(Math.abs(item.value + i)) * 0.05
+        }
+        return result
+      }
+
+      // ================================================================
+      // 7. 创建分片任务
+      // ================================================================
+      function createChunkedTask() {
+        log('📦 正在生成 ' + formatNumber(state.total) + ' 条测试数据...', 'info')
+
+        state.data = new Array(state.total)
+        const batchSize = 100000
+        for (let start = 0; start < state.total; start += batchSize) {
+          const end = Math.min(start + batchSize, state.total)
+          for (let i = start; i < end; i++) {
+            state.data[i] = {
+              id: i,
+              value: Math.random() * 1000,
+              processed: false,
+              result: null,
+            }
+          }
+          if (start > 0) {
+            log('📦 已生成 ' + formatNumber(end) + ' 条数据', 'info')
+          }
+        }
+
+        state.processed = 0
+        state.chunks = 0
+        state.isCancelled = false
+        state.isPaused = false
+        state.startTime = now()
+        state.lastUpdateTime = state.startTime
+        state.lastUpdateProcessed = 0
+        state.logThrottle = 0
+
+        log('🚀 开始处理 ' + formatNumber(state.total) + ' 项数据', 'success')
+        setStatus('运行中', 'running')
+        updateUI()
+
+        function workLoop() {
+          if (state.isCancelled) {
+            log('⛔ 任务已被取消', 'error')
+            setStatus('已取消', 'cancelled')
+            state.currentTaskId = null
+            state.data = null
+            updateUI()
+            return undefined
+          }
+
+          if (state.isPaused) {
+            return workLoop
+          }
+
+          let processedInChunk = 0
+          const chunkStart = now()
+
+          while (state.processed < state.total) {
+            if (shouldYield()) {
+              state.chunks++
+              const chunkDuration = (now() - chunkStart).toFixed(2)
+              processedInChunk = state.processed - state.lastUpdateProcessed
+
+              state.logThrottle++
+              const pct = (state.processed / state.total) * 100
+              if (state.logThrottle % 20 === 0 || pct - Math.floor(pct) < 0.5) {
+                log(
+                  `🧩 分片 #${formatNumber(state.chunks)} 处理 ${formatNumber(
+                    processedInChunk,
+                  )} 项，` + `耗时 ${chunkDuration}ms，进度 ${pct.toFixed(1)}%`,
+                  'chunk',
+                )
+              }
+
+              state.lastUpdateProcessed = state.processed
+              updateUI()
+              return workLoop
+            }
+
+            const item = state.data[state.processed]
+            item.result = performWork(item)
+            item.processed = true
+            state.processed++
+
+            if (state.processed % 2000 === 0 || state.processed === state.total) {
+              updateUI()
+            }
+          }
+
+          const totalTime = now() - state.startTime
+          const avgChunkTime = state.chunks > 0 ? totalTime / state.chunks : 0
+
+          log(`✅ 任务完成！`, 'success')
+          log(`📊 总数据: ${formatNumber(state.total)} 项`, 'stat')
+          log(`📊 分片数: ${formatNumber(state.chunks)}`, 'stat')
+          log(`📊 总耗时: ${formatTime(totalTime)}`, 'stat')
+          log(`📊 平均每片: ${avgChunkTime.toFixed(2)} ms`, 'stat')
+          log(
+            `📊 处理速度: ${formatNumber(Math.round(state.total / (totalTime / 1000)))} 项/秒`,
+            'stat',
+          )
+
+          timeDisplay.textContent = formatTime(totalTime)
+          setStatus('已完成', 'done')
+          state.currentTaskId = null
+          state.data = null
+          updateUI()
+
+          return undefined
+        }
+
+        return workLoop
+      }
+
+      // ================================================================
+      // 8. 启动 / 取消 / 暂停
+      // ================================================================
+      function startTask() {
+        if (state.currentTaskId) {
+          log('⚠️ 已有任务在运行，先取消', 'warning')
+          cancelCallback(state.currentTaskId)
+          state.currentTaskId = null
+        }
+
+        if (logContainer.children.length > 50) {
+          logContainer.innerHTML = ''
+          log('🗑️ 已清空旧日志', 'info')
+        }
+
+        resetState()
+        const workLoop = createChunkedTask()
+        state.currentTaskId = scheduleCallback(NormalPriority, workLoop)
+        log('📌 任务已加入调度队列（优先级: 普通）', 'info')
+      }
+
+      function cancelTask() {
+        if (state.currentTaskId) {
+          cancelCallback(state.currentTaskId)
+          state.currentTaskId = null
+          state.isCancelled = true
+          state.isPaused = false
+          log('⛔ 正在取消任务...', 'warning')
+          setStatus('已取消', 'cancelled')
+          updateUI()
+        }
+      }
+
+      function togglePause() {
+        if (!state.isRunning) return
+        state.isPaused = !state.isPaused
+        if (state.isPaused) {
+          log('⏸ 用户暂停任务', 'warning')
+          setStatus('已暂停', 'paused')
+        } else {
+          log('▶ 用户恢复任务', 'info')
+          setStatus('运行中', 'running')
+          if (state.currentTaskId) {
+            cancelCallback(state.currentTaskId)
+            state.currentTaskId = scheduleCallback(NormalPriority, function resumeWork() {
+              if (state.isPaused) {
+                return resumeWork
+              }
+              const currentData = state.data
+              if (!currentData) return undefined
+
+              function continueWork() {
+                if (state.isCancelled) {
+                  setStatus('已取消', 'cancelled')
+                  return undefined
+                }
+                if (state.isPaused) {
+                  return continueWork
+                }
+
+                let count = 0
+                while (state.processed < state.total && !shouldYield()) {
+                  const item = state.data[state.processed]
+                  item.result = performWork(item)
+                  item.processed = true
+                  state.processed++
+                  count++
+                  if (state.processed % 2000 === 0) updateUI()
+                }
+
+                state.chunks++
+                updateUI()
+
+                if (state.processed < state.total) {
+                  return continueWork
+                }
+
+                const totalTime = now() - state.startTime
+                log(`✅ 任务完成！总耗时 ${formatTime(totalTime)}`, 'success')
+                setStatus('已完成', 'done')
+                state.currentTaskId = null
+                state.data = null
+                updateUI()
+                return undefined
+              }
+
+              return continueWork
+            })
+            log('📌 任务已重新调度', 'info')
+          }
+        }
+      }
+
+      // ================================================================
+      // 9. 测试优先级
+      // ================================================================
+      function testPriorities() {
+        log('🎯 开始测试不同优先级任务', 'priority')
+        log('📌 高优先级会打断低优先级任务', 'priority')
+
+        const tasks = [
+          { name: '🔥 紧急', priority: ImmediatePriority, items: 300 },
+          { name: '👆 用户交互', priority: UserBlockingPriority, items: 500 },
+          { name: '📊 普通', priority: NormalPriority, items: 800 },
+          { name: '📦 低', priority: LowPriority, items: 1200 },
+          { name: '💤 空闲', priority: IdlePriority, items: 2000 },
+        ]
+
+        let completed = 0
+
+        tasks.forEach(({ name, priority, items }) => {
+          const data = Array.from({ length: items }, (_, i) => i)
+          let processed = 0
+
+          scheduleCallback(priority, function work() {
+            const start = now()
+            let count = 0
+
+            while (processed < data.length && !shouldYield()) {
+              let sum = 0
+              for (let i = 0; i < 20; i++) {
+                sum += Math.sin(data[processed] + i * 0.1) * Math.cos(data[processed] - i * 0.1)
+              }
+              processed++
+              count++
+            }
+
+            const duration = (now() - start).toFixed(2)
+
+            if (processed < data.length) {
+              log(
+                `⏳ ${name} 优先级 处理 ${count} 项 (${processed}/${data.length}) 继续...`,
+                'priority',
+              )
+              return work
+            } else {
+              completed++
+              log(`✅ ${name} 优先级 完成！共 ${items} 项，最后一批耗时 ${duration}ms`, 'success')
+              if (completed === tasks.length) {
+                log('🎉 所有优先级测试完成！', 'success')
+              }
+              return undefined
+            }
+          })
+        })
+
+        log('📌 所有任务已提交，观察执行顺序', 'priority')
+      }
+
+      // ================================================================
+      // 10. 绑定事件
+      // ================================================================
+      startBtn.addEventListener('click', startTask)
+      cancelBtn.addEventListener('click', cancelTask)
+      pauseBtn.addEventListener('click', togglePause)
+      clearBtn.addEventListener('click', () => {
+        logContainer.innerHTML = ''
+        log('🗑️ 日志已清空', 'info')
+      })
+      testPriorityBtn.addEventListener('click', testPriorities)
+
+      // ================================================================
+      // 11. 暴露调试接口
+      // ================================================================
+      window.__demo = {
+        start: startTask,
+        cancel: cancelTask,
+        pause: togglePause,
+        test: testPriorities,
+        state: state,
+        Scheduler: Scheduler,
+        help: function () {
+          console.log('📖 可用命令:')
+          console.log('  __demo.start()     - 启动分片任务 (50万数据)')
+          console.log('  __demo.cancel()    - 取消当前任务')
+          console.log('  __demo.pause()     - 暂停/继续任务')
+          console.log('  __demo.test()      - 测试优先级抢占')
+          console.log('  __demo.state       - 查看当前状态')
+          console.log('  __demo.Scheduler   - 查看 Scheduler API')
+        },
+      }
+
+      // ================================================================
+      // 12. 初始化
+      // ================================================================
+      totalDisplay.textContent = formatNumber(state.total)
+      log('🚀 Scheduler 独立 Demo 已加载（自实现版）', 'success')
+      log(`📊 数据量: ${formatNumber(state.total)} 项`, 'info')
+      log('💡 点击 "启动分片任务" 开始体验', 'info')
+      log('💡 控制台输入 __demo.help() 查看调试命令', 'info')
+
+      console.log('✅ Scheduler 独立 Demo 已就绪（自实现版）')
+      console.log('💡 输入 __demo.help() 查看可用命令')
+    </script>
+    <script>
+      createMovingElement()
+      function createMovingElement() {
+        const el = document.createElement('div')
+        const size = 50
+        // 随机颜色
+        const randomColor =
+          '#' +
+          Math.floor(Math.random() * 0xffffff)
+            .toString(16)
+            .padStart(6, '0')
+        el.style.width = size + 'px'
+        el.style.height = size + 'px'
+        el.style.background = randomColor
+        el.style.position = 'fixed'
+        el.style.borderRadius = '8px'
+        el.style.zIndex = '9999'
+
+        // 初始位置随机，保证方块完全落在视口内
+        const maxInitX = window.innerWidth - size
+        const maxInitY = window.innerHeight - size
+        let x = Math.floor(Math.random() * maxInitX)
+        let y = Math.floor(Math.random() * maxInitY)
+
+        // 速度大小 1~4，方向正负随机
+        const baseSpeed = 1 + Math.random() * 3
+        let speedX = Math.random() > 0.5 ? baseSpeed : -baseSpeed
+        let speedY = Math.random() > 0.5 ? baseSpeed : -baseSpeed
+
+        el.style.left = x + 'px'
+        el.style.top = y + 'px'
+        document.body.appendChild(el)
+
+        let animationId = null
+        function move() {
+          const maxX = window.innerWidth - size
+          const maxY = window.innerHeight - size
+          x += speedX
+          y += speedY
+          if (x <= 0 || x >= maxX) speedX *= -1
+          if (y <= 0 || y >= maxY) speedY *= -1
+          x = Math.max(0, Math.min(x, maxX))
+          y = Math.max(0, Math.min(y, maxY))
+          el.style.left = x + 'px'
+          el.style.top = y + 'px'
+          animationId = requestAnimationFrame(move)
+        }
+        move()
+
+        return {
+          el,
+          destroy: () => {
+            if (animationId) {
+              cancelAnimationFrame(animationId)
+            }
+            if (el.parentNode) {
+              el.parentNode.removeChild(el)
+            }
+          },
+        }
+      }
+    </script>
+  </body>
+</html>

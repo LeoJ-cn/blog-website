@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>NPL-search-advanced</title>
+    <style>
+      .marking {
+        margin-bottom: 20px;
+      }
+      #shiftDisplayType,
+      #goToDiff,
+      #goToFirst,
+      #goPreDiff {
+        cursor: pointer;
+        border: none;
+        margin-left: 20px;
+        background: #666;
+        color: #fff;
+        outline: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+      }
+      #goPreDiff,
+      #goToDiff {
+        color: greenyellow;
+      }
+      #goToFirst {
+        color: blue;
+      }
+      .compared-scroll {
+        padding: 10px 48px 40px 48px;
+        overflow: auto;
+        max-width: calc(100% - 100px);
+      }
+      .compared-content {
+        white-space: nowrap;
+      }
+      .compared-qa {
+        color: green;
+      }
+      .compared-qab {
+        color: orange;
+      }
+      .compared-qab--remove {
+        color: red;
+      }
+      .compared-qa--none {
+        color: #666666;
+        opacity: 0.2;
+        cursor: not-allowed;
+      }
+      .compared-content .compared-icon--split {
+        display: inline-block;
+        margin: 0 6px;
+        width: 1px;
+        height: 30px;
+        background: #999;
+        vertical-align: middle;
+      }
+      .compared-host {
+        height: 20px;
+      }
+      .compared-host a {
+        position: fixed;
+      }
+    </style>
+  </head>
+
+  <body>
+    <section class="marking">
+      <h2>标注说明：</h2>
+      <div class="marking-item">黑色字体：表示相同的文本</div>
+      <div class="marking-item compared-qa">
+        <span>绿色字体：</span>
+        <span>表示在相同位置, qa存在的文本，但是在qab上被删除了</span>
+      </div>
+      <div class="marking-item compared-qab--remove">
+        <span>红色字体：</span>
+        <span>表示在相同位置, qa存在的文本，但是qab上被删除了</span>
+      </div>
+      <div class="marking-item compared-qa--none">
+        <span>透明字体：</span>
+        <span>表示在相同位置，qa没有的文本</span>
+      </div>
+      <div class="marking-item compared-qab">
+        <span>橙色字体：</span>
+        <span>表示在相同位置，是qab上新增的文本</span>
+      </div>
+      <hr />
+    </section>
+
+    <h1 class="tpl-title">
+      NPL-search-advanced
+
+      <button class="show-compare" id="shiftDisplayType">关闭对比模式</button>
+      <button class="show-compare" id="goPreDiff">上一个Diff</button>
+      <button class="show-compare" id="goToDiff">下一个Diff</button>
+      <button class="show-compare" id="goToFirst">回到第一个</button>
+    </h1>
+    <section class="compared-scroll">
+      <section class="compared-area">
+        <h3 class="compared-host"><a href="http://qa-ana.zhy.com/search/input#/field">qa</a></h3>
+        <div class="compared-content">
+          搜索工作空间帮助中心产品 专利数据库 英策 化学数据库 Bio数据库 GroupCreated with Sketch.
+          Discovery
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qa--none compare-control">专利管理系统</span>
+          <span class="compare-control compared-icon--split"></span>
+          学院 新手任务 帮助中心 账号激活 设置密码 检索专利 保存专利 设置提醒
+          用户设置语言English简体中文繁體中文日本語历史记录工作空间 邮件提醒
+          已保存语句我的分析专利地图申请人分组自定义字段管理 导出记录 22 没有任务正在处理
+          更新日志数据范围 登出 恭喜您获得了一个免费的智慧芽学院账号！ 开始学习
+          简单搜索高级搜索高级搜索高级搜索批量处理语义搜索扩展搜索分类号搜索法律搜索图像搜索化学搜索文献
+          专利类型 发明申请 发明授权 实用新型 外观设计 全部数据库 (116/116) 知识产权五局 美国 (US)
+          中国 (CN) 欧洲 (EP) 日本 (JP) 韩国 (KR) 主要国家/地区 世界知识产权组织 (WO) 奥地利 (AT)
+          澳大利亚 (AU) 比利时 (BE) 比荷卢经济联盟 (BX) 加拿大 (CA) 瑞士 (CH) 德国 (DE) 丹麦 (DK)
+          西班牙 (ES) 欧盟 (EU) 芬兰 (FI) 法国 (FR) 英国 (GB) 中国香港 (HK) 爱尔兰 (IE) 以色列 (IL)
+          印度 (IN) 中国澳门 (MO) 荷兰 (NL) 挪威 (NO) 新西兰 (NZ) 波兰 (PL) 俄罗斯 (RU) 瑞典 (SE)
+          新加坡 (SG) 泰国 (TH) 中国台湾 (TW) 其他国家/地区 阿拉伯联合酋长国 (AE) 亚美尼亚 (AM)
+          非洲地区知识产权组织 (AP) 阿根廷 (AR) 波黑 (BA) 保加利亚 (BG) 巴林 (BH) 文莱 (BN) 玻利维亚
+          (BO) 巴西 (BR) 白俄罗斯 (BY) 智利 (CL) 哥伦比亚 (CO) 哥斯达黎加 (CR) 捷克共斯洛伐克共和国
+          (CS) 古巴 (CU) 塞浦路斯 (CY) 捷克 (CZ) 东德 (DD) 多米尼加共和国 (DO) 阿尔及利亚 (DZ)
+          欧亚专利局 (EA) 厄瓜多尔 (EC) 爱沙尼亚 (EE) 埃及 (EG) 海湾地区阿拉伯国家合作委员会专利局
+          (GC) 格鲁吉亚 (GE) 希腊 (GR) 危地马拉 (GT) 洪都拉斯 (HN) 克罗地亚 (HR) 匈牙利 (HU)
+          印度尼西亚 (ID) 冰岛 (IS) 意大利 (IT) 约旦 (JO) 肯尼亚 (KE) 吉尔吉斯斯坦 (KG) 柬埔寨 (KH)
+          哈萨克斯坦 (KZ) 老挝 (LA) 黎巴嫩 (LB) 立陶宛 (LT) 卢森堡 (LU) 拉脱维亚 (LV) 摩洛哥 (MA)
+          摩纳哥 (MC) 摩尔多瓦 (MD) 黑山共和国 (ME) 北马其顿共和国 (MK) 蒙古 (MN) 马耳他 (MT) 马拉维
+          (MW) 墨西哥 (MX) 马来西亚 (MY) 尼加拉瓜 (NI) 非洲知识产权组织 (OA) 巴拿马 (PA) 秘鲁 (PE)
+          菲律宾 (PH) 葡萄牙 (PT) 巴拉圭 (PY) 罗马尼亚 (RO) 塞尔维亚共和国 (RS) 沙特阿拉伯 (SA)
+          斯洛文尼亚 (SI) 斯洛伐克 (SK) 圣马力诺 (SM) 前苏联 (SU) 萨尔瓦多 (SV) 塔吉克斯坦 (TJ)
+          突尼斯 (TN) 土耳其 (TR) 特立尼达和多巴哥 (TT) 乌克兰 (UA) 乌拉圭 (UY) 乌兹别克斯坦 (UZ)
+          委内瑞拉 (VE) 越南 (VN) 南斯拉夫 (YU) 南非 (ZA) 赞比亚 (ZM) 津巴布韦 (ZW) 字段搜索
+          尝试使用模版来创建你的检索 保存模板
+          de21de12de10de9de8de005de004de003de002delete001cfd-190816原始申请人all
+          tpl多字段1个tpl001经典版搜索字段默认模板 保存模板 搜索帮助 AND OR NOT 主要字段 取消
+          标题/摘要[标]当前申请(专利权)人IPC分类号主要字段 关键词 分类号 申请人/发明人/代理 日期
+          号码 地址 引用/同族 其他 关键词助手 关键词助手 中 分析
+          请输入5个以内的关键词或短语，词或短语间用逗号分隔。例如：太阳能, 硅, 光伏 无数据
+          关键字建议: 提交 取消
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qa">
+            输入关键词，公司名称，或者专利号搜索范围包括标题、摘要、权利要求、说明书、公开号、申请号、申请人、发明人和IPC/UPC/LOC分类号
+          </span>
+          <span class="compare-control compared-icon--split"></span>
+          AND OR NOT 标题/摘要 取消 标题/摘要[标]当前申请(专利权)人IPC分类号主要字段 关键词 分类号
+          申请人/发明人/代理 日期 号码 地址 引用/同族 其他 关键词助手 关键词助手 中 分析
+          请输入5个以内的关键词或短语，词或短语间用逗号分隔。例如：太阳能, 硅, 光伏 无数据
+          关键字建议: 提交 取消
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qa">
+            在专利的标题或摘要中搜索关键词例如输入：汽车 AND
+            座椅表示汽车和座椅可以同时或分别出现在标题或摘要的任何一处
+          </span>
+          <span class="compare-control compared-icon--split"></span>
+          AND OR NOT [全字段]申请(专利权)人: 联合索引字段, 检索结果包括以下五个字段:
+          [标]当前申请(专利权)人、当前申请(专利权)人、[标]原始申请(专利权)人、原始申请(专利权)人、Docdb申请(专利权)人
+          [全字段]申请(专利权)人 取消 标题/摘要[标]当前申请(专利权)人IPC分类号主要字段 关键词 分类号
+          申请人/发明人/代理 日期 号码 地址 引用/同族 其他 公司树 公司树 搜索
+          您可以通过公司树查看公司之间的层级关联，便于您查找相关申请人，中国公司请用中文查询。
+          提供全球150多万家公司精确可靠的数据供您参考。 无数据 提交 取消
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qa">
+            搜索申请(专利权)人名称或名称中的关键词，多个名称可以用逻辑符AND/OR/NOT连接例如输入：华为
+            OR 中兴[全字段]申请(专利权)人: 联合索引字段,
+            检索结果包括以下的[标]当前申请(专利权)人、当前申请(专利权)人、[标]原始申请(专利权)人、原始申请(专利权)人、Docdb申请(专利权)人五个字段[标]当前申请(专利权)人:
+            经智慧芽标准化处理后的专利当前申请(专利权)人当前申请(专利权)人:
+            专利当前的申请(专利权)人[标]原始申请(专利权)人:
+            经智慧芽标准化处理后的专利最初的申请(专利权)人原始申请(专利权)人:
+            专利最初的申请(专利权)人Docdb申请(专利权)人: 欧洲专利局的Docdb数据源提供的申请(专利权)人
+          </span>
+          <span class="compare-control compared-icon--split"></span>
+          AND OR NOT IPC分类号 取消 标题/摘要[标]当前申请(专利权)人IPC分类号主要字段 关键词 分类号
+          申请人/发明人/代理 日期 号码 地址 引用/同族 其他 IPC助手 IPC助手 搜索
+          您的搜索未能匹配到任何数据 建议： 尝试其他分类号或者关键词。
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qa">
+            IPC分类(国际专利分类号)是用来对发明和实用新型专利进行技术分类的最通用分类体系，有助于快速定位搜索的技术领域搜索任意层级的分类号，多个分类号可以用逻辑符AND/OR/NOT连接例如输入：A61K
+            OR C07H7/06
+          </span>
+          <span class="compare-control compared-icon--split"></span>
+          添加字段 在上方字段中输入检索词，在此处预览您的检索式
+          检索式中的逻辑运算优先顺序为NOT>AND>OR，您也可以切换到命令搜索使用括号( )修改顺序
+          普通命令模式 专业命令模式 清空 准备检索了吗？对你的检索式满意吗？ 如果满意请点击检索按钮。
+          2/4 下一个 搜索 x
+          <span class="compare-control compared-icon--split"></span>
+        </div>
+      </section>
+      <section class="compared-area qab">
+        <h3 class="compared-host">
+          <a href="http://ci-ana.zhy.com/search/input#/field">qab/ci</a>
+        </h3>
+        <div class="compared-content">
+          搜索工作空间帮助中心产品 专利数据库 英策 化学数据库 Bio数据库 GroupCreated with Sketch.
+          Discovery
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qab goto-1">专利管理系统</span>
+          <span class="compare-control compared-icon--split"></span>
+          学院 新手任务 帮助中心 账号激活 设置密码 检索专利 保存专利 设置提醒
+          用户设置语言English简体中文繁體中文日本語历史记录工作空间 邮件提醒
+          已保存语句我的分析专利地图申请人分组自定义字段管理 导出记录 22 没有任务正在处理
+          更新日志数据范围 登出 恭喜您获得了一个免费的智慧芽学院账号！ 开始学习
+          简单搜索高级搜索高级搜索高级搜索批量处理语义搜索扩展搜索分类号搜索法律搜索图像搜索化学搜索文献
+          专利类型 发明申请 发明授权 实用新型 外观设计 全部数据库 (116/116) 知识产权五局 美国 (US)
+          中国 (CN) 欧洲 (EP) 日本 (JP) 韩国 (KR) 主要国家/地区 世界知识产权组织 (WO) 奥地利 (AT)
+          澳大利亚 (AU) 比利时 (BE) 比荷卢经济联盟 (BX) 加拿大 (CA) 瑞士 (CH) 德国 (DE) 丹麦 (DK)
+          西班牙 (ES) 欧盟 (EU) 芬兰 (FI) 法国 (FR) 英国 (GB) 中国香港 (HK) 爱尔兰 (IE) 以色列 (IL)
+          印度 (IN) 中国澳门 (MO) 荷兰 (NL) 挪威 (NO) 新西兰 (NZ) 波兰 (PL) 俄罗斯 (RU) 瑞典 (SE)
+          新加坡 (SG) 泰国 (TH) 中国台湾 (TW) 其他国家/地区 阿拉伯联合酋长国 (AE) 亚美尼亚 (AM)
+          非洲地区知识产权组织 (AP) 阿根廷 (AR) 波黑 (BA) 保加利亚 (BG) 巴林 (BH) 文莱 (BN) 玻利维亚
+          (BO) 巴西 (BR) 白俄罗斯 (BY) 智利 (CL) 哥伦比亚 (CO) 哥斯达黎加 (CR) 捷克共斯洛伐克共和国
+          (CS) 古巴 (CU) 塞浦路斯 (CY) 捷克 (CZ) 东德 (DD) 多米尼加共和国 (DO) 阿尔及利亚 (DZ)
+          欧亚专利局 (EA) 厄瓜多尔 (EC) 爱沙尼亚 (EE) 埃及 (EG) 海湾地区阿拉伯国家合作委员会专利局
+          (GC) 格鲁吉亚 (GE) 希腊 (GR) 危地马拉 (GT) 洪都拉斯 (HN) 克罗地亚 (HR) 匈牙利 (HU)
+          印度尼西亚 (ID) 冰岛 (IS) 意大利 (IT) 约旦 (JO) 肯尼亚 (KE) 吉尔吉斯斯坦 (KG) 柬埔寨 (KH)
+          哈萨克斯坦 (KZ) 老挝 (LA) 黎巴嫩 (LB) 立陶宛 (LT) 卢森堡 (LU) 拉脱维亚 (LV) 摩洛哥 (MA)
+          摩纳哥 (MC) 摩尔多瓦 (MD) 黑山共和国 (ME) 北马其顿共和国 (MK) 蒙古 (MN) 马耳他 (MT) 马拉维
+          (MW) 墨西哥 (MX) 马来西亚 (MY) 尼加拉瓜 (NI) 非洲知识产权组织 (OA) 巴拿马 (PA) 秘鲁 (PE)
+          菲律宾 (PH) 葡萄牙 (PT) 巴拉圭 (PY) 罗马尼亚 (RO) 塞尔维亚共和国 (RS) 沙特阿拉伯 (SA)
+          斯洛文尼亚 (SI) 斯洛伐克 (SK) 圣马力诺 (SM) 前苏联 (SU) 萨尔瓦多 (SV) 塔吉克斯坦 (TJ)
+          突尼斯 (TN) 土耳其 (TR) 特立尼达和多巴哥 (TT) 乌克兰 (UA) 乌拉圭 (UY) 乌兹别克斯坦 (UZ)
+          委内瑞拉 (VE) 越南 (VN) 南斯拉夫 (YU) 南非 (ZA) 赞比亚 (ZM) 津巴布韦 (ZW) 字段搜索
+          尝试使用模版来创建你的检索 保存模板
+          de21de12de10de9de8de005de004de003de002delete001cfd-190816原始申请人all
+          tpl多字段1个tpl001经典版搜索字段默认模板 保存模板 搜索帮助 AND OR NOT 主要字段 取消
+          标题/摘要[标]当前申请(专利权)人IPC分类号主要字段 关键词 分类号 申请人/发明人/代理 日期
+          号码 地址 引用/同族 其他 关键词助手 关键词助手 中 分析
+          请输入5个以内的关键词或短语，词或短语间用逗号分隔。例如：太阳能, 硅, 光伏 无数据
+          关键字建议: 提交 取消
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qab--remove goto-2">
+            输入关键词，公司名称，或者专利号搜索范围包括标题、摘要、权利要求、说明书、公开号、申请号、申请人、发明人和IPC/UPC/LOC分类号
+          </span>
+          <span class="compare-control compared-icon--split"></span>
+          AND OR NOT 标题/摘要 取消 标题/摘要[标]当前申请(专利权)人IPC分类号主要字段 关键词 分类号
+          申请人/发明人/代理 日期 号码 地址 引用/同族 其他 关键词助手 关键词助手 中 分析
+          请输入5个以内的关键词或短语，词或短语间用逗号分隔。例如：太阳能, 硅, 光伏 无数据
+          关键字建议: 提交 取消
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qab--remove goto-3">
+            在专利的标题或摘要中搜索关键词例如输入：汽车 AND
+            座椅表示汽车和座椅可以同时或分别出现在标题或摘要的任何一处
+          </span>
+          <span class="compare-control compared-icon--split"></span>
+          AND OR NOT [全字段]申请(专利权)人: 联合索引字段, 检索结果包括以下五个字段:
+          [标]当前申请(专利权)人、当前申请(专利权)人、[标]原始申请(专利权)人、原始申请(专利权)人、Docdb申请(专利权)人
+          [全字段]申请(专利权)人 取消 标题/摘要[标]当前申请(专利权)人IPC分类号主要字段 关键词 分类号
+          申请人/发明人/代理 日期 号码 地址 引用/同族 其他 公司树 公司树 搜索
+          您可以通过公司树查看公司之间的层级关联，便于您查找相关申请人，中国公司请用中文查询。
+          提供全球150多万家公司精确可靠的数据供您参考。 无数据 提交 取消
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qab--remove goto-4">
+            搜索申请(专利权)人名称或名称中的关键词，多个名称可以用逻辑符AND/OR/NOT连接例如输入：华为
+            OR 中兴[全字段]申请(专利权)人: 联合索引字段,
+            检索结果包括以下的[标]当前申请(专利权)人、当前申请(专利权)人、[标]原始申请(专利权)人、原始申请(专利权)人、Docdb申请(专利权)人五个字段[标]当前申请(专利权)人:
+            经智慧芽标准化处理后的专利当前申请(专利权)人当前申请(专利权)人:
+            专利当前的申请(专利权)人[标]原始申请(专利权)人:
+            经智慧芽标准化处理后的专利最初的申请(专利权)人原始申请(专利权)人:
+            专利最初的申请(专利权)人Docdb申请(专利权)人: 欧洲专利局的Docdb数据源提供的申请(专利权)人
+          </span>
+          <span class="compare-control compared-icon--split"></span>
+          AND OR NOT IPC分类号 取消 标题/摘要[标]当前申请(专利权)人IPC分类号主要字段 关键词 分类号
+          申请人/发明人/代理 日期 号码 地址 引用/同族 其他 IPC助手 IPC助手 搜索
+          您的搜索未能匹配到任何数据 建议： 尝试其他分类号或者关键词。
+          <span class="compare-control compared-icon--split"></span>
+          <span class="compared-qab--remove goto-5">
+            IPC分类(国际专利分类号)是用来对发明和实用新型专利进行技术分类的最通用分类体系，有助于快速定位搜索的技术领域搜索任意层级的分类号，多个分类号可以用逻辑符AND/OR/NOT连接例如输入：A61K
+            OR C07H7/06
+          </span>
+          <span class="compare-control compared-icon--split"></span>
+          添加字段 在上方字段中输入检索词，在此处预览您的检索式
+          检索式中的逻辑运算优先顺序为NOT>AND>OR，您也可以切换到命令搜索使用括号( )修改顺序
+          普通命令模式 专业命令模式 清空 准备检索了吗？对你的检索式满意吗？ 如果满意请点击检索按钮。
+          2/4 下一个 搜索 x
+          <span class="compare-control compared-icon--split"></span>
+        </div>
+      </section>
+    </section>
+
+    <!-- <section>
+        <hr>
+        <%compare-result>
+    </section> -->
+
+    <script>
+      const maxIndex = 5
+      let compareIndex = 0
+      const nextBtn = document.querySelector('#goToDiff')
+      const nextDoms = document.querySelectorAll('.compared-area.qab .compare-control')
+      const maxLength = nextDoms.length
+
+      const goToFirstBtn = document.querySelector('#goToFirst')
+      const goPreDiffBtn = document.querySelector('#goPreDiff')
+
+      const btn = document.querySelector('#shiftDisplayType')
+      const compareDom = document.querySelectorAll('.compare-control')
+      const scrollDom = document.querySelector('.compared-scroll')
+
+      function goToNextDom(num, type) {
+        if (type) {
+          return document.querySelector(`.goto-1`)
+        } else {
+          if (compareIndex + num <= maxIndex && compareIndex + num > 0) {
+            compareIndex += num
+          }
+          const currentSelector = `.goto-${compareIndex}`
+          return document.querySelector(currentSelector)
+        }
+      }
+
+      btn.addEventListener('click', (e) => {
+        if (e.target.className.indexOf('show-compare') !== -1) {
+          btn.className = 'hide-compare'
+          btn.innerHTML = '显示对比模式'
+          ;[].forEach.call(document.querySelectorAll('.compare-control'), function (itemDom) {
+            itemDom.style.display = 'none'
+            nextBtn.style.display = 'none'
+          })
+        } else {
+          btn.className = 'show-compare'
+          btn.innerHTML = '隐藏对比模式'
+          ;[].forEach.call(document.querySelectorAll('.compare-control'), function (itemDom) {
+            itemDom.style.display = 'inline-block'
+            nextBtn.style.display = 'inline-block'
+          })
+        }
+      })
+
+      nextBtn.addEventListener('click', (e) => {
+        if (!maxIndex) return
+        //下一个
+        scrollDom.scrollTo(goToNextDom(1).offsetLeft - 100, 0)
+      })
+
+      goPreDiffBtn.addEventListener('click', (e) => {
+        if (!maxIndex) return
+        //上一个
+        scrollDom.scrollTo(goToNextDom(-1).offsetLeft - 100, 0)
+      })
+
+      goToFirstBtn.addEventListener('click', () => {
+        if (!maxIndex) return
+        compareIndex = 0
+        scrollDom.scrollTo(goToNextDom(compareIndex, 'init').offsetLeft - 100, 0)
+      })
+    </script>
+  </body>
+</html>

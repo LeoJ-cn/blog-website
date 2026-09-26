@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    // 应用源码别名必须与 Vite、Webpack 的 @ alias 保持一致。
+    "composite": false,
+    // 保留 JSX 语法交给 Vite JSX 插件或 Babel JSX 插件处理。
+    "jsx": "preserve",
+    // 使用 Vue 提供的 JSX 类型定义。
+    "jsxImportSource": "vue",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@blog/config": ["../../packages/config/src/index.ts"],
+      "@blog/types": ["../../packages/types/src/index.ts"],
+      "@blog/shared": ["../../packages/shared/src/index.ts"],
+      "@blog/ui": ["../../packages/ui/src/index.ts"]
+    }
+  },
+  // 当前应用源码检查范围；未来技术组件目录暂不纳入入口扫描。
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"],
+  // 生成物和未来技术清单不作为当前应用的主动检查入口。
+  "exclude": ["dist-vite/**", "dist-webpack/**", "node_modules/**"]
+}

@@ -1,0 +1,52 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - feature/v2-blog-website
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.5
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # - name: Type check
+      #   run: pnpm typecheck
+
+      - name: Build Vite production bundle
+        run: pnpm build:vite
+
+      - name: Verify Webpack production bundle
+        run: pnpm build:webpack
+
+      - name: Deploy Vite bundle
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist-vite
+          branch: static-pages

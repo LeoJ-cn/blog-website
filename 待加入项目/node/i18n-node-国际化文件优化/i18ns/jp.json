@@ -1,0 +1,9 @@
+{
+  "global": {
+    "menu": {
+      "login": "ログイン",
+      "register": "登録",
+      "search": "検索"
+    }
+  }
+}
