@@ -5,7 +5,13 @@ import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
   {
-    ignores: ['dist-vite/**', 'dist-webpack/**', 'node_modules/**', 'coverage/**'],
+    ignores: [
+      'dist-vite/**',
+      'dist-webpack/**',
+      'node_modules/**',
+      'coverage/**',
+      '待加入项目/**',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

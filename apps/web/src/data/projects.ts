@@ -1,8 +1,10 @@
-import schedulerDemoSource from '../components/scheduler/demo.vue?raw'
-import schedulerUaSource from '../components/scheduler/test-ua.js?raw'
+import schedulerUaSource from '../components/test-ua/test-ua.js?raw'
 import advancedImageComponentSource from '../components/advanced-image-loader/nail-box_zm.vue?raw'
 import advancedImageMockSource from '../components/advanced-image-loader/mock.js?raw'
 import advancedImageLoaderSource from '../components/advanced-image-loader/stream-loader_norxjs.ts?raw'
+import schedulerDemoSource from '../components/task-scheduler/Demo.vue?raw'
+import renderSchedulerSource from '../components/task-scheduler/task-scheduler.js?raw'
+import schedulerComposableSource from '../components/task-scheduler/useDeferRegister.js?raw'
 import type { ProjectCategory, ProjectDefinition } from '../types/project'
 
 export const categoryMetadata: Record<
@@ -22,25 +24,6 @@ export const categoryMetadata: Record<
 }
 
 export const projects: ProjectDefinition[] = [
-  {
-    slug: 'scheduler',
-    title: 'Scheduler',
-    summary: '分片任务与优先级调度实验',
-    description: '观察 MessageChannel、任务切片和主线程响应之间的关系。',
-    category: 'performance',
-    status: 'active',
-    tags: ['Vue 3', 'MessageChannel', 'Performance API'],
-    featured: true,
-    updatedAt: '2026-09-19',
-    sources: [
-      {
-        label: 'demo.vue',
-        path: 'apps/web/src/components/scheduler/demo.vue',
-        language: 'markup',
-        content: schedulerDemoSource,
-      },
-    ],
-  },
   {
     slug: 'advanced-image-loader',
     title: 'Advanced Image Loader',
@@ -73,6 +56,38 @@ export const projects: ProjectDefinition[] = [
     ],
   },
   {
+    slug: 'render-scheduler',
+    title: '协作式任务编排器',
+    summary: '优先级队列与 Vue 组件延迟渲染实验',
+    description:
+      '通过优先级队列依次释放 Vue 组件的渲染时机，观察不同业务模块按计划进入页面的过程。',
+    category: 'browser',
+    status: 'active',
+    tags: ['Vue 3', 'Priority Queue', 'Deferred Rendering'],
+    featured: true,
+    updatedAt: '2026-09-26',
+    sources: [
+      {
+        label: 'Demo.vue',
+        path: 'apps/web/src/components/task-scheduler/Demo.vue',
+        language: 'markup',
+        content: schedulerDemoSource,
+      },
+      {
+        label: 'task-scheduler.js',
+        path: 'apps/web/src/components/task-scheduler/task-scheduler.js',
+        language: 'javascript',
+        content: renderSchedulerSource,
+      },
+      {
+        label: 'useDeferRegister.js',
+        path: 'apps/web/src/components/task-scheduler/useDeferRegister.js',
+        language: 'javascript',
+        content: schedulerComposableSource,
+      },
+    ],
+  },
+  {
     slug: 'device-performance-probe',
     title: '设备性能探针',
     summary: '设备能力采集、动态基准测试与性能分级',
@@ -86,7 +101,7 @@ export const projects: ProjectDefinition[] = [
     sources: [
       {
         label: 'test-ua.js',
-        path: 'apps/web/src/components/scheduler/test-ua.js',
+        path: 'apps/web/src/components/test-ua/test-ua.js',
         language: 'javascript',
         content: schedulerUaSource,
       },

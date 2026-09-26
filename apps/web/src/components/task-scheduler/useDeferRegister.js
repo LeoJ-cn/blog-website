@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { scheduler } from 'index.js'
+import { scheduler } from './task-scheduler.js'
 const schedulerInstance = scheduler
 
 /**
@@ -26,6 +26,8 @@ export function useDeferRegister(config) {
   }
 
   function doRegister() {
+    isReady.value = false
+
     // 已有任务：先移除旧任务，重新注册
     if (taskId) {
       schedulerInstance.removeTask(taskId)
@@ -52,5 +54,6 @@ export function useDeferRegister(config) {
 
   return {
     isReady,
+    restart: doRegister,
   }
 }

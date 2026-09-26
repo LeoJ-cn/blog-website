@@ -1,7 +1,7 @@
 <template>
   <div class="main-container">
     <div class="main-header">
-      <h2>📊 Main 组件</h2>
+      <h2>📊 协作式任务编排器</h2>
     </div>
     <div class="main-body">
       <Left v-if="readyA" />
@@ -16,7 +16,6 @@
      <!-- <Left />
       <Right />  -->
     </div>
-
   </div>
 </template>
 

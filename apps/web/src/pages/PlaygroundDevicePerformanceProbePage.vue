@@ -5,7 +5,7 @@ import {
   detectPerformanceTier,
   renderPerformanceReport,
   type PerformanceProbeResult,
-} from '../components/scheduler/test-ua'
+} from '../components/test-ua/test-ua'
 import { projects } from '../data/projects'
 
 const project = projects.find((item) => item.slug === 'device-performance-probe')!
