@@ -39,12 +39,6 @@ export const projects: ProjectDefinition[] = [
         language: 'markup',
         content: schedulerDemoSource,
       },
-      {
-        label: 'test-ua.js',
-        path: 'apps/web/src/components/scheduler/test-ua.js',
-        language: 'javascript',
-        content: schedulerUaSource,
-      },
     ],
   },
   {
@@ -75,6 +69,26 @@ export const projects: ProjectDefinition[] = [
         path: 'apps/web/src/components/advanced-image-loader/mock.js',
         language: 'javascript',
         content: advancedImageMockSource,
+      },
+    ],
+  },
+  {
+    slug: 'device-performance-probe',
+    title: '设备性能探针',
+    summary: '设备能力采集、动态基准测试与性能分级',
+    description:
+      '结合浏览器设备信息、静态硬件指标和带熔断的动态基准测试，生成当前设备的性能等级与渲染建议。',
+    category: 'browser',
+    status: 'active',
+    tags: ['User Agent', 'Performance API', 'Circuit Breaker'],
+    featured: false,
+    updatedAt: '2026-09-26',
+    sources: [
+      {
+        label: 'test-ua.js',
+        path: 'apps/web/src/components/scheduler/test-ua.js',
+        language: 'javascript',
+        content: schedulerUaSource,
       },
     ],
   },

@@ -297,7 +297,7 @@ function parseCommonDevices(ua) {
 /**
  * 设备性能分级检测（含熔断机制，分层返回）
  */
-async function detectPerformanceTier() {
+export async function detectPerformanceTier() {
   // 先尝试加载 ua-parser-js
   try {
     await loadUAParser()
@@ -471,7 +471,7 @@ function runBenchmarkWithCircuitBreaker() {
 /**
  * 将检测结果渲染为 HTML 报告（包含性能卡片和完整设备信息）
  */
-function renderPerformanceReport(result) {
+export function renderPerformanceReport(result) {
   const { tier, tierLabel, score, performanceDetails, deviceDetails } = result
 
   const tierColorMap = {
@@ -488,6 +488,8 @@ function renderPerformanceReport(result) {
   // 主容器
   // =========================
   const container = document.querySelector('#test-ua') || document.createElement('div')
+
+  container.replaceChildren()
 
   // 容器参数
   container.dataset.tier = tier ?? ''
@@ -824,36 +826,9 @@ function renderPerformanceReport(result) {
   // =========================
   // 插入页面
   // =========================
-  document.body.appendChild(container)
+  if (!container.isConnected) {
+    document.body.appendChild(container)
+  }
 
   return container
 }
-
-// ============================================================
-// 使用示例
-// ============================================================
-
-setTimeout(() => {
-  detectPerformanceTier().then((result) => {
-    const { tier, tierLabel, score, performanceDetails, deviceDetails } = result
-
-    console.log(`性能等级: ${tierLabel} (${tier})，综合评分: ${score}`)
-    console.log('性能参数:', performanceDetails)
-    console.log('完整设备参数:', deviceDetails)
-
-    const renderCountMap = {
-      FLAGSHIP: Infinity,
-      HIGH_PERF: 8,
-      MAINSTREAM: 5,
-      ENTRY: 2,
-      CONSTRAINED: 1,
-    }
-    const count = renderCountMap[tier]
-    console.log(`建议首屏渲染区域数量: ${count === Infinity ? '全部' : count}`)
-    if (performanceDetails.benchmarkAborted) {
-      console.log(`检测过程发生熔断，原因: ${performanceDetails.abortReason}`)
-    }
-
-    renderPerformanceReport(result)
-  })
-}, 500)

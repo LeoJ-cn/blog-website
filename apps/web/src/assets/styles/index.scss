@@ -323,9 +323,17 @@ h1 span {
 }
 
 .playground-nav__project {
+  border-left: 0 !important;
   color: #63728e;
+  display: block !important;
   font-size: 12px;
   padding: 5px 12px 8px 26px;
+}
+
+.playground-nav__project:hover,
+.playground-nav__project.router-link-active {
+  background: transparent !important;
+  color: #62e6b5 !important;
 }
 
 .playground-content-area {

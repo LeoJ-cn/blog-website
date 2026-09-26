@@ -9,6 +9,11 @@ const categories = (Object.keys(categoryMetadata) as ProjectCategory[]).map((slu
   hint: categoryMetadata[slug].hint,
   projects: getProjectsByCategory(slug),
 }))
+
+function getProjectPath(category: ProjectCategory, projectSlug: string) {
+  if (category === 'performance') return '/playground/performance'
+  return `/playground/browser/${projectSlug}`
+}
 </script>
 
 <template>
@@ -31,13 +36,14 @@ const categories = (Object.keys(categoryMetadata) as ProjectCategory[]).map((slu
             </span>
             <span class="playground-nav__count">{{ category.projects.length }}</span>
           </RouterLink>
-          <div
+          <RouterLink
             v-for="project in category.projects"
             :key="project.slug"
+            :to="getProjectPath(category.slug, project.slug)"
             class="playground-nav__project"
           >
             {{ project.title }}
-          </div>
+          </RouterLink>
         </div>
       </nav>
     </aside>

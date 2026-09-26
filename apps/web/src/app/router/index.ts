@@ -22,8 +22,17 @@ const router = createRouter({
         },
         {
           path: 'browser',
+          redirect: '/playground/browser/advanced-image-loader',
+        },
+        {
+          path: 'browser/advanced-image-loader',
           name: 'playground-advanced-image',
           component: () => import('../../pages/PlaygroundAdvancedImagePage.vue'),
+        },
+        {
+          path: 'browser/device-performance-probe',
+          name: 'playground-device-performance-probe',
+          component: () => import('../../pages/PlaygroundDevicePerformanceProbePage.vue'),
         },
       ],
     },

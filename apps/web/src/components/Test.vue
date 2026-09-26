@@ -8,13 +8,11 @@
       frameborder="0"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
     ></iframe>
-    <div id="test-ua" style="width: 100%; height: 500px; margin-top: 2rem" />
   </section>
 </template>
 
 <script setup lang="ts">
 import Scheduler from '../components/scheduler/demo.vue'
-import '../components/scheduler/test-ua'
 </script>
 
 <style></style>

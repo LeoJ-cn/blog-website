@@ -26,7 +26,7 @@ type PerformanceRecordingListener = () => void
 
 const FRAME_BUDGET = 1000 / 60
 const METRICS_SAMPLE_INTERVAL = 500
-const MICROTASK_DURATION = 2
+const MICROTASK_DURATION = 0.2
 export const CPU_PRESSURE_OPTIONS = [2, 4, 6, 12, 24] as const
 
 class MovingBoxManager {
@@ -246,7 +246,7 @@ class MovingBoxManager {
       }
 
       this.runCpuTask(this.cpuWorkMs)
-      queueMicrotask(() => this.runCpuTask(MICROTASK_DURATION))
+      // queueMicrotask(() => this.runCpuTask(MICROTASK_DURATION))
       this.scheduleCpuTaskLoop(boxId, taskIds)
     }, 0)
 
