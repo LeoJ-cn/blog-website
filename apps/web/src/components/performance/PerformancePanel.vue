@@ -1,40 +1,42 @@
 <script setup lang="ts">
-import type { FramePerformanceSnapshot } from '@blog/monitoring'
+import { createFramePerformanceMonitor } from '@blog/monitoring'
+import { onUnmounted, ref } from 'vue'
+import { usePerformancePanel } from '../../composables/use-performance-panel'
+import {
+  CPU_PRESSURE_OPTIONS,
+  createPerformanceSimulationManager,
+} from './performance-simulation-manager'
 
 interface Props {
-  snapshot: FramePerformanceSnapshot
-  status?: 'running' | 'idle'
   recordingDuration?: number
-  recordedFps?: readonly number[]
-  recordedDroppedFrames?: number | null
-  recording?: boolean
-  recordingSecondsLeft?: number
-  pressureOptions?: readonly number[]
-  activePressure?: number
-  cpuTaskAvailable?: boolean
-  cpuTaskEnabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  status: 'idle',
   recordingDuration: 5,
-  recordedFps: () => [],
-  recordedDroppedFrames: null,
-  recording: false,
-  recordingSecondsLeft: 0,
-  pressureOptions: () => [],
-  activePressure: undefined,
-  cpuTaskAvailable: false,
-  cpuTaskEnabled: false,
+})
+const framePerformanceMonitor = createFramePerformanceMonitor()
+const simulationManager = createPerformanceSimulationManager()
+const simulationState = ref(simulationManager.getState())
+const {
+  snapshot,
+  recordedFps,
+  recordedDroppedFrames,
+  recording,
+  recordingSecondsLeft,
+  startRecording,
+} = usePerformancePanel(framePerformanceMonitor, {
+  recordingDuration: props.recordingDuration,
+})
+const unsubscribeSimulationState = simulationManager.subscribe((state) => {
+  simulationState.value = state
 })
 
-const emit = defineEmits<{
-  'add-animation': []
-  'clear-animations': []
-  record: []
-  'change-pressure': [duration: number]
-  'change-cpu-task-enabled': [enabled: boolean]
-}>()
+defineExpose({ startRecording })
+
+onUnmounted(() => {
+  unsubscribeSimulationState()
+  simulationManager.clear()
+})
 
 function getFpsLevel(fps: number) {
   if (fps > 55) {
@@ -53,34 +55,34 @@ function getFpsLevel(fps: number) {
   <aside class="performance-panel" aria-label="动画性能监控">
     <div class="performance-panel__header">
       <span>PERFORMANCE</span>
-      <strong :class="{ 'is-running': props.status === 'running' }">
-        {{ props.status === 'running' ? 'RUNNING' : 'IDLE' }}
+      <strong :class="{ 'is-running': simulationState.runningBoxes > 0 }">
+        {{ simulationState.runningBoxes > 0 ? 'RUNNING' : 'IDLE' }}
       </strong>
     </div>
 
     <dl class="performance-panel__metrics" aria-live="polite">
       <div>
         <dt>实时 FPS</dt>
-        <dd :class="getFpsLevel(props.snapshot.fps)">{{ props.snapshot.fps }}</dd>
+        <dd :class="getFpsLevel(snapshot.fps)">{{ snapshot.fps }}</dd>
       </div>
     </dl>
 
     <div class="performance-panel__history">
       <div class="performance-panel__history-header">
         <span>触发后 {{ props.recordingDuration }} 秒 FPS</span>
-        <button type="button" :disabled="props.recording" @click="emit('record')">
-          {{ props.recording ? `记录中 ${props.recordingSecondsLeft}s` : '记录' }}
+        <button type="button" :disabled="recording" @click="startRecording">
+          {{ recording ? `记录中 ${recordingSecondsLeft}s` : '记录' }}
         </button>
       </div>
-      <div v-if="props.recordedFps.length === 0" class="performance-panel__history-empty">
+      <div v-if="recordedFps.length === 0" class="performance-panel__history-empty">
         {{
-          props.recording
+          recording
             ? '正在采集触发后的 FPS…'
             : `点击“记录”后采集 ${props.recordingDuration} 秒`
         }}
       </div>
       <div v-else class="performance-panel__history-list" aria-live="polite">
-        <div v-for="(fps, index) in props.recordedFps" :key="index">
+        <div v-for="(fps, index) in recordedFps" :key="index">
           <span>第 {{ index + 1 }} 秒</span>
           <i>
             <b :class="getFpsLevel(fps)" :style="{ width: `${(Math.min(fps, 60) / 60) * 100}%` }" />
@@ -89,7 +91,7 @@ function getFpsLevel(fps: number) {
         </div>
         <div class="performance-panel__recorded-drops">
           <span>{{ props.recordingDuration }} 秒累计掉帧</span>
-          <strong>{{ props.recordedDroppedFrames ?? 0 }} 帧</strong>
+          <strong>{{ recordedDroppedFrames ?? 0 }} 帧</strong>
         </div>
       </div>
     </div>
@@ -97,33 +99,33 @@ function getFpsLevel(fps: number) {
     <div class="performance-panel__simulation">
       <span class="performance-panel__section-title">压力模拟</span>
       <div class="performance-panel__animation-actions" aria-label="动画控制">
-        <button type="button" @click="emit('add-animation')">增加动画</button>
-        <button type="button" @click="emit('clear-animations')">取消所有动画</button>
+        <button type="button" @click="simulationManager.create()">增加动画</button>
+        <button type="button" @click="simulationManager.clear()">取消所有动画</button>
       </div>
 
-      <div v-if="props.pressureOptions.length > 0" class="performance-panel__pressure">
+      <div class="performance-panel__pressure">
         <div class="performance-panel__pressure-header">
           <span>动画附加任务</span>
           <button
             type="button"
             role="switch"
-            :aria-checked="props.cpuTaskEnabled"
-            :disabled="!props.cpuTaskAvailable"
-            :class="{ 'is-active': props.cpuTaskEnabled }"
-            @click="emit('change-cpu-task-enabled', !props.cpuTaskEnabled)"
+            :aria-checked="simulationState.cpuTaskEnabled"
+            :disabled="simulationState.runningBoxes === 0"
+            :class="{ 'is-active': simulationState.cpuTaskEnabled }"
+            @click="simulationManager.setCpuTaskEnabled(!simulationState.cpuTaskEnabled)"
           >
-            {{ props.cpuTaskEnabled ? '开启' : '关闭' }}
+            {{ simulationState.cpuTaskEnabled ? '开启' : '关闭' }}
           </button>
         </div>
-        <small v-if="!props.cpuTaskAvailable">请先增加动画</small>
+        <small v-if="simulationState.runningBoxes === 0">请先增加动画</small>
         <div class="performance-panel__pressure-options">
           <button
-            v-for="duration in props.pressureOptions"
+            v-for="duration in CPU_PRESSURE_OPTIONS"
             :key="duration"
             type="button"
-            :class="{ 'is-active': props.activePressure === duration }"
-            :disabled="!props.cpuTaskAvailable || !props.cpuTaskEnabled"
-            @click="emit('change-pressure', duration)"
+            :class="{ 'is-active': simulationState.cpuWorkMs === duration }"
+            :disabled="simulationState.runningBoxes === 0 || !simulationState.cpuTaskEnabled"
+            @click="simulationManager.setCpuWorkMs(duration)"
           >
             {{ duration }}ms
           </button>

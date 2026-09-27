@@ -23,7 +23,7 @@ export type MovingBoxStateListener = (state: MovingBoxDemoState) => void
 
 export const CPU_PRESSURE_OPTIONS = [2, 4, 6, 12, 24] as const
 
-class MovingBoxManager {
+class PerformanceSimulationManager {
   private boxes = new Map<number, MovingBox>()
   private animationId: number | null = null
   private idCounter = 0
@@ -295,4 +295,6 @@ class MovingBoxManager {
   }
 }
 
-export const movingBoxManager = new MovingBoxManager()
+export function createPerformanceSimulationManager() {
+  return new PerformanceSimulationManager()
+}

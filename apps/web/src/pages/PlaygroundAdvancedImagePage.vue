@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import { createFramePerformanceMonitor } from '@blog/monitoring'
-import { computed, onUnmounted, ref } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router'
+import { computed, ref } from 'vue'
 import AdvancedImageLoaderDemo from '../components/advanced-image-loader/AdvancedImageLoaderDemo.vue'
 import NormalImageLoaderDemo from '../components/advanced-image-loader/NormalImageLoaderDemo.vue'
-import {
-  CPU_PRESSURE_OPTIONS,
-  movingBoxManager,
-} from '../components/advanced-image-loader/moving-box-manager'
 import CodeBlock from '../components/CodeBlock.vue'
 import PerformancePanel from '../components/performance/PerformancePanel.vue'
-import { usePerformancePanel } from '../composables/use-performance-panel'
 import { projects } from '../data/projects'
 
 const tabs = [
@@ -26,64 +19,16 @@ const renderMode = ref<'normal' | 'optimized'>('optimized')
 const activeTab = ref<(typeof tabs)[number]['id']>('demo')
 const activeSourceIndex = ref(0)
 const activeSource = computed(() => project.sources[activeSourceIndex.value])
-const framePerformanceMonitor = createFramePerformanceMonitor()
-const movingBoxState = ref(movingBoxManager.getState())
-const {
-  snapshot,
-  recordedFps,
-  recordedDroppedFrames,
-  recording,
-  recordingSecondsLeft,
-  startRecording,
-} = usePerformancePanel(framePerformanceMonitor)
-const unsubscribeMovingBoxState = movingBoxManager.subscribe((state) => {
-  movingBoxState.value = state
-})
+const performancePanel = ref<InstanceType<typeof PerformancePanel> | null>(null)
 
-function setCpuPressure(duration: number) {
-  movingBoxManager.setCpuWorkMs(duration)
+function startPerformanceRecording() {
+  performancePanel.value?.startRecording()
 }
-
-function setCpuTaskEnabled(enabled: boolean) {
-  movingBoxManager.setCpuTaskEnabled(enabled)
-}
-
-function addAnimation() {
-  movingBoxManager.create()
-}
-
-function clearAnimations() {
-  movingBoxManager.clear()
-}
-
-onUnmounted(() => {
-  unsubscribeMovingBoxState()
-})
-
-onBeforeRouteLeave(() => {
-  movingBoxManager.clear()
-})
 </script>
 
 <template>
   <article class="playground-content" data-page="advanced-image-loader">
-    <PerformancePanel
-      :snapshot="snapshot"
-      :status="movingBoxState.runningBoxes > 0 ? 'running' : 'idle'"
-      :recorded-fps="recordedFps"
-      :recorded-dropped-frames="recordedDroppedFrames"
-      :recording="recording"
-      :recording-seconds-left="recordingSecondsLeft"
-      :pressure-options="CPU_PRESSURE_OPTIONS"
-      :active-pressure="movingBoxState.cpuWorkMs"
-      :cpu-task-available="movingBoxState.runningBoxes > 0"
-      :cpu-task-enabled="movingBoxState.cpuTaskEnabled"
-      @add-animation="addAnimation"
-      @clear-animations="clearAnimations"
-      @record="startRecording"
-      @change-pressure="setCpuPressure"
-      @change-cpu-task-enabled="setCpuTaskEnabled"
-    />
+    <PerformancePanel ref="performancePanel" />
     <p class="eyebrow">BROWSER</p>
     <h2>{{ project.title }}</h2>
     <p class="playground-description">{{ project.description }}</p>
@@ -119,9 +64,9 @@ onBeforeRouteLeave(() => {
       </div>
       <AdvancedImageLoaderDemo
         v-if="renderMode === 'optimized'"
-        @performance-recording-request="startRecording"
+        @performance-recording-request="startPerformanceRecording"
       />
-      <NormalImageLoaderDemo v-else @performance-recording-request="startRecording" />
+      <NormalImageLoaderDemo v-else @performance-recording-request="startPerformanceRecording" />
     </div>
 
     <nav class="content-tabs" aria-label="技术内容" role="tablist">

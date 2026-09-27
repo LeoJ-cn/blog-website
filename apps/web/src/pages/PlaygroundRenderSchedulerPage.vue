@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import CodeBlock from '../components/CodeBlock.vue'
+import PerformancePanel from '../components/performance/PerformancePanel.vue'
 import SchedulerDemo from '../components/task-scheduler/Demo.vue'
 import { projects } from '../data/projects'
 
@@ -19,6 +20,7 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
 
 <template>
   <article class="playground-content scheduler-page" data-page="render-scheduler">
+    <PerformancePanel />
     <p class="eyebrow">BROWSER</p>
     <h2>{{ project.title }}</h2>
     <p class="playground-description">{{ project.description }}</p>
