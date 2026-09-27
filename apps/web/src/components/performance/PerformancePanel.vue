@@ -43,6 +43,22 @@ function getFpsLevel(fps: number) {
 
   return 'is-danger'
 }
+
+function getFrameIntervalLevel(interval: number) {
+  if (interval <= 0) {
+    return undefined
+  }
+
+  if (interval <= 16.7) {
+    return 'is-good'
+  }
+
+  if (interval <= 33.3) {
+    return 'is-warning'
+  }
+
+  return 'is-danger'
+}
 </script>
 
 <template>
@@ -81,7 +97,12 @@ function getFpsLevel(fps: number) {
       </div>
       <div>
         <dt>P95 帧间隔</dt>
-        <dd data-testid="performance-p95">{{ snapshot.sample.p95FrameInterval.toFixed(1) }}ms</dd>
+        <dd
+          data-testid="performance-p95"
+          :class="getFrameIntervalLevel(snapshot.sample.p95FrameInterval)"
+        >
+          {{ snapshot.sample.p95FrameInterval.toFixed(1) }}ms
+        </dd>
       </div>
       <!-- <div>
         <dt>最大帧间隔</dt>
@@ -136,7 +157,9 @@ function getFpsLevel(fps: number) {
               <td :class="getFpsLevel(recordedSnapshot.sample.fps)">
                 {{ recordedSnapshot.sample.fps }}
               </td>
-              <td>{{ recordedSnapshot.sample.p95FrameInterval.toFixed(1) }}</td>
+              <td :class="getFrameIntervalLevel(recordedSnapshot.sample.p95FrameInterval)">
+                {{ recordedSnapshot.sample.p95FrameInterval.toFixed(1) }}
+              </td>
               <td>
                 {{
                   recordedSnapshot.target
