@@ -14,23 +14,30 @@ export interface CreateMovingBoxOptions {
 }
 
 export interface MovingBoxDemoState {
-  cpuTaskEnabled: boolean
-  cpuWorkMs: number
+  frameTaskEnabled: boolean
+  frameWorkMs: number
+  longTaskEnabled: boolean
+  longTaskWorkMs: number
   runningBoxes: number
 }
 
 export type MovingBoxStateListener = (state: MovingBoxDemoState) => void
 
-export const CPU_PRESSURE_OPTIONS = [2, 4, 6, 12, 24] as const
+export const FRAME_PRESSURE_OPTIONS = [2, 4, 8, 12, 20] as const
+export const LONG_TASK_PRESSURE_OPTIONS = [50, 100, 200] as const
+
+const LONG_TASK_INTERVAL = 1000
 
 class PerformanceSimulationManager {
   private boxes = new Map<number, MovingBox>()
   private animationId: number | null = null
+  private longTaskTimerId: number | null = null
   private idCounter = 0
-  private cpuTaskEnabled = false
-  private cpuWorkMs: number = CPU_PRESSURE_OPTIONS[0]
+  private frameTaskEnabled = false
+  private frameWorkMs: number = FRAME_PRESSURE_OPTIONS[0]
+  private longTaskEnabled = false
+  private longTaskWorkMs: number = LONG_TASK_PRESSURE_OPTIONS[0]
   private cpuAccumulator = 0
-  private taskIdsByBox = new Map<number, Set<number>>()
   private stateListeners = new Set<MovingBoxStateListener>()
 
   create(options: CreateMovingBoxOptions = {}): number {
@@ -60,9 +67,6 @@ class PerformanceSimulationManager {
     }
 
     this.boxes.set(id, box)
-    if (this.cpuTaskEnabled) {
-      this.scheduleCpuTask(id)
-    }
     this.start()
     this.emitState()
 
@@ -78,11 +82,9 @@ class PerformanceSimulationManager {
 
     box.el.remove()
     this.boxes.delete(id)
-    this.clearCpuTasks(id)
 
     if (this.boxes.size === 0) {
-      this.cpuTaskEnabled = false
-      this.clearAllCpuTasks()
+      this.disableAllTasks()
       this.stopIfIdle()
     }
 
@@ -97,8 +99,7 @@ class PerformanceSimulationManager {
     }
 
     this.boxes.clear()
-    this.cpuTaskEnabled = false
-    this.clearAllCpuTasks()
+    this.disableAllTasks()
     this.stopIfIdle()
     this.emitState()
   }
@@ -113,8 +114,10 @@ class PerformanceSimulationManager {
 
   getState(): MovingBoxDemoState {
     return {
-      cpuTaskEnabled: this.cpuTaskEnabled,
-      cpuWorkMs: this.cpuWorkMs,
+      frameTaskEnabled: this.frameTaskEnabled,
+      frameWorkMs: this.frameWorkMs,
+      longTaskEnabled: this.longTaskEnabled,
+      longTaskWorkMs: this.longTaskWorkMs,
       runningBoxes: this.boxes.size,
     }
   }
@@ -135,28 +138,40 @@ class PerformanceSimulationManager {
     }
   }
 
-  setCpuWorkMs(duration: number): void {
-    this.cpuWorkMs = Math.max(0, Math.min(duration, 64))
+  setFrameWorkMs(duration: number): void {
+    this.frameWorkMs = Math.max(0, Math.min(duration, 32))
     this.emitState()
   }
 
-  setCpuTaskEnabled(enabled: boolean): void {
+  setFrameTaskEnabled(enabled: boolean): void {
     const nextEnabled = enabled && this.boxes.size > 0
 
-    if (this.cpuTaskEnabled === nextEnabled) {
+    if (this.frameTaskEnabled === nextEnabled) {
       return
     }
 
-    this.cpuTaskEnabled = nextEnabled
+    this.frameTaskEnabled = nextEnabled
+    this.emitState()
+  }
 
-    if (nextEnabled) {
-      for (const boxId of this.boxes.keys()) {
-        this.scheduleCpuTask(boxId)
-      }
-    } else {
-      this.clearAllCpuTasks()
+  setLongTaskWorkMs(duration: number): void {
+    this.longTaskWorkMs = Math.max(0, Math.min(duration, 500))
+    this.emitState()
+  }
+
+  setLongTaskEnabled(enabled: boolean): void {
+    const nextEnabled = enabled && this.boxes.size > 0
+
+    if (this.longTaskEnabled === nextEnabled) {
+      return
     }
 
+    this.longTaskEnabled = nextEnabled
+    if (nextEnabled) {
+      this.scheduleLongTask()
+    } else {
+      this.clearLongTask()
+    }
     this.emitState()
   }
 
@@ -171,6 +186,10 @@ class PerformanceSimulationManager {
   private tick = (): void => {
     for (const box of this.boxes.values()) {
       this.updateBox(box)
+    }
+
+    if (this.frameTaskEnabled) {
+      this.runCpuTask(this.frameWorkMs)
     }
 
     if (this.boxes.size === 0) {
@@ -238,50 +257,36 @@ class PerformanceSimulationManager {
     this.cpuAccumulator = value
   }
 
-  private scheduleCpuTask(boxId: number): void {
-    const taskIds = new Set<number>()
-    this.taskIdsByBox.set(boxId, taskIds)
-    this.scheduleCpuTaskLoop(boxId, taskIds)
-  }
-
-  private scheduleCpuTaskLoop(boxId: number, taskIds: Set<number>): void {
-    if (!this.boxes.has(boxId) || !this.taskIdsByBox.has(boxId)) {
+  private scheduleLongTask(): void {
+    if (!this.longTaskEnabled || this.boxes.size === 0 || this.longTaskTimerId !== null) {
       return
     }
 
-    const taskId = window.setTimeout(() => {
-      taskIds.delete(taskId)
+    this.longTaskTimerId = window.setTimeout(() => {
+      this.longTaskTimerId = null
 
-      if (!this.boxes.has(boxId) || !this.taskIdsByBox.has(boxId)) {
+      if (!this.longTaskEnabled || this.boxes.size === 0) {
         return
       }
 
-      this.runCpuTask(this.cpuWorkMs)
-
-      this.scheduleCpuTaskLoop(boxId, taskIds)
-    }, 0)
-
-    taskIds.add(taskId)
+      this.runCpuTask(this.longTaskWorkMs)
+      this.scheduleLongTask()
+    }, LONG_TASK_INTERVAL)
   }
 
-  private clearCpuTasks(boxId: number): void {
-    const taskIds = this.taskIdsByBox.get(boxId)
-
-    if (!taskIds) {
+  private clearLongTask(): void {
+    if (this.longTaskTimerId === null) {
       return
     }
 
-    for (const taskId of taskIds) {
-      window.clearTimeout(taskId)
-    }
-
-    this.taskIdsByBox.delete(boxId)
+    window.clearTimeout(this.longTaskTimerId)
+    this.longTaskTimerId = null
   }
 
-  private clearAllCpuTasks(): void {
-    for (const boxId of this.taskIdsByBox.keys()) {
-      this.clearCpuTasks(boxId)
-    }
+  private disableAllTasks(): void {
+    this.frameTaskEnabled = false
+    this.longTaskEnabled = false
+    this.clearLongTask()
   }
 
   private emitState(): void {

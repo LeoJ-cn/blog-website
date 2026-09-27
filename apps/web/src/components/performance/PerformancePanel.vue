@@ -3,7 +3,8 @@ import { createFramePerformanceMonitor } from '@blog/monitoring'
 import { onUnmounted, ref } from 'vue'
 import { usePerformancePanel } from '../../composables/use-performance-panel'
 import {
-  CPU_PRESSURE_OPTIONS,
+  FRAME_PRESSURE_OPTIONS,
+  LONG_TASK_PRESSURE_OPTIONS,
   createPerformanceSimulationManager,
 } from './performance-simulation-manager'
 
@@ -196,27 +197,58 @@ function getFrameIntervalLevel(interval: number) {
 
       <div class="performance-panel__pressure">
         <div class="performance-panel__pressure-header">
-          <span>动画附加任务</span>
+          <span>帧内负载</span>
           <button
             type="button"
             role="switch"
-            :aria-checked="simulationState.cpuTaskEnabled"
+            :aria-label="`帧内负载 ${simulationState.frameTaskEnabled ? '开启' : '关闭'}`"
+            :aria-checked="simulationState.frameTaskEnabled"
             :disabled="simulationState.runningBoxes === 0"
-            :class="{ 'is-active': simulationState.cpuTaskEnabled }"
-            @click="simulationManager.setCpuTaskEnabled(!simulationState.cpuTaskEnabled)"
+            :class="{ 'is-active': simulationState.frameTaskEnabled }"
+            @click="simulationManager.setFrameTaskEnabled(!simulationState.frameTaskEnabled)"
           >
-            {{ simulationState.cpuTaskEnabled ? '开启' : '关闭' }}
+            {{ simulationState.frameTaskEnabled ? '开启' : '关闭' }}
           </button>
         </div>
         <small v-if="simulationState.runningBoxes === 0">请先增加动画</small>
         <div class="performance-panel__pressure-options">
           <button
-            v-for="duration in CPU_PRESSURE_OPTIONS"
+            v-for="duration in FRAME_PRESSURE_OPTIONS"
             :key="duration"
             type="button"
-            :class="{ 'is-active': simulationState.cpuWorkMs === duration }"
-            :disabled="simulationState.runningBoxes === 0 || !simulationState.cpuTaskEnabled"
-            @click="simulationManager.setCpuWorkMs(duration)"
+            :class="{ 'is-active': simulationState.frameWorkMs === duration }"
+            :disabled="simulationState.runningBoxes === 0 || !simulationState.frameTaskEnabled"
+            @click="simulationManager.setFrameWorkMs(duration)"
+          >
+            {{ duration }}ms
+          </button>
+        </div>
+      </div>
+
+      <div class="performance-panel__pressure">
+        <div class="performance-panel__pressure-header">
+          <span>偶发长任务 · 每秒</span>
+          <button
+            type="button"
+            role="switch"
+            :aria-label="`偶发长任务 ${simulationState.longTaskEnabled ? '开启' : '关闭'}`"
+            :aria-checked="simulationState.longTaskEnabled"
+            :disabled="simulationState.runningBoxes === 0"
+            :class="{ 'is-active': simulationState.longTaskEnabled }"
+            @click="simulationManager.setLongTaskEnabled(!simulationState.longTaskEnabled)"
+          >
+            {{ simulationState.longTaskEnabled ? '开启' : '关闭' }}
+          </button>
+        </div>
+        <small v-if="simulationState.runningBoxes === 0">请先增加动画</small>
+        <div class="performance-panel__pressure-options">
+          <button
+            v-for="duration in LONG_TASK_PRESSURE_OPTIONS"
+            :key="duration"
+            type="button"
+            :class="{ 'is-active': simulationState.longTaskWorkMs === duration }"
+            :disabled="simulationState.runningBoxes === 0 || !simulationState.longTaskEnabled"
+            @click="simulationManager.setLongTaskWorkMs(duration)"
           >
             {{ duration }}ms
           </button>
@@ -458,6 +490,10 @@ function getFrameIntervalLevel(interval: number) {
   padding: 7px;
 }
 
+.performance-panel__pressure + .performance-panel__pressure {
+  margin-top: 6px;
+}
+
 .performance-panel__pressure-header {
   align-items: center;
   display: flex;
@@ -499,7 +535,7 @@ function getFrameIntervalLevel(interval: number) {
 
 .performance-panel__pressure-options {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(38px, 1fr));
   margin-top: 6px;
 }
 

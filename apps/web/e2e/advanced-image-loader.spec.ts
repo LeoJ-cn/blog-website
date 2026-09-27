@@ -53,8 +53,8 @@ test('性能面板输出 V2 帧指标并能施加目标帧压力', async ({ page
   await expect(page.getByTestId('performance-missed-frames')).toHaveText(/^\d+\s*$/)
 
   await page.getByRole('button', { name: '增加动画' }).click()
-  await page.getByRole('switch', { name: '关闭' }).click()
-  await page.getByRole('button', { name: '24ms' }).click()
+  await page.getByRole('switch', { name: '帧内负载 关闭' }).click()
+  await page.getByRole('button', { name: '20ms' }).click()
 
   await expect
     .poll(async () => Number.parseFloat((await page.getByTestId('performance-p95').innerText()) || '0'))

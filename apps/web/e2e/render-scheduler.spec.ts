@@ -63,7 +63,8 @@ test('协作式任务编排器复用完整的 V2 性能面板', async ({ page })
 
   await page.getByRole('button', { name: '增加动画' }).click()
   await expect(page.getByTestId('managed-moving-box')).toHaveCount(1)
-  await expect(page.getByRole('switch', { name: '关闭' })).toBeEnabled()
+  await expect(page.getByRole('switch', { name: '帧内负载 关闭' })).toBeEnabled()
+  await expect(page.getByRole('switch', { name: '偶发长任务 关闭' })).toBeEnabled()
 
   await page.getByRole('link', { name: 'Advanced Image Loader' }).click()
   await expect(page.getByTestId('managed-moving-box')).toHaveCount(0)
