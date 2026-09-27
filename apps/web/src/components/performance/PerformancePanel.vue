@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { createFramePerformanceMonitor } from '@blog/monitoring'
-import { computed, onUnmounted, ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 import { usePerformancePanel } from '../../composables/use-performance-panel'
 import {
   CPU_PRESSURE_OPTIONS,
@@ -17,22 +17,14 @@ const props = withDefaults(defineProps<Props>(), {
 const framePerformanceMonitor = createFramePerformanceMonitor({ targetFps: 60 })
 const simulationManager = createPerformanceSimulationManager()
 const simulationState = ref(simulationManager.getState())
-const {
-  snapshot,
-  recordedSnapshots,
-  recording,
-  recordingSecondsLeft,
-  startRecording,
-} = usePerformancePanel(framePerformanceMonitor, {
-  recordingDuration: props.recordingDuration,
-})
+const minimized = ref(false)
+const { snapshot, recordedSnapshots, recording, recordingSecondsLeft, startRecording } =
+  usePerformancePanel(framePerformanceMonitor, {
+    recordingDuration: props.recordingDuration,
+  })
 const unsubscribeSimulationState = simulationManager.subscribe((state) => {
   simulationState.value = state
 })
-const recordedMissedFrames = computed(() =>
-  recordedSnapshots.value.reduce((total, item) => total + (item.target?.missedFrames ?? 0), 0),
-)
-
 defineExpose({ startRecording })
 
 onUnmounted(() => {
@@ -54,15 +46,33 @@ function getFpsLevel(fps: number) {
 </script>
 
 <template>
-  <aside class="performance-panel" aria-label="动画性能监控">
+  <aside
+    class="performance-panel"
+    :class="{ 'performance-panel--minimized': minimized }"
+    aria-label="动画性能监控"
+  >
     <div class="performance-panel__header">
       <span>PERFORMANCE</span>
-      <strong :class="{ 'is-running': simulationState.runningBoxes > 0 }">
-        {{ simulationState.runningBoxes > 0 ? 'RUNNING' : 'IDLE' }}
-      </strong>
+      <div class="performance-panel__header-actions">
+        <b v-if="minimized" :class="getFpsLevel(snapshot.sample.fps)">
+          {{ snapshot.sample.fps }} FPS
+        </b>
+        <strong :class="{ 'is-running': simulationState.runningBoxes > 0 }">
+          {{ simulationState.runningBoxes > 0 ? 'RUNNING' : 'IDLE' }}
+        </strong>
+        <button
+          type="button"
+          :aria-expanded="!minimized"
+          :aria-label="minimized ? '展开性能面板' : '最小化性能面板'"
+          @click="minimized = !minimized"
+        >
+          {{ minimized ? '展开' : '最小化' }}
+        </button>
+      </div>
     </div>
 
-    <dl class="performance-panel__metrics" aria-live="polite">
+    <div v-if="!minimized" class="performance-panel__body">
+      <dl class="performance-panel__metrics" aria-live="polite">
       <div>
         <dt>实时 FPS</dt>
         <dd data-testid="performance-fps" :class="getFpsLevel(snapshot.sample.fps)">
@@ -73,12 +83,12 @@ function getFpsLevel(fps: number) {
         <dt>P95 帧间隔</dt>
         <dd data-testid="performance-p95">{{ snapshot.sample.p95FrameInterval.toFixed(1) }}ms</dd>
       </div>
-      <div>
+      <!-- <div>
         <dt>最大帧间隔</dt>
         <dd data-testid="performance-max-interval">
           {{ snapshot.sample.maxFrameInterval.toFixed(1) }}ms
         </dd>
-      </div>
+      </div> -->
       <div v-if="snapshot.target">
         <dt>{{ snapshot.target.fps }} FPS 目标</dt>
         <dd data-testid="performance-target-rate">
@@ -92,46 +102,63 @@ function getFpsLevel(fps: number) {
       <div v-if="snapshot.longAnimationFrames">
         <dt>LoAF / 阻塞</dt>
         <dd data-testid="performance-loaf">
-          {{ snapshot.longAnimationFrames.count }} / {{ snapshot.longAnimationFrames.totalBlockingDuration.toFixed(1) }}ms
+          {{ snapshot.longAnimationFrames.count }} /
+          {{ snapshot.longAnimationFrames.totalBlockingDuration.toFixed(1) }}ms
         </dd>
       </div>
-    </dl>
+      </dl>
 
-    <div class="performance-panel__history">
+      <div class="performance-panel__history">
       <div class="performance-panel__history-header">
-        <span>触发后 {{ props.recordingDuration }} 秒 FPS</span>
+        <span>触发后 {{ props.recordingDuration }} 秒性能</span>
         <button type="button" :disabled="recording" @click="startRecording">
           {{ recording ? `记录中 ${recordingSecondsLeft}s` : '记录' }}
         </button>
       </div>
       <div v-if="recordedSnapshots.length === 0" class="performance-panel__history-empty">
-        {{
-          recording
-            ? '正在采集触发后的 FPS…'
-            : `点击“记录”后采集 ${props.recordingDuration} 秒`
-        }}
+        {{ recording ? '正在采集完整性能窗口…' : `点击“记录”后采集 ${props.recordingDuration} 秒` }}
       </div>
-      <div v-else class="performance-panel__history-list" aria-live="polite">
-        <div v-for="(recordedSnapshot, index) in recordedSnapshots" :key="index">
-          <span>第 {{ index + 1 }} 秒</span>
-          <i>
-            <b
-              :class="getFpsLevel(recordedSnapshot.sample.fps)"
-              :style="{ width: `${(Math.min(recordedSnapshot.sample.fps, 60) / 60) * 100}%` }"
-            />
-          </i>
-          <strong :class="getFpsLevel(recordedSnapshot.sample.fps)">
-            {{ recordedSnapshot.sample.fps }} FPS
-          </strong>
-        </div>
-        <div class="performance-panel__recorded-drops">
-          <span>{{ props.recordingDuration }} 秒未达目标帧</span>
-          <strong>{{ recordedMissedFrames }} 帧</strong>
-        </div>
+      <div v-else class="performance-panel__history-table-wrap" aria-live="polite">
+        <table class="performance-panel__history-table">
+          <thead>
+            <tr>
+              <th scope="col">时间</th>
+              <th scope="col">平均 FPS</th>
+              <th scope="col">P95 帧间隔</th>
+              <th scope="col">60 FPS 目标</th>
+              <th scope="col">未达目标帧</th>
+              <th scope="col">LoAF / 阻塞</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(recordedSnapshot, index) in recordedSnapshots" :key="index">
+              <th scope="row">第 {{ index + 1 }} 秒</th>
+              <td :class="getFpsLevel(recordedSnapshot.sample.fps)">
+                {{ recordedSnapshot.sample.fps }}
+              </td>
+              <td>{{ recordedSnapshot.sample.p95FrameInterval.toFixed(1) }}ms</td>
+              <td>
+                {{
+                  recordedSnapshot.target
+                    ? `${Math.round(recordedSnapshot.target.achievementRate * 100)}%`
+                    : '—'
+                }}
+              </td>
+              <td>{{ recordedSnapshot.target?.missedFrames ?? '—' }}</td>
+              <td>
+                {{
+                  recordedSnapshot.longAnimationFrames
+                    ? `${recordedSnapshot.longAnimationFrames.count} / ${recordedSnapshot.longAnimationFrames.totalBlockingDuration.toFixed(1)}ms`
+                    : '—'
+                }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
+      </div>
 
-    <div class="performance-panel__simulation">
+      <div class="performance-panel__simulation">
       <span class="performance-panel__section-title">压力模拟</span>
       <div class="performance-panel__animation-actions" aria-label="动画控制">
         <button type="button" @click="simulationManager.create()">增加动画</button>
@@ -166,6 +193,7 @@ function getFpsLevel(fps: number) {
           </button>
         </div>
       </div>
+      </div>
     </div>
   </aside>
 </template>
@@ -180,12 +208,17 @@ function getFpsLevel(fps: number) {
     0 16px 40px rgb(0 0 0 / 35%),
     inset 0 1px rgb(83 255 162 / 10%);
   color: #d8ffe8;
-  padding: 10px 12px;
+  padding: 8px 10px;
   position: fixed;
   right: 18px;
   top: 76px;
-  width: 220px;
+  max-width: calc(100vw - 36px);
+  width: 480px;
   z-index: 1200;
+}
+
+.performance-panel--minimized {
+  width: 220px;
 }
 
 .performance-panel__header {
@@ -194,6 +227,17 @@ function getFpsLevel(fps: number) {
   font-family: monospace;
   justify-content: space-between;
   letter-spacing: 0.08em;
+}
+
+.performance-panel__header-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.performance-panel__header-actions b {
+  font: 11px monospace;
+  letter-spacing: 0;
 }
 
 .performance-panel__header span {
@@ -210,10 +254,25 @@ function getFpsLevel(fps: number) {
   color: #43f58d;
 }
 
+.performance-panel__header button {
+  background: transparent;
+  border: 1px solid #257d50;
+  border-radius: 3px;
+  color: #75c999;
+  cursor: pointer;
+  font: 9px monospace;
+  padding: 2px 5px;
+}
+
+.performance-panel__header button:hover {
+  background: #123d29;
+  color: #d8ffe8;
+}
+
 .performance-panel__metrics {
   display: grid;
   gap: 5px;
-  margin: 9px 0;
+  margin: 7px 0;
 }
 
 .performance-panel__metrics div {
@@ -296,54 +355,44 @@ function getFpsLevel(fps: number) {
   place-items: center;
 }
 
-.performance-panel__history-list {
-  display: grid;
-  gap: 2px;
+.performance-panel__history-table-wrap {
+  overflow-x: auto;
 }
 
-.performance-panel__history-list > div {
-  align-items: center;
-  display: grid;
+.performance-panel__history-table {
+  border-collapse: collapse;
   font: 9px monospace;
-  gap: 4px;
-  grid-template-columns: 34px minmax(0, 1fr) 42px;
-  min-height: 17px;
+  min-width: 450px;
+  width: 100%;
 }
 
-.performance-panel__history-list span {
-  color: #609879;
-}
-
-.performance-panel__history-list i {
-  background: #0b2c1d;
-  height: 5px;
-  overflow: hidden;
-}
-
-.performance-panel__history-list b {
-  display: block;
-  height: 100%;
-}
-
-.performance-panel__history-list strong {
-  font-weight: 500;
+.performance-panel__history-table th,
+.performance-panel__history-table td {
+  border-bottom: 1px solid #174d34;
+  padding: 4px;
   text-align: right;
+  white-space: nowrap;
 }
 
-.performance-panel__history-list .performance-panel__recorded-drops {
-  border-top: 1px solid #174d34;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 3px;
-  padding-top: 5px;
-}
-
-.performance-panel__recorded-drops span {
+.performance-panel__history-table thead th {
   color: #75c999;
+  font-weight: 500;
 }
 
-.performance-panel__recorded-drops strong {
-  color: #d8ffe8;
+.performance-panel__history-table th:first-child {
+  color: #609879;
+  padding-left: 0;
+  text-align: left;
+}
+
+.performance-panel__history-table th:last-child,
+.performance-panel__history-table td:last-child {
+  padding-right: 0;
+}
+
+.performance-panel__history-table tbody tr:last-child th,
+.performance-panel__history-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .is-good {
@@ -356,18 +405,6 @@ function getFpsLevel(fps: number) {
 
 .is-danger {
   color: #ff5d68;
-}
-
-.performance-panel__history-list b.is-good {
-  background: linear-gradient(90deg, #1cb867, #63ffab);
-}
-
-.performance-panel__history-list b.is-warning {
-  background: linear-gradient(90deg, #c68b13, #ffd65a);
-}
-
-.performance-panel__history-list b.is-danger {
-  background: linear-gradient(90deg, #b52f3a, #ff5d68);
 }
 
 .performance-panel__simulation {

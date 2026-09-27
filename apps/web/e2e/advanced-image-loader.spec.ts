@@ -49,7 +49,6 @@ test('性能面板输出 V2 帧指标并能施加目标帧压力', async ({ page
 
   await expect(page.getByTestId('performance-fps')).toHaveText(/^\d+$/)
   await expect(page.getByTestId('performance-p95')).toHaveText(/^\d+(\.\d)?ms\s*$/)
-  await expect(page.getByTestId('performance-max-interval')).toHaveText(/^\d+(\.\d)?ms\s*$/)
   await expect(page.getByTestId('performance-target-rate')).toHaveText(/^\d+%\s*$/)
   await expect(page.getByTestId('performance-missed-frames')).toHaveText(/^\d+\s*$/)
 
@@ -58,8 +57,8 @@ test('性能面板输出 V2 帧指标并能施加目标帧压力', async ({ page
   await page.getByRole('button', { name: '24ms' }).click()
 
   await expect
-    .poll(async () => Number.parseFloat((await page.getByTestId('performance-max-interval').innerText()) || '0'))
-    .toBeGreaterThan(0)
+    .poll(async () => Number.parseFloat((await page.getByTestId('performance-p95').innerText()) || '0'))
+    .toBeGreaterThan(16)
 
   const loafMetric = page.getByTestId('performance-loaf')
   if ((await loafMetric.count()) > 0) {
