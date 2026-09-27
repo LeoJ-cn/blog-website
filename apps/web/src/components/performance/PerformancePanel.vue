@@ -65,27 +65,33 @@ function getFpsLevel(fps: number) {
     <dl class="performance-panel__metrics" aria-live="polite">
       <div>
         <dt>实时 FPS</dt>
-        <dd :class="getFpsLevel(snapshot.sample.fps)">{{ snapshot.sample.fps }}</dd>
+        <dd data-testid="performance-fps" :class="getFpsLevel(snapshot.sample.fps)">
+          {{ snapshot.sample.fps }}
+        </dd>
       </div>
       <div>
         <dt>P95 帧间隔</dt>
-        <dd>{{ snapshot.sample.p95FrameInterval.toFixed(1) }}ms</dd>
+        <dd data-testid="performance-p95">{{ snapshot.sample.p95FrameInterval.toFixed(1) }}ms</dd>
       </div>
       <div>
         <dt>最大帧间隔</dt>
-        <dd>{{ snapshot.sample.maxFrameInterval.toFixed(1) }}ms</dd>
+        <dd data-testid="performance-max-interval">
+          {{ snapshot.sample.maxFrameInterval.toFixed(1) }}ms
+        </dd>
       </div>
       <div v-if="snapshot.target">
         <dt>{{ snapshot.target.fps }} FPS 目标</dt>
-        <dd>{{ Math.round(snapshot.target.achievementRate * 100) }}%</dd>
+        <dd data-testid="performance-target-rate">
+          {{ Math.round(snapshot.target.achievementRate * 100) }}%
+        </dd>
       </div>
       <div v-if="snapshot.target">
         <dt>未达目标帧</dt>
-        <dd>{{ snapshot.target.missedFrames }}</dd>
+        <dd data-testid="performance-missed-frames">{{ snapshot.target.missedFrames }}</dd>
       </div>
       <div v-if="snapshot.longAnimationFrames">
         <dt>LoAF / 阻塞</dt>
-        <dd>
+        <dd data-testid="performance-loaf">
           {{ snapshot.longAnimationFrames.count }} / {{ snapshot.longAnimationFrames.totalBlockingDuration.toFixed(1) }}ms
         </dd>
       </div>

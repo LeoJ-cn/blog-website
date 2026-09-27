@@ -8,7 +8,7 @@
   "scripts": {
     "test": "vitest run --config vitest.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.config.ts",
-    "test:soak": "vitest run --config vitest.config.ts --include **/*.soak.test.ts"
+    "test:soak": "vitest run --config vitest.soak.config.ts"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "2.1.8",

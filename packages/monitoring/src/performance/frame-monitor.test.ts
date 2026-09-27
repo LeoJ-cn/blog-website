@@ -159,6 +159,31 @@ describe('createFramePerformanceMonitor', () => {
     expect(monitor.getSnapshot().status).toBe('idle')
     expect(monitor.getSnapshot().sample.fps).toBe(0)
     expect(listener).toHaveBeenCalledTimes(1)
+
+    monitor.reset()
+    monitor.stop()
+    expect(monitor.getSnapshot().status).toBe('idle')
+  })
+
+  it('starts suspended when the document is initially hidden', () => {
+    const runtime = createFakeFrameMonitorRuntime()
+    runtime.setVisibility('hidden')
+    const monitor = createFramePerformanceMonitor({ runtime })
+
+    monitor.subscribe(() => undefined)
+
+    expect(monitor.getSnapshot().status).toBe('suspended')
+    expect(runtime.pendingFrameCount).toBe(0)
+  })
+
+  it('falls back to the default window for invalid sample intervals', () => {
+    const runtime = createFakeFrameMonitorRuntime()
+    const monitor = createFramePerformanceMonitor({ runtime, sampleInterval: Number.NaN })
+    monitor.subscribe(() => undefined)
+
+    runStableFrames(runtime, 60)
+
+    expect(monitor.getSnapshot().sample.duration).toBeCloseTo(1000, 5)
   })
 
   it('returns null LoAF metrics when the runtime does not support them', () => {
@@ -193,6 +218,18 @@ describe('createFramePerformanceMonitor', () => {
       totalBlockingDuration: 0,
       maxDuration: 0,
     })
+  })
+
+  it('ignores invalid LoAF entries', () => {
+    const runtime = createFakeFrameMonitorRuntime(0, { longAnimationFrameSupported: true })
+    const monitor = createFramePerformanceMonitor({ runtime, sampleInterval: 100 })
+    monitor.subscribe(() => undefined)
+
+    runtime.emitLongAnimationFrame({ duration: Number.NaN, blockingDuration: 10 })
+    runtime.emitLongAnimationFrame({ duration: 80, blockingDuration: -1 })
+    runStableFrames(runtime, 50, 0.1)
+
+    expect(monitor.getSnapshot().longAnimationFrames?.count).toBe(0)
   })
 
   it('disconnects and recreates the LoAF observer across lifecycle changes', () => {

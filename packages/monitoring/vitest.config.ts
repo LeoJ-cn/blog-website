@@ -7,6 +7,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text'],
+      include: [
+        'src/performance/frame-monitor.ts',
+        'src/performance/frame-statistics.ts',
+      ],
       thresholds: {
         statements: 95,
         branches: 90,

@@ -203,3 +203,23 @@ Playwright 只验证浏览器集成与趋势，不断言机器必须达到固定
 ## 后续演进
 
 刷新率估算只有在实际业务需要解释多刷新率设备差异时再进入下一版。届时必须同时输出置信度，并保持它为诊断字段，不参与目标达成、告警或准确性验收。
+
+## 实施状态
+
+Frame Monitor V2 已按本文协议落地：公共 API、可注入 Runtime、Fake Runtime、窗口统计、显式目标预算、页面可见性生命周期与可选 LoAF 采集均已实现。`PerformancePanel` 已迁移到完整 V2 快照，并在 Advanced Image Loader 和协作式任务编排器中复用。
+
+验证命令如下：
+
+```sh
+pnpm --filter @blog/monitoring test
+pnpm --filter @blog/monitoring test:coverage
+pnpm --filter @blog/monitoring test:soak
+pnpm test:e2e
+pnpm typecheck
+pnpm lint
+pnpm build:vite
+```
+
+LoAF 继续采用能力检测：支持 `long-animation-frame` 的浏览器输出窗口指标，不支持时返回 `null`，不影响 rAF 主指标。刷新率推算及其置信度明确延后，不属于本版本 API，也不参与任何准确性判断。
+
+浏览器 Observer 使用非 buffered 观察，只接收监控启动后的新条目，避免页面可见性恢复并重建 Observer 时重复累计历史 LoAF。

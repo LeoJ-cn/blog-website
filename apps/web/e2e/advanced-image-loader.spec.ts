@@ -43,3 +43,26 @@ test('Browser 内部切换保留动画，进入 Performance 时清除动画', as
   await expect(page).toHaveURL(/#\/playground\/performance$/)
   await expect(page.getByTestId('managed-moving-box')).toHaveCount(0)
 })
+
+test('性能面板输出 V2 帧指标并能施加目标帧压力', async ({ page }) => {
+  await page.goto('/#/playground/browser/advanced-image-loader')
+
+  await expect(page.getByTestId('performance-fps')).toHaveText(/^\d+$/)
+  await expect(page.getByTestId('performance-p95')).toHaveText(/^\d+(\.\d)?ms\s*$/)
+  await expect(page.getByTestId('performance-max-interval')).toHaveText(/^\d+(\.\d)?ms\s*$/)
+  await expect(page.getByTestId('performance-target-rate')).toHaveText(/^\d+%\s*$/)
+  await expect(page.getByTestId('performance-missed-frames')).toHaveText(/^\d+\s*$/)
+
+  await page.getByRole('button', { name: '增加动画' }).click()
+  await page.getByRole('switch', { name: '关闭' }).click()
+  await page.getByRole('button', { name: '24ms' }).click()
+
+  await expect
+    .poll(async () => Number.parseFloat((await page.getByTestId('performance-max-interval').innerText()) || '0'))
+    .toBeGreaterThan(0)
+
+  const loafMetric = page.getByTestId('performance-loaf')
+  if ((await loafMetric.count()) > 0) {
+    await expect(loafMetric).toHaveText(/^\d+ \/ \d+(\.\d)?ms\s*$/)
+  }
+})

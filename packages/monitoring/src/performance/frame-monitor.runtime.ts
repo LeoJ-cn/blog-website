@@ -37,7 +37,7 @@ export function createBrowserFrameMonitorRuntime(): FrameMonitorRuntime | null {
           })
         }
       })
-      observer.observe({ type: 'long-animation-frame', buffered: true })
+      observer.observe({ type: 'long-animation-frame' })
       return { disconnect: () => observer.disconnect() }
     },
   }

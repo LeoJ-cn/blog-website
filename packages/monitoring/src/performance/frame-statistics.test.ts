@@ -15,6 +15,11 @@ describe('calculatePercentile', () => {
     expect(calculatePercentile([50, 10, 40, 20, 30], 50)).toBe(30)
   })
 
+  it('clamps percentile requests to the supported range', () => {
+    expect(calculatePercentile([10, 20, 30], -10)).toBe(10)
+    expect(calculatePercentile([10, 20, 30], 150)).toBe(30)
+  })
+
   it('ignores invalid frame intervals', () => {
     expect(calculatePercentile([8, 0, -1, Number.NaN, Number.POSITIVE_INFINITY, 12], 95)).toBe(
       12,
@@ -40,6 +45,17 @@ describe('calculateFrameSample', () => {
       p95FrameInterval: 16,
       maxFrameInterval: 16,
     })
+  })
+
+  it('normalizes invalid frame counts and empty intervals', () => {
+    expect(calculateFrameSample([], 1000, Number.NaN)).toEqual({
+      duration: 1000,
+      frameCount: 0,
+      fps: 0,
+      p95FrameInterval: 0,
+      maxFrameInterval: 0,
+    })
+    expect(calculateFrameSample([], 1000, -2.5).frameCount).toBe(0)
   })
 })
 
@@ -74,5 +90,10 @@ describe('calculateTargetMetrics', () => {
     expect(target?.overBudgetFrames).toBe(0)
     expect(target?.missedFrames).toBe(0)
     expect(target?.achievementRate).toBe(1)
+  })
+
+  it('normalizes invalid measured FPS', () => {
+    expect(calculateTargetMetrics([20], Number.NaN, 60)?.achievementRate).toBe(0)
+    expect(calculateTargetMetrics([20], -20, 60)?.achievementRate).toBe(0)
   })
 })
