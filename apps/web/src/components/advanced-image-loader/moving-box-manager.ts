@@ -13,6 +13,11 @@ export interface CreateMovingBoxOptions {
   speed?: number
 }
 
+export interface MovingBoxDemoState {
+  cpuWorkMs: number
+  runningBoxes: number
+}
+
 export interface MovingBoxPerformanceSnapshot {
   fps: number
   maxFrameInterval: number
@@ -23,10 +28,10 @@ export interface MovingBoxPerformanceSnapshot {
 
 type PerformanceListener = (snapshot: MovingBoxPerformanceSnapshot) => void
 type PerformanceRecordingListener = () => void
+export type MovingBoxStateListener = (state: MovingBoxDemoState) => void
 
 const FRAME_BUDGET = 1000 / 60
 const METRICS_SAMPLE_INTERVAL = 500
-const MICROTASK_DURATION = 0.2
 export const CPU_PRESSURE_OPTIONS = [2, 4, 6, 12, 24] as const
 
 class MovingBoxManager {
@@ -38,6 +43,7 @@ class MovingBoxManager {
   private taskIdsByBox = new Map<number, Set<number>>()
   private listeners = new Set<PerformanceListener>()
   private recordingListeners = new Set<PerformanceRecordingListener>()
+  private stateListeners = new Set<MovingBoxStateListener>()
   private lastFrameTime: number | null = null
   private sampleStartedAt = 0
   private sampledFrames = 0
@@ -73,6 +79,7 @@ class MovingBoxManager {
     this.boxes.set(id, box)
     this.scheduleCpuTask(id)
     this.start()
+    this.emitState()
 
     return id
   }
@@ -87,6 +94,7 @@ class MovingBoxManager {
     box.el.remove()
     this.boxes.delete(id)
     this.clearCpuTasks(id)
+    this.emitState()
 
     if (this.boxes.size === 0) {
       this.stopIfIdle()
@@ -103,6 +111,7 @@ class MovingBoxManager {
     this.boxes.clear()
     this.clearAllCpuTasks()
     this.stopIfIdle()
+    this.emitState()
   }
 
   get(id: number): MovingBox | undefined {
@@ -113,9 +122,33 @@ class MovingBoxManager {
     return Array.from(this.boxes.values())
   }
 
+  getState(): MovingBoxDemoState {
+    return {
+      cpuWorkMs: this.cpuWorkMs,
+      runningBoxes: this.boxes.size,
+    }
+  }
+
+  subscribe(listener: MovingBoxStateListener): () => void {
+    this.stateListeners.add(listener)
+    listener(this.getState())
+
+    let subscribed = true
+
+    return () => {
+      if (!subscribed) {
+        return
+      }
+
+      subscribed = false
+      this.stateListeners.delete(listener)
+    }
+  }
+
   setCpuWorkMs(duration: number): void {
     this.cpuWorkMs = Math.max(0, Math.min(duration, 64))
     this.emitPerformanceSnapshot(this.getCurrentFps())
+    this.emitState()
   }
 
   subscribePerformance(listener: PerformanceListener): () => void {
@@ -246,7 +279,6 @@ class MovingBoxManager {
       }
 
       this.runCpuTask(this.cpuWorkMs)
-      // queueMicrotask(() => this.runCpuTask(MICROTASK_DURATION))
       this.scheduleCpuTaskLoop(boxId, taskIds)
     }, 0)
 
@@ -326,6 +358,12 @@ class MovingBoxManager {
 
     for (const listener of this.listeners) {
       listener(snapshot)
+    }
+  }
+
+  private emitState(): void {
+    for (const listener of this.stateListeners) {
+      listener(this.getState())
     }
   }
 
