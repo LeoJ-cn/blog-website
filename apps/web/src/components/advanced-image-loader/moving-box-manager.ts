@@ -18,20 +18,8 @@ export interface MovingBoxDemoState {
   runningBoxes: number
 }
 
-export interface MovingBoxPerformanceSnapshot {
-  fps: number
-  maxFrameInterval: number
-  droppedFrames: number
-  cpuWorkMs: number
-  runningBoxes: number
-}
-
-type PerformanceListener = (snapshot: MovingBoxPerformanceSnapshot) => void
-type PerformanceRecordingListener = () => void
 export type MovingBoxStateListener = (state: MovingBoxDemoState) => void
 
-const FRAME_BUDGET = 1000 / 60
-const METRICS_SAMPLE_INTERVAL = 500
 export const CPU_PRESSURE_OPTIONS = [2, 4, 6, 12, 24] as const
 
 class MovingBoxManager {
@@ -41,14 +29,7 @@ class MovingBoxManager {
   private cpuWorkMs: number = CPU_PRESSURE_OPTIONS[0]
   private cpuAccumulator = 0
   private taskIdsByBox = new Map<number, Set<number>>()
-  private listeners = new Set<PerformanceListener>()
-  private recordingListeners = new Set<PerformanceRecordingListener>()
   private stateListeners = new Set<MovingBoxStateListener>()
-  private lastFrameTime: number | null = null
-  private sampleStartedAt = 0
-  private sampledFrames = 0
-  private maxFrameInterval = 0
-  private droppedFrames = 0
 
   create(options: CreateMovingBoxOptions = {}): number {
     const { size = 50, speed = 2 } = options
@@ -147,33 +128,7 @@ class MovingBoxManager {
 
   setCpuWorkMs(duration: number): void {
     this.cpuWorkMs = Math.max(0, Math.min(duration, 64))
-    this.emitPerformanceSnapshot(this.getCurrentFps())
     this.emitState()
-  }
-
-  subscribePerformance(listener: PerformanceListener): () => void {
-    this.listeners.add(listener)
-    this.start()
-    listener(this.createPerformanceSnapshot(this.getCurrentFps()))
-
-    return () => {
-      this.listeners.delete(listener)
-      this.stopIfIdle()
-    }
-  }
-
-  requestPerformanceRecording(): void {
-    for (const listener of this.recordingListeners) {
-      listener()
-    }
-  }
-
-  subscribePerformanceRecordingRequest(listener: PerformanceRecordingListener): () => void {
-    this.recordingListeners.add(listener)
-
-    return () => {
-      this.recordingListeners.delete(listener)
-    }
   }
 
   private start(): void {
@@ -181,18 +136,15 @@ class MovingBoxManager {
       return
     }
 
-    this.resetPerformanceMetrics()
     this.animationId = requestAnimationFrame(this.tick)
   }
 
-  private tick = (timestamp: number): void => {
-    this.measureFrame(timestamp)
-
+  private tick = (): void => {
     for (const box of this.boxes.values()) {
       this.updateBox(box)
     }
 
-    if (this.boxes.size === 0 && this.listeners.size === 0) {
+    if (this.boxes.size === 0) {
       this.animationId = null
       return
     }
@@ -238,12 +190,10 @@ class MovingBoxManager {
 
     cancelAnimationFrame(this.animationId)
     this.animationId = null
-    this.lastFrameTime = null
-    this.emitPerformanceSnapshot(0)
   }
 
   private stopIfIdle(): void {
-    if (this.boxes.size === 0 && this.listeners.size === 0) {
+    if (this.boxes.size === 0) {
       this.stop()
     }
   }
@@ -302,62 +252,6 @@ class MovingBoxManager {
   private clearAllCpuTasks(): void {
     for (const boxId of this.taskIdsByBox.keys()) {
       this.clearCpuTasks(boxId)
-    }
-  }
-
-  private measureFrame(timestamp: number): void {
-    if (this.lastFrameTime !== null) {
-      const frameInterval = timestamp - this.lastFrameTime
-      this.maxFrameInterval = Math.max(this.maxFrameInterval, frameInterval)
-      this.droppedFrames += Math.max(0, Math.round(frameInterval / FRAME_BUDGET) - 1)
-    }
-
-    this.lastFrameTime = timestamp
-    this.sampledFrames += 1
-
-    if (timestamp - this.sampleStartedAt < METRICS_SAMPLE_INTERVAL) {
-      return
-    }
-
-    this.emitPerformanceSnapshot(this.getCurrentFps(timestamp))
-    this.sampleStartedAt = timestamp
-    this.sampledFrames = 0
-  }
-
-  private getCurrentFps(timestamp = performance.now()): number {
-    const elapsed = timestamp - this.sampleStartedAt
-
-    if (elapsed <= 0 || this.sampledFrames === 0) {
-      return 0
-    }
-
-    return Math.round((this.sampledFrames * 1000) / elapsed)
-  }
-
-  private resetPerformanceMetrics(): void {
-    this.lastFrameTime = null
-    this.sampleStartedAt = performance.now()
-    this.sampledFrames = 0
-    this.maxFrameInterval = 0
-    this.droppedFrames = 0
-    this.emitPerformanceSnapshot(0)
-  }
-
-  private createPerformanceSnapshot(fps: number): MovingBoxPerformanceSnapshot {
-    return {
-      fps,
-      maxFrameInterval: Math.round(this.maxFrameInterval * 10) / 10,
-      droppedFrames: this.droppedFrames,
-      cpuWorkMs: this.cpuWorkMs,
-      runningBoxes: this.boxes.size,
-    }
-  }
-
-  private emitPerformanceSnapshot(fps: number): void {
-    const snapshot = this.createPerformanceSnapshot(fps)
-
-    for (const listener of this.listeners) {
-      listener(snapshot)
     }
   }
 

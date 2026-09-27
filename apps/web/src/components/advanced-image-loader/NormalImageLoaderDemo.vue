@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import NormalNailBox from './normal-nail-box.vue'
-import { movingBoxManager } from './moving-box-manager'
 // @ts-expect-error 该文件保留为可直接阅读的 JavaScript mock 源码。
 import { getiMockImgList } from './mock.js'
+
+const emit = defineEmits<{
+  'performance-recording-request': []
+}>()
 
 type CropBox = [number, number, number, number]
 
@@ -83,7 +86,7 @@ function addCacheTimestamp(image: NailBoxImage, timestamp: number): NailBoxImage
 function rerender() {
   cacheTimestamp.value = Date.now()
   renderVersion.value += 1
-  movingBoxManager.requestPerformanceRecording()
+  emit('performance-recording-request')
 }
 </script>
 

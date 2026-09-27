@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { createFramePerformanceMonitor } from '@blog/monitoring'
+import { computed, onUnmounted, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import AdvancedImageLoaderDemo from '../components/advanced-image-loader/AdvancedImageLoaderDemo.vue'
 import NormalImageLoaderDemo from '../components/advanced-image-loader/NormalImageLoaderDemo.vue'
-import MovingBoxPerformancePanel from '../components/advanced-image-loader/MovingBoxPerformancePanel.vue'
-import { movingBoxManager } from '../components/advanced-image-loader/moving-box-manager'
+import {
+  CPU_PRESSURE_OPTIONS,
+  movingBoxManager,
+} from '../components/advanced-image-loader/moving-box-manager'
 import CodeBlock from '../components/CodeBlock.vue'
+import PerformancePanel from '../components/performance/PerformancePanel.vue'
+import { usePerformancePanel } from '../composables/use-performance-panel'
 import { projects } from '../data/projects'
 
 const tabs = [
@@ -21,17 +26,43 @@ const renderMode = ref<'normal' | 'optimized'>('optimized')
 const activeTab = ref<(typeof tabs)[number]['id']>('demo')
 const activeSourceIndex = ref(0)
 const activeSource = computed(() => project.sources[activeSourceIndex.value])
+const framePerformanceMonitor = createFramePerformanceMonitor()
+const movingBoxState = ref(movingBoxManager.getState())
+const {
+  snapshot,
+  recordedFps,
+  recordedDroppedFrames,
+  recording,
+  recordingSecondsLeft,
+  startRecording,
+} = usePerformancePanel(framePerformanceMonitor)
+const unsubscribeMovingBoxState = movingBoxManager.subscribe((state) => {
+  movingBoxState.value = state
+})
 
-onBeforeRouteLeave((to) => {
-  if (to.path === '/playground/performance') {
-    movingBoxManager.clear()
-  }
+onUnmounted(() => {
+  unsubscribeMovingBoxState()
+})
+
+onBeforeRouteLeave(() => {
+  movingBoxManager.clear()
 })
 </script>
 
 <template>
   <article class="playground-content" data-page="advanced-image-loader">
-    <MovingBoxPerformancePanel />
+    <PerformancePanel
+      :snapshot="snapshot"
+      :status="movingBoxState.runningBoxes > 0 ? 'running' : 'idle'"
+      :recorded-fps="recordedFps"
+      :recorded-dropped-frames="recordedDroppedFrames"
+      :recording="recording"
+      :recording-seconds-left="recordingSecondsLeft"
+      :pressure-options="CPU_PRESSURE_OPTIONS"
+      :active-pressure="movingBoxState.cpuWorkMs"
+      @record="startRecording"
+      @change-pressure="movingBoxManager.setCpuWorkMs"
+    />
     <p class="eyebrow">BROWSER</p>
     <h2>{{ project.title }}</h2>
     <p class="playground-description">{{ project.description }}</p>
@@ -70,8 +101,11 @@ onBeforeRouteLeave((to) => {
           </div>
         </div>
       </div>
-      <AdvancedImageLoaderDemo v-if="renderMode === 'optimized'" />
-      <NormalImageLoaderDemo v-else />
+      <AdvancedImageLoaderDemo
+        v-if="renderMode === 'optimized'"
+        @performance-recording-request="startRecording"
+      />
+      <NormalImageLoaderDemo v-else @performance-recording-request="startRecording" />
     </div>
 
     <nav class="content-tabs" aria-label="技术内容" role="tablist">
