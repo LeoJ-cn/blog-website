@@ -122,21 +122,21 @@ function getFpsLevel(fps: number) {
         <table class="performance-panel__history-table">
           <thead>
             <tr>
-              <th scope="col">时间</th>
-              <th scope="col">平均 FPS</th>
-              <th scope="col">P95 帧间隔</th>
-              <th scope="col">60 FPS 目标</th>
-              <th scope="col">未达目标帧</th>
-              <th scope="col">LoAF / 阻塞</th>
+              <th scope="col">秒</th>
+              <th scope="col" title="平均 FPS">FPS</th>
+              <th scope="col" title="P95 帧间隔">P95</th>
+              <th scope="col" title="60 FPS 目标达成率">目标</th>
+              <th scope="col" title="未达目标帧">未达</th>
+              <th scope="col" title="LoAF 次数 / 阻塞时长">LoAF</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(recordedSnapshot, index) in recordedSnapshots" :key="index">
-              <th scope="row">第 {{ index + 1 }} 秒</th>
+              <th scope="row">{{ index + 1 }}s</th>
               <td :class="getFpsLevel(recordedSnapshot.sample.fps)">
                 {{ recordedSnapshot.sample.fps }}
               </td>
-              <td>{{ recordedSnapshot.sample.p95FrameInterval.toFixed(1) }}ms</td>
+              <td>{{ recordedSnapshot.sample.p95FrameInterval.toFixed(1) }}</td>
               <td>
                 {{
                   recordedSnapshot.target
@@ -145,10 +145,16 @@ function getFpsLevel(fps: number) {
                 }}
               </td>
               <td>{{ recordedSnapshot.target?.missedFrames ?? '—' }}</td>
-              <td>
+              <td
+                :title="
+                  recordedSnapshot.longAnimationFrames
+                    ? `${recordedSnapshot.longAnimationFrames.count} 次 / ${recordedSnapshot.longAnimationFrames.totalBlockingDuration.toFixed(1)}ms`
+                    : undefined
+                "
+              >
                 {{
                   recordedSnapshot.longAnimationFrames
-                    ? `${recordedSnapshot.longAnimationFrames.count} / ${recordedSnapshot.longAnimationFrames.totalBlockingDuration.toFixed(1)}ms`
+                    ? `${recordedSnapshot.longAnimationFrames.count}/${Math.round(recordedSnapshot.longAnimationFrames.totalBlockingDuration)}ms`
                     : '—'
                 }}
               </td>
@@ -207,13 +213,14 @@ function getFpsLevel(fps: number) {
   box-shadow:
     0 16px 40px rgb(0 0 0 / 35%),
     inset 0 1px rgb(83 255 162 / 10%);
+  box-sizing: border-box;
   color: #d8ffe8;
   padding: 8px 10px;
   position: fixed;
   right: 18px;
   top: 76px;
   max-width: calc(100vw - 36px);
-  width: 480px;
+  width: 300px;
   z-index: 1200;
 }
 
@@ -362,15 +369,15 @@ function getFpsLevel(fps: number) {
 .performance-panel__history-table {
   border-collapse: collapse;
   font: 9px monospace;
-  min-width: 450px;
+  min-width: 278px;
   width: 100%;
 }
 
 .performance-panel__history-table th,
 .performance-panel__history-table td {
   border-bottom: 1px solid #174d34;
-  padding: 4px;
-  text-align: right;
+  padding: 4px 2px;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -383,6 +390,7 @@ function getFpsLevel(fps: number) {
   color: #609879;
   padding-left: 0;
   text-align: left;
+  width: 22px;
 }
 
 .performance-panel__history-table th:last-child,
