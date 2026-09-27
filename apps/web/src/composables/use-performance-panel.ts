@@ -27,54 +27,44 @@ export function usePerformancePanel(
   const recordedSnapshots = ref<FramePerformanceSnapshot[]>([])
   const recording = ref(false)
   const recordingSecondsLeft = ref(0)
-  let recordingTimer: number | null = null
+  let pendingSnapshots: FramePerformanceSnapshot[] = []
 
   const unsubscribe = monitor.subscribe((nextSnapshot) => {
     snapshot.value = nextSnapshot
-  })
 
-  function clearRecordingTimer() {
-    if (recordingTimer === null) {
+    if (!recording.value || nextSnapshot.status !== 'running' || nextSnapshot.sample.duration <= 0) {
       return
     }
 
-    window.clearInterval(recordingTimer)
-    recordingTimer = null
-  }
+    pendingSnapshots.push({
+      ...nextSnapshot,
+      sample: { ...nextSnapshot.sample },
+      target: nextSnapshot.target ? { ...nextSnapshot.target } : null,
+      longAnimationFrames: nextSnapshot.longAnimationFrames
+        ? { ...nextSnapshot.longAnimationFrames }
+        : null,
+    })
+    recordingSecondsLeft.value = Math.max(0, recordingDuration - pendingSnapshots.length)
+
+    if (pendingSnapshots.length < recordingDuration) {
+      return
+    }
+
+    recordedSnapshots.value = pendingSnapshots
+    recording.value = false
+  })
 
   function startRecording() {
-    clearRecordingTimer()
-
-    const pendingSnapshots: FramePerformanceSnapshot[] = []
+    pendingSnapshots = []
 
     recordedSnapshots.value = []
     recording.value = true
     recordingSecondsLeft.value = recordingDuration
-
-    recordingTimer = window.setInterval(() => {
-      pendingSnapshots.push({
-        ...snapshot.value,
-        sample: { ...snapshot.value.sample },
-        target: snapshot.value.target ? { ...snapshot.value.target } : null,
-        longAnimationFrames: snapshot.value.longAnimationFrames
-          ? { ...snapshot.value.longAnimationFrames }
-          : null,
-      })
-      recordingSecondsLeft.value -= 1
-
-      if (recordingSecondsLeft.value > 0) {
-        return
-      }
-
-      recordedSnapshots.value = pendingSnapshots
-      recording.value = false
-      clearRecordingTimer()
-    }, 1000)
+    monitor.reset()
   }
 
   onUnmounted(() => {
     unsubscribe()
-    clearRecordingTimer()
   })
 
   return {
