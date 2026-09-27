@@ -1,18 +1,4 @@
-export interface FrameSampleMetrics {
-  duration: number
-  frameCount: number
-  fps: number
-  p95FrameInterval: number
-  maxFrameInterval: number
-}
-
-export interface FrameTargetMetrics {
-  fps: number
-  frameBudget: number
-  overBudgetFrames: number
-  missedFrames: number
-  achievementRate: number
-}
+import type { FrameSampleMetrics, FrameTargetMetrics } from './frame-monitor.types'
 
 function getValidIntervals(values: readonly number[]): number[] {
   return values.filter((value) => Number.isFinite(value) && value > 0)

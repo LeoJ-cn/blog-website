@@ -1,125 +1,181 @@
+import { calculateFrameSample, calculateTargetMetrics } from './frame-statistics'
+import { createBrowserFrameMonitorRuntime } from './frame-monitor.runtime'
 import type {
   FramePerformanceListener,
   FramePerformanceMonitor,
   FramePerformanceMonitorOptions,
   FramePerformanceSnapshot,
+  FrameMonitorRuntime,
+  FrameMonitorStatus,
 } from './frame-monitor.types'
 
-const DEFAULT_TARGET_FPS = 60
-const DEFAULT_SAMPLE_INTERVAL = 500
+const DEFAULT_SAMPLE_INTERVAL = 1000
 
-function createEmptySnapshot(): FramePerformanceSnapshot {
+function createEmptySnapshot(
+  status: FrameMonitorStatus = 'idle',
+  timestamp = 0,
+): FramePerformanceSnapshot {
   return {
-    fps: 0,
-    maxFrameInterval: 0,
-    droppedFrames: 0,
+    timestamp,
+    status,
+    sample: {
+      duration: 0,
+      frameCount: 0,
+      fps: 0,
+      p95FrameInterval: 0,
+      maxFrameInterval: 0,
+    },
+    target: null,
+    longAnimationFrames: null,
   }
 }
 
 export function createFramePerformanceMonitor(
   options: FramePerformanceMonitorOptions = {},
 ): FramePerformanceMonitor {
-  const targetFps =
-    options.targetFps !== undefined && options.targetFps > 0
-      ? options.targetFps
-      : DEFAULT_TARGET_FPS
+  const runtime: FrameMonitorRuntime | null =
+    options.runtime === undefined ? createBrowserFrameMonitorRuntime() : options.runtime
   const sampleInterval =
-    options.sampleInterval !== undefined && options.sampleInterval > 0
+    options.sampleInterval !== undefined &&
+    Number.isFinite(options.sampleInterval) &&
+    options.sampleInterval > 0
       ? options.sampleInterval
       : DEFAULT_SAMPLE_INTERVAL
-  const frameBudget = 1000 / targetFps
   const listeners = new Set<FramePerformanceListener>()
-
-  let animationId: number | null = null
-  let running = false
+  let snapshot = createEmptySnapshot('idle', runtime?.now() ?? 0)
+  let frameId: number | null = null
+  let generation = 0
+  let unsubscribeVisibility: (() => void) | null = null
+  let windowStartedAt = runtime?.now() ?? 0
   let lastFrameTime: number | null = null
-  let sampleStartedAt = 0
-  let sampledFrames = 0
-  let snapshot = createEmptySnapshot()
+  let frameCount = 0
+  let frameIntervals: number[] = []
 
-  const supportsFrameMonitoring = () =>
-    typeof window !== 'undefined' &&
-    typeof window.requestAnimationFrame === 'function' &&
-    typeof window.cancelAnimationFrame === 'function' &&
-    typeof window.performance?.now === 'function'
+  const copySnapshot = (): FramePerformanceSnapshot => ({
+    ...snapshot,
+    sample: { ...snapshot.sample },
+    target: snapshot.target ? { ...snapshot.target } : null,
+    longAnimationFrames: snapshot.longAnimationFrames
+      ? { ...snapshot.longAnimationFrames }
+      : null,
+  })
 
-  const copySnapshot = (): FramePerformanceSnapshot => ({ ...snapshot })
+  const notifyListener = (listener: FramePerformanceListener) => {
+    try {
+      listener(copySnapshot())
+    } catch (error) {
+      options.onListenerError?.(error)
+    }
+  }
 
   const emit = () => {
     for (const listener of listeners) {
-      listener(copySnapshot())
+      notifyListener(listener)
     }
   }
 
-  const tick = (timestamp: number) => {
-    if (!running) {
+  const resetWindow = (timestamp: number) => {
+    windowStartedAt = timestamp
+    lastFrameTime = null
+    frameCount = 0
+    frameIntervals = []
+  }
+
+  const cancelScheduledFrame = () => {
+    generation += 1
+    if (runtime && frameId !== null) {
+      runtime.cancelFrame(frameId)
+    }
+    frameId = null
+  }
+
+  const scheduleFrame = () => {
+    if (!runtime || snapshot.status !== 'running' || frameId !== null) {
+      return
+    }
+    const scheduledGeneration = generation
+    frameId = runtime.requestFrame((timestamp) => {
+      if (scheduledGeneration !== generation || snapshot.status !== 'running') {
+        return
+      }
+      frameId = null
+
+      if (timestamp >= windowStartedAt && (lastFrameTime === null || timestamp > lastFrameTime)) {
+        if (lastFrameTime !== null) {
+          frameIntervals.push(timestamp - lastFrameTime)
+        }
+        lastFrameTime = timestamp
+        frameCount += 1
+
+        const elapsed = timestamp - windowStartedAt
+        if (elapsed + 0.001 >= sampleInterval) {
+          const sample = calculateFrameSample(frameIntervals, elapsed, frameCount)
+          snapshot = {
+            timestamp,
+            status: 'running',
+            sample,
+            target: calculateTargetMetrics(frameIntervals, sample.fps, options.targetFps),
+            longAnimationFrames: null,
+          }
+          resetWindow(timestamp)
+          emit()
+        }
+      }
+
+      scheduleFrame()
+    })
+  }
+
+  const handleVisibilityChange = () => {
+    if (!runtime || snapshot.status === 'idle') {
       return
     }
 
-    if (lastFrameTime !== null) {
-      const frameInterval = timestamp - lastFrameTime
-      snapshot = {
-        ...snapshot,
-        maxFrameInterval: Math.round(Math.max(snapshot.maxFrameInterval, frameInterval) * 10) / 10,
-        droppedFrames:
-          snapshot.droppedFrames + Math.max(0, Math.round(frameInterval / frameBudget) - 1),
-      }
-    }
-
-    lastFrameTime = timestamp
-    sampledFrames += 1
-
-    const elapsed = timestamp - sampleStartedAt
-
-    if (elapsed >= sampleInterval) {
-      snapshot = {
-        ...snapshot,
-        fps: elapsed > 0 ? Math.round((sampledFrames * 1000) / elapsed) : 0,
-      }
-      sampleStartedAt = timestamp
-      sampledFrames = 0
+    if (runtime.getVisibilityState() === 'hidden') {
+      cancelScheduledFrame()
+      resetWindow(runtime.now())
+      snapshot = { ...snapshot, timestamp: runtime.now(), status: 'suspended' }
       emit()
+      return
     }
 
-    if (running) {
-      animationId = window.requestAnimationFrame(tick)
-    }
+    resetWindow(runtime.now())
+    snapshot = { ...snapshot, timestamp: runtime.now(), status: 'running' }
+    emit()
+    scheduleFrame()
   }
 
   const start = () => {
-    if (running || !supportsFrameMonitoring()) {
+    if (!runtime || snapshot.status !== 'idle') {
       return
     }
-
-    running = true
-    lastFrameTime = null
-    sampledFrames = 0
-    sampleStartedAt = window.performance.now()
-    animationId = window.requestAnimationFrame(tick)
+    unsubscribeVisibility = runtime.subscribeVisibilityChange(handleVisibilityChange)
+    resetWindow(runtime.now())
+    snapshot = {
+      ...snapshot,
+      timestamp: runtime.now(),
+      status: runtime.getVisibilityState() === 'hidden' ? 'suspended' : 'running',
+    }
+    scheduleFrame()
   }
 
   const stop = () => {
-    running = false
-
-    if (animationId !== null && supportsFrameMonitoring()) {
-      window.cancelAnimationFrame(animationId)
+    if (snapshot.status === 'idle') {
+      return
     }
-
-    animationId = null
-    lastFrameTime = null
-    sampledFrames = 0
-
-    if (snapshot.fps !== 0) {
-      snapshot = { ...snapshot, fps: 0 }
-      emit()
-    }
+    cancelScheduledFrame()
+    unsubscribeVisibility?.()
+    unsubscribeVisibility = null
+    resetWindow(runtime?.now() ?? 0)
+    snapshot = { ...snapshot, timestamp: runtime?.now() ?? 0, status: 'idle' }
+    emit()
   }
 
   const reset = () => {
-    snapshot = createEmptySnapshot()
-    lastFrameTime = null
-    sampledFrames = 0
-    sampleStartedAt = supportsFrameMonitoring() ? window.performance.now() : 0
+    const status = snapshot.status
+    const timestamp = runtime?.now() ?? 0
+    resetWindow(timestamp)
+    snapshot = createEmptySnapshot(status, timestamp)
     emit()
   }
 
@@ -130,19 +186,16 @@ export function createFramePerformanceMonitor(
     getSnapshot: copySnapshot,
     subscribe(listener) {
       listeners.add(listener)
-      listener(copySnapshot())
       start()
+      notifyListener(listener)
 
       let subscribed = true
-
       return () => {
         if (!subscribed) {
           return
         }
-
         subscribed = false
         listeners.delete(listener)
-
         if (listeners.size === 0) {
           stop()
         }
