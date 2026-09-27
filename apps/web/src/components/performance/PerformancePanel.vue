@@ -103,7 +103,7 @@ function getFpsLevel(fps: number) {
 
       <div v-if="props.pressureOptions.length > 0" class="performance-panel__pressure">
         <div class="performance-panel__pressure-header">
-          <span>循环宏附加任务</span>
+          <span>动画附加任务</span>
           <button
             type="button"
             role="switch"
