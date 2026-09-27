@@ -31,6 +31,7 @@ export function createFramePerformanceMonitor(
   const listeners = new Set<FramePerformanceListener>()
 
   let animationId: number | null = null
+  let running = false
   let lastFrameTime: number | null = null
   let sampleStartedAt = 0
   let sampledFrames = 0
@@ -51,6 +52,10 @@ export function createFramePerformanceMonitor(
   }
 
   const tick = (timestamp: number) => {
+    if (!running) {
+      return
+    }
+
     if (lastFrameTime !== null) {
       const frameInterval = timestamp - lastFrameTime
       snapshot = {
@@ -76,14 +81,17 @@ export function createFramePerformanceMonitor(
       emit()
     }
 
-    animationId = window.requestAnimationFrame(tick)
+    if (running) {
+      animationId = window.requestAnimationFrame(tick)
+    }
   }
 
   const start = () => {
-    if (animationId !== null || !supportsFrameMonitoring()) {
+    if (running || !supportsFrameMonitoring()) {
       return
     }
 
+    running = true
     lastFrameTime = null
     sampledFrames = 0
     sampleStartedAt = window.performance.now()
@@ -91,6 +99,8 @@ export function createFramePerformanceMonitor(
   }
 
   const stop = () => {
+    running = false
+
     if (animationId !== null && supportsFrameMonitoring()) {
       window.cancelAnimationFrame(animationId)
     }
