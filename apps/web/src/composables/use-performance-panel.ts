@@ -9,8 +9,7 @@ export interface UsePerformancePanelOptions {
 
 export interface UsePerformancePanelResult {
   snapshot: Readonly<Ref<FramePerformanceSnapshot>>
-  recordedFps: Readonly<Ref<readonly number[]>>
-  recordedDroppedFrames: Readonly<Ref<number | null>>
+  recordedSnapshots: Readonly<Ref<readonly FramePerformanceSnapshot[]>>
   recording: Readonly<Ref<boolean>>
   recordingSecondsLeft: Readonly<Ref<number>>
   startRecording: () => void
@@ -25,8 +24,7 @@ export function usePerformancePanel(
     Math.floor(options.recordingDuration ?? DEFAULT_RECORDING_DURATION),
   )
   const snapshot = ref<FramePerformanceSnapshot>(monitor.getSnapshot())
-  const recordedFps = ref<number[]>([])
-  const recordedDroppedFrames = ref<number | null>(null)
+  const recordedSnapshots = ref<FramePerformanceSnapshot[]>([])
   const recording = ref(false)
   const recordingSecondsLeft = ref(0)
   let recordingTimer: number | null = null
@@ -47,27 +45,28 @@ export function usePerformancePanel(
   function startRecording() {
     clearRecordingTimer()
 
-    const pendingFps: number[] = []
-    const droppedFramesStart = snapshot.value.droppedFrames
+    const pendingSnapshots: FramePerformanceSnapshot[] = []
 
-    recordedFps.value = []
-    recordedDroppedFrames.value = null
+    recordedSnapshots.value = []
     recording.value = true
     recordingSecondsLeft.value = recordingDuration
 
     recordingTimer = window.setInterval(() => {
-      pendingFps.push(snapshot.value.fps)
+      pendingSnapshots.push({
+        ...snapshot.value,
+        sample: { ...snapshot.value.sample },
+        target: snapshot.value.target ? { ...snapshot.value.target } : null,
+        longAnimationFrames: snapshot.value.longAnimationFrames
+          ? { ...snapshot.value.longAnimationFrames }
+          : null,
+      })
       recordingSecondsLeft.value -= 1
 
       if (recordingSecondsLeft.value > 0) {
         return
       }
 
-      recordedFps.value = pendingFps
-      recordedDroppedFrames.value = Math.max(
-        0,
-        snapshot.value.droppedFrames - droppedFramesStart,
-      )
+      recordedSnapshots.value = pendingSnapshots
       recording.value = false
       clearRecordingTimer()
     }, 1000)
@@ -80,8 +79,7 @@ export function usePerformancePanel(
 
   return {
     snapshot: readonly(snapshot),
-    recordedFps: readonly(recordedFps),
-    recordedDroppedFrames: readonly(recordedDroppedFrames),
+    recordedSnapshots: readonly(recordedSnapshots),
     recording: readonly(recording),
     recordingSecondsLeft: readonly(recordingSecondsLeft),
     startRecording,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { createFramePerformanceMonitor } from '@blog/monitoring'
-import { onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { usePerformancePanel } from '../../composables/use-performance-panel'
 import {
   CPU_PRESSURE_OPTIONS,
@@ -14,13 +14,12 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   recordingDuration: 5,
 })
-const framePerformanceMonitor = createFramePerformanceMonitor()
+const framePerformanceMonitor = createFramePerformanceMonitor({ targetFps: 60 })
 const simulationManager = createPerformanceSimulationManager()
 const simulationState = ref(simulationManager.getState())
 const {
   snapshot,
-  recordedFps,
-  recordedDroppedFrames,
+  recordedSnapshots,
   recording,
   recordingSecondsLeft,
   startRecording,
@@ -30,6 +29,9 @@ const {
 const unsubscribeSimulationState = simulationManager.subscribe((state) => {
   simulationState.value = state
 })
+const recordedMissedFrames = computed(() =>
+  recordedSnapshots.value.reduce((total, item) => total + (item.target?.missedFrames ?? 0), 0),
+)
 
 defineExpose({ startRecording })
 
@@ -63,7 +65,29 @@ function getFpsLevel(fps: number) {
     <dl class="performance-panel__metrics" aria-live="polite">
       <div>
         <dt>实时 FPS</dt>
-        <dd :class="getFpsLevel(snapshot.fps)">{{ snapshot.fps }}</dd>
+        <dd :class="getFpsLevel(snapshot.sample.fps)">{{ snapshot.sample.fps }}</dd>
+      </div>
+      <div>
+        <dt>P95 帧间隔</dt>
+        <dd>{{ snapshot.sample.p95FrameInterval.toFixed(1) }}ms</dd>
+      </div>
+      <div>
+        <dt>最大帧间隔</dt>
+        <dd>{{ snapshot.sample.maxFrameInterval.toFixed(1) }}ms</dd>
+      </div>
+      <div v-if="snapshot.target">
+        <dt>{{ snapshot.target.fps }} FPS 目标</dt>
+        <dd>{{ Math.round(snapshot.target.achievementRate * 100) }}%</dd>
+      </div>
+      <div v-if="snapshot.target">
+        <dt>未达目标帧</dt>
+        <dd>{{ snapshot.target.missedFrames }}</dd>
+      </div>
+      <div v-if="snapshot.longAnimationFrames">
+        <dt>LoAF / 阻塞</dt>
+        <dd>
+          {{ snapshot.longAnimationFrames.count }} / {{ snapshot.longAnimationFrames.totalBlockingDuration.toFixed(1) }}ms
+        </dd>
       </div>
     </dl>
 
@@ -74,7 +98,7 @@ function getFpsLevel(fps: number) {
           {{ recording ? `记录中 ${recordingSecondsLeft}s` : '记录' }}
         </button>
       </div>
-      <div v-if="recordedFps.length === 0" class="performance-panel__history-empty">
+      <div v-if="recordedSnapshots.length === 0" class="performance-panel__history-empty">
         {{
           recording
             ? '正在采集触发后的 FPS…'
@@ -82,16 +106,21 @@ function getFpsLevel(fps: number) {
         }}
       </div>
       <div v-else class="performance-panel__history-list" aria-live="polite">
-        <div v-for="(fps, index) in recordedFps" :key="index">
+        <div v-for="(recordedSnapshot, index) in recordedSnapshots" :key="index">
           <span>第 {{ index + 1 }} 秒</span>
           <i>
-            <b :class="getFpsLevel(fps)" :style="{ width: `${(Math.min(fps, 60) / 60) * 100}%` }" />
+            <b
+              :class="getFpsLevel(recordedSnapshot.sample.fps)"
+              :style="{ width: `${(Math.min(recordedSnapshot.sample.fps, 60) / 60) * 100}%` }"
+            />
           </i>
-          <strong :class="getFpsLevel(fps)">{{ fps }} FPS</strong>
+          <strong :class="getFpsLevel(recordedSnapshot.sample.fps)">
+            {{ recordedSnapshot.sample.fps }} FPS
+          </strong>
         </div>
         <div class="performance-panel__recorded-drops">
-          <span>{{ props.recordingDuration }} 秒累计掉帧</span>
-          <strong>{{ recordedDroppedFrames ?? 0 }} 帧</strong>
+          <span>{{ props.recordingDuration }} 秒未达目标帧</span>
+          <strong>{{ recordedMissedFrames }} 帧</strong>
         </div>
       </div>
     </div>
