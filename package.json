@@ -59,6 +59,7 @@
     "verify:ci:docker": "node scripts/ci-docker-check.mjs",
     "prepare": "husky",
     "typecheck": "pnpm --filter @blog/web typecheck",
+    "test:monitoring": "pnpm --filter @blog/monitoring test",
     "check:config": "pnpm --filter @blog/web exec tsc --noEmit -p tsconfig.config.json",
     "check:editor": "pnpm check:config && pnpm typecheck && pnpm lint",
     "lint": "pnpm lint:script",
