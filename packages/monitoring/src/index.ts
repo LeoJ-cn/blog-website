@@ -26,5 +26,12 @@ export function startMonitoring(options: MonitoringOptions = {}) {
 }
 
 export { collectAndReport, collectPerformanceMetrics } from './performance/collector'
+export { createFramePerformanceMonitor } from './performance/frame-monitor'
 export { ConsoleReporter } from './reporter/console'
+export type {
+  FramePerformanceListener,
+  FramePerformanceMonitor,
+  FramePerformanceMonitorOptions,
+  FramePerformanceSnapshot,
+} from './performance/frame-monitor.types'
 export type { MonitoringOptions, MonitoringReporter, PerformanceMetric } from './types'
