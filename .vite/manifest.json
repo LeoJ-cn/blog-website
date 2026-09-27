@@ -1,49 +1,72 @@
 {
+  "_PerformancePanel-ne8TAykH.css": {
+    "file": "assets/PerformancePanel-ne8TAykH.css",
+    "src": "_PerformancePanel-ne8TAykH.css"
+  },
+  "_chunk-5TUtLGfP.js": {
+    "file": "assets/chunk-5TUtLGfP.js",
+    "name": "PerformancePanel",
+    "imports": [
+      "_chunk-C-6fBGKu.js",
+      "_chunk-DlAUqK2U.js"
+    ],
+    "css": [
+      "assets/PerformancePanel-ne8TAykH.css"
+    ]
+  },
   "_chunk-AdE2V8ze.js": {
     "file": "assets/chunk-AdE2V8ze.js",
     "name": "projects"
   },
-  "_chunk-BZ5AErn-.js": {
-    "file": "assets/chunk-BZ5AErn-.js",
+  "_chunk-C-6fBGKu.js": {
+    "file": "assets/chunk-C-6fBGKu.js",
+    "name": "framework"
+  },
+  "_chunk-DLQgUsJI.js": {
+    "file": "assets/chunk-DLQgUsJI.js",
     "name": "CodeBlock.vue_vue_type_script_setup_true_lang",
     "imports": [
-      "_chunk-L0Oz9bk5.js"
+      "_chunk-C-6fBGKu.js"
     ]
   },
   "_chunk-DlAUqK2U.js": {
     "file": "assets/chunk-DlAUqK2U.js",
     "name": "_plugin-vue_export-helper"
   },
-  "_chunk-L0Oz9bk5.js": {
-    "file": "assets/chunk-L0Oz9bk5.js",
-    "name": "framework"
-  },
   "_chunk-legacy-BVIICed7.js": {
     "file": "assets/chunk-legacy-BVIICed7.js",
     "name": "_plugin-vue_export-helper"
   },
-  "_chunk-legacy-BtWA7tge.js": {
-    "file": "assets/chunk-legacy-BtWA7tge.js",
-    "name": "CodeBlock.vue_vue_type_script_setup_true_lang",
+  "_chunk-legacy-Cq4m86Gl.js": {
+    "file": "assets/chunk-legacy-Cq4m86Gl.js",
+    "name": "PerformancePanel",
     "imports": [
-      "_chunk-legacy-CJYSeWyu.js"
+      "_chunk-legacy-DM9c4FxL.js",
+      "_chunk-legacy-BVIICed7.js"
     ]
   },
-  "_chunk-legacy-CJYSeWyu.js": {
-    "file": "assets/chunk-legacy-CJYSeWyu.js",
+  "_chunk-legacy-DM9c4FxL.js": {
+    "file": "assets/chunk-legacy-DM9c4FxL.js",
     "name": "framework"
+  },
+  "_chunk-legacy-DQn48W9G.js": {
+    "file": "assets/chunk-legacy-DQn48W9G.js",
+    "name": "CodeBlock.vue_vue_type_script_setup_true_lang",
+    "imports": [
+      "_chunk-legacy-DM9c4FxL.js"
+    ]
   },
   "_chunk-legacy-HSWlfosX.js": {
     "file": "assets/chunk-legacy-HSWlfosX.js",
     "name": "projects"
   },
   "index-legacy.html": {
-    "file": "assets/entry-index-legacy-QKxEbzRx.js",
+    "file": "assets/entry-index-legacy-VfFIbFNf.js",
     "name": "index",
     "src": "index-legacy.html",
     "isEntry": true,
     "imports": [
-      "_chunk-legacy-CJYSeWyu.js"
+      "_chunk-legacy-DM9c4FxL.js"
     ],
     "dynamicImports": [
       "src/pages/HomePage-legacy.tsx",
@@ -56,12 +79,12 @@
     ]
   },
   "index.html": {
-    "file": "assets/entry-index-BEFAd2jj.js",
+    "file": "assets/entry-index-BgL15Rrm.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_chunk-L0Oz9bk5.js"
+      "_chunk-C-6fBGKu.js"
     ],
     "dynamicImports": [
       "src/pages/HomePage.tsx",
@@ -81,54 +104,55 @@
     "src": "src/components/advanced-image-loader/no-image.png"
   },
   "src/pages/HomePage-legacy.tsx": {
-    "file": "assets/chunk-legacy-BmaA9jAd.js",
+    "file": "assets/chunk-legacy--tZ713FW.js",
     "name": "HomePage",
     "src": "src/pages/HomePage-legacy.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-legacy-CJYSeWyu.js",
+      "_chunk-legacy-DM9c4FxL.js",
       "_chunk-legacy-HSWlfosX.js"
     ]
   },
   "src/pages/HomePage.tsx": {
-    "file": "assets/chunk-B3JdRzNG.js",
+    "file": "assets/chunk-DTElXe48.js",
     "name": "HomePage",
     "src": "src/pages/HomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-L0Oz9bk5.js",
+      "_chunk-C-6fBGKu.js",
       "_chunk-AdE2V8ze.js"
     ]
   },
   "src/pages/NotFoundPage-legacy.vue": {
-    "file": "assets/chunk-legacy-GQP9OjKl.js",
+    "file": "assets/chunk-legacy-BKGuzgjZ.js",
     "name": "NotFoundPage",
     "src": "src/pages/NotFoundPage-legacy.vue",
     "isDynamicEntry": true,
     "imports": [
       "_chunk-legacy-BVIICed7.js",
-      "_chunk-legacy-CJYSeWyu.js"
+      "_chunk-legacy-DM9c4FxL.js"
     ]
   },
   "src/pages/NotFoundPage.vue": {
-    "file": "assets/chunk-BNeJbG3P.js",
+    "file": "assets/chunk-DXYo1Bxq.js",
     "name": "NotFoundPage",
     "src": "src/pages/NotFoundPage.vue",
     "isDynamicEntry": true,
     "imports": [
       "_chunk-DlAUqK2U.js",
-      "_chunk-L0Oz9bk5.js"
+      "_chunk-C-6fBGKu.js"
     ]
   },
   "src/pages/PlaygroundAdvancedImagePage-legacy.vue": {
-    "file": "assets/chunk-legacy-ggL6TL1d.js",
+    "file": "assets/chunk-legacy-_xTGIxRa.js",
     "name": "PlaygroundAdvancedImagePage",
     "src": "src/pages/PlaygroundAdvancedImagePage-legacy.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-legacy-CJYSeWyu.js",
-      "_chunk-legacy-BtWA7tge.js",
+      "_chunk-legacy-DM9c4FxL.js",
+      "_chunk-legacy-DQn48W9G.js",
       "_chunk-legacy-BVIICed7.js",
+      "_chunk-legacy-Cq4m86Gl.js",
       "_chunk-legacy-HSWlfosX.js"
     ],
     "assets": [
@@ -136,43 +160,44 @@
     ]
   },
   "src/pages/PlaygroundAdvancedImagePage.vue": {
-    "file": "assets/chunk-Cj7B0Qzh.js",
+    "file": "assets/chunk-xUCai3Rw.js",
     "name": "PlaygroundAdvancedImagePage",
     "src": "src/pages/PlaygroundAdvancedImagePage.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-L0Oz9bk5.js",
-      "_chunk-BZ5AErn-.js",
+      "_chunk-C-6fBGKu.js",
+      "_chunk-DLQgUsJI.js",
       "_chunk-DlAUqK2U.js",
+      "_chunk-5TUtLGfP.js",
       "_chunk-AdE2V8ze.js"
     ],
     "css": [
-      "assets/PlaygroundAdvancedImagePage-D1wsFaOi.css"
+      "assets/PlaygroundAdvancedImagePage-CeoipPQ7.css"
     ],
     "assets": [
       "assets/no-image-DBM_6GG3.png"
     ]
   },
   "src/pages/PlaygroundDevicePerformanceProbePage-legacy.vue": {
-    "file": "assets/chunk-legacy-CnFLXuvd.js",
+    "file": "assets/chunk-legacy-CI9Aqhdv.js",
     "name": "PlaygroundDevicePerformanceProbePage",
     "src": "src/pages/PlaygroundDevicePerformanceProbePage-legacy.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-legacy-CJYSeWyu.js",
-      "_chunk-legacy-BtWA7tge.js",
+      "_chunk-legacy-DM9c4FxL.js",
+      "_chunk-legacy-DQn48W9G.js",
       "_chunk-legacy-HSWlfosX.js",
       "_chunk-legacy-BVIICed7.js"
     ]
   },
   "src/pages/PlaygroundDevicePerformanceProbePage.vue": {
-    "file": "assets/chunk-C3Dl77pe.js",
+    "file": "assets/chunk-D0BxDDF0.js",
     "name": "PlaygroundDevicePerformanceProbePage",
     "src": "src/pages/PlaygroundDevicePerformanceProbePage.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-L0Oz9bk5.js",
-      "_chunk-BZ5AErn-.js",
+      "_chunk-C-6fBGKu.js",
+      "_chunk-DLQgUsJI.js",
       "_chunk-AdE2V8ze.js",
       "_chunk-DlAUqK2U.js"
     ],
@@ -181,70 +206,72 @@
     ]
   },
   "src/pages/PlaygroundPage-legacy.vue": {
-    "file": "assets/chunk-legacy-jawhXdcY.js",
+    "file": "assets/chunk-legacy-CqcHUWGf.js",
     "name": "PlaygroundPage",
     "src": "src/pages/PlaygroundPage-legacy.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-legacy-CJYSeWyu.js",
+      "_chunk-legacy-DM9c4FxL.js",
       "_chunk-legacy-HSWlfosX.js"
     ]
   },
   "src/pages/PlaygroundPage.vue": {
-    "file": "assets/chunk-BOAKNuwp.js",
+    "file": "assets/chunk-Np4J8VsH.js",
     "name": "PlaygroundPage",
     "src": "src/pages/PlaygroundPage.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-L0Oz9bk5.js",
+      "_chunk-C-6fBGKu.js",
       "_chunk-AdE2V8ze.js"
     ]
   },
   "src/pages/PlaygroundPerformancePage-legacy.vue": {
-    "file": "assets/chunk-legacy-Cd37gubs.js",
+    "file": "assets/chunk-legacy-CtaXiqe9.js",
     "name": "PlaygroundPerformancePage",
     "src": "src/pages/PlaygroundPerformancePage-legacy.vue",
     "isDynamicEntry": true,
     "imports": [
       "_chunk-legacy-BVIICed7.js",
-      "_chunk-legacy-CJYSeWyu.js"
+      "_chunk-legacy-DM9c4FxL.js"
     ]
   },
   "src/pages/PlaygroundPerformancePage.vue": {
-    "file": "assets/chunk-BbgBQ_I4.js",
+    "file": "assets/chunk-CyXtfFmx.js",
     "name": "PlaygroundPerformancePage",
     "src": "src/pages/PlaygroundPerformancePage.vue",
     "isDynamicEntry": true,
     "imports": [
       "_chunk-DlAUqK2U.js",
-      "_chunk-L0Oz9bk5.js"
+      "_chunk-C-6fBGKu.js"
     ]
   },
   "src/pages/PlaygroundRenderSchedulerPage-legacy.vue": {
-    "file": "assets/chunk-legacy-DqzCjDPA.js",
+    "file": "assets/chunk-legacy-SPgwMgdC.js",
     "name": "PlaygroundRenderSchedulerPage",
     "src": "src/pages/PlaygroundRenderSchedulerPage-legacy.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-legacy-BtWA7tge.js",
+      "_chunk-legacy-DQn48W9G.js",
+      "_chunk-legacy-Cq4m86Gl.js",
       "_chunk-legacy-BVIICed7.js",
-      "_chunk-legacy-CJYSeWyu.js",
+      "_chunk-legacy-DM9c4FxL.js",
       "_chunk-legacy-HSWlfosX.js"
     ]
   },
   "src/pages/PlaygroundRenderSchedulerPage.vue": {
-    "file": "assets/chunk-D8VCYbOr.js",
+    "file": "assets/chunk-Cg7hLS1n.js",
     "name": "PlaygroundRenderSchedulerPage",
     "src": "src/pages/PlaygroundRenderSchedulerPage.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-BZ5AErn-.js",
+      "_chunk-DLQgUsJI.js",
+      "_chunk-5TUtLGfP.js",
       "_chunk-DlAUqK2U.js",
-      "_chunk-L0Oz9bk5.js",
+      "_chunk-C-6fBGKu.js",
       "_chunk-AdE2V8ze.js"
     ],
     "css": [
-      "assets/PlaygroundRenderSchedulerPage-CD2jvuEy.css"
+      "assets/PlaygroundRenderSchedulerPage-ChvkRfVv.css"
     ]
   },
   "vite/legacy-polyfills": {
