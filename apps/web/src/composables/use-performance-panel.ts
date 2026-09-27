@@ -32,10 +32,12 @@ export function usePerformancePanel(
   const unsubscribe = monitor.subscribe((nextSnapshot) => {
     snapshot.value = nextSnapshot
 
+    // 录制按“完整采样窗口”计数；暂停态和 reset 产生的空快照不代表有效的一秒数据。
     if (!recording.value || nextSnapshot.status !== 'running' || nextSnapshot.sample.duration <= 0) {
       return
     }
 
+    // 保存独立快照，避免监控器后续更新嵌套指标时污染已经录制的历史数据。
     pendingSnapshots.push({
       ...nextSnapshot,
       sample: { ...nextSnapshot.sample },
@@ -60,6 +62,7 @@ export function usePerformancePanel(
     recordedSnapshots.value = []
     recording.value = true
     recordingSecondsLeft.value = recordingDuration
+    // 从新的采样窗口开始，避免把用户点击前已经累计的半个窗口记入第一秒。
     monitor.reset()
   }
 

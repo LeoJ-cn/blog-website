@@ -49,6 +49,7 @@ function fail() {
 async function drawImage() {
   stopLoading()
   status.value = 'loading'
+  // 等待 Vue 切换 loading/canvas DOM 后再读取模板引用。
   await nextTick()
 
   const image = new Image()
@@ -60,6 +61,7 @@ async function drawImage() {
       : props.image.thumbSrc || props.image.src
     image.className = 'normal-nail-box__image'
     image.onload = () => {
+      // props 变化会启动新请求；旧请求晚到时不得覆盖当前图片。
       if (currentImage !== image || !imageWrapper.value) return
       imageWrapper.value.replaceChildren(image)
       status.value = 'done'
@@ -72,6 +74,7 @@ async function drawImage() {
   image.onload = () => {
     if (currentImage !== image || !canvas.value) return
 
+    // box 是相对原图的归一化坐标，需要转换为 drawImage 的像素源矩形。
     const { box, oriWidth, oriHeight } = props.image.model
     const sourceX = oriWidth * box[0]
     const sourceY = oriHeight * box[1]

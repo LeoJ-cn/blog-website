@@ -318,7 +318,7 @@ export async function detectPerformanceTier() {
   // 获取完整设备信息
   const deviceInfo = getDeviceInfo(highEntropy)
 
-  // 评分逻辑（与之前验证为 95 分的版本完全一致）
+  // 权重和阈值是既有标定模型的一部分；调整会改变历史设备等级，不应作为普通重构处理。
   let cpuScore = 0
   if (cores >= 16) cpuScore = 100
   else if (cores >= 12) cpuScore = 90
@@ -341,7 +341,7 @@ export async function detectPerformanceTier() {
   const dprPenalty = dpr >= 3 ? 10 : dpr >= 2 ? 5 : 0
   const staticWeighted = cpuScore * 0.3 + memScore * 0.25 + (100 - dprPenalty) * 0.1
 
-  // 熔断判断
+  // 静态能力明显不足时跳过 CPU 基准，避免检测本身进一步阻塞低端设备。
   const ABORT_STATIC_THRESHOLD = 20
   let dynamicScore = 0
   let benchmarkAborted = false
@@ -358,6 +358,7 @@ export async function detectPerformanceTier() {
     abortReason = result.aborted ? 'benchmark time budget exceeded' : ''
   }
 
+  // 静态指标占 65%，短时动态基准占 35%，兼顾设备声明能力与当前实际执行表现。
   const score = Math.round(staticWeighted + dynamicScore * 0.35)
 
   let tier, tierLabel
@@ -434,8 +435,10 @@ export async function detectPerformanceTier() {
  */
 function runBenchmarkWithCircuitBreaker() {
   return new Promise((resolve) => {
+    // 延后启动，先把执行权交还给页面初始化流程，避免检测阻塞首轮同步渲染。
     setTimeout(() => {
       const start = performance.now()
+      // 150ms 是保护主线程的硬预算；超时即停止，而不是为完成固定工作量继续卡住页面。
       const BUDGET_MS = 150
       let result = 0
       const arr = new Array(10000).fill(0).map((_, i) => i)
@@ -458,6 +461,7 @@ function runBenchmarkWithCircuitBreaker() {
       const elapsed = performance.now() - start
       let score
       if (aborted) {
+        // 超出预算越多得分越低；未超时路径则把约 50~1000ms 线性映射到 100~0 分。
         score = Math.max(0, Math.round(30 - (elapsed - BUDGET_MS) / 10))
       } else {
         score = 100 - (elapsed - 50) * (100 / 950)

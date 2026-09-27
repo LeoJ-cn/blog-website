@@ -105,6 +105,7 @@ function updateCanvasStyle() {
   const height = model.value.oriHeight * (box[3] - box[1])
 
   if (imgSize.value.origin) {
+    // 原图模式按裁剪区域等比缩放，避免固定容器比例拉伸裁剪结果。
     const ratio = Math.max(width / imgSize.value.width, height / imgSize.value.height)
     const cvsWidth = width / ratio
     const cvsHeight = height / ratio
@@ -116,10 +117,12 @@ function updateCanvasStyle() {
 }
 
 function drawImage() {
+  // props 变化时先取消上一条异步链，防止旧图片晚到后覆盖新图片。
   abortImageLoad()
   status.value = LOADING
 
   if (type.value === IMAGE_TYPE_OFFICIAL) {
+    // 官方图片无需 Canvas 裁剪；缩略图失败后再尝试原图，兼顾首屏速度和可用性。
     const imgWrapperGetter = () => imageElementWrapper.value as HTMLElement
     if (!imgSrc.value) {
       status.value = FAILURE
@@ -147,6 +150,7 @@ function drawImage() {
     return
   }
 
+  // 非官方图片通过归一化 box 从合图中裁剪，交给共享加载器统一处理并发和缓存。
   const { path, box, oriWidth, oriHeight } = model.value
   if (!path) {
     status.value = FAILURE
@@ -174,6 +178,7 @@ function drawImage() {
 watch(
   () => props.image,
   (value, oldValue) => {
+    // 与当前渲染路径相关的 URL 未变化时跳过重绘，避免无关字段更新触发重复解码。
     if (
       value.type === oldValue.type &&
       value.type === IMAGE_TYPE_OFFICIAL &&

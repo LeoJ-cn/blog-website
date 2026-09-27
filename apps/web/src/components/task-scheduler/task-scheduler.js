@@ -18,6 +18,7 @@ class RenderScheduler {
     }
 
     if (newTask.priority === 0) {
+      // 0 表示同步放行；随后插入占位任务，仍为后续队列保留一次可观察的调度间隔。
       newTask.run()
       // 间隔任务
       this.waitQueue.unshift({
@@ -30,11 +31,12 @@ class RenderScheduler {
     }
 
     this.waitQueue.push(newTask)
+    // 依赖现代引擎稳定排序，使相同优先级任务保持注册顺序。
     this.waitQueue.sort((a, b) => a.priority - b.priority)
 
     if (!this.isRunning) {
       this.isRunning = true
-      // ✅ 改为微任务启动，不阻塞当前同步栈，至少等待一次事件循环
+      // 微任务启动可让同一同步调用栈中的任务先全部入队，再统一按优先级排序执行。
       Promise.resolve().then(() => {
         this.runLoop()
       })
@@ -58,6 +60,7 @@ class RenderScheduler {
      * 下一帧的渲染
      **/
 
+    // 200ms 是演示用的可感知间隔，用来展示渐进渲染顺序，而不是通用调度策略。
     setTimeout(() => {
       this.runLoop()
     }, this.taskIntervalMs)
@@ -73,6 +76,7 @@ class RenderScheduler {
   }
 
   clear() {
+    // clear 只清空尚未执行的任务；已进入回调的任务不能被撤销。
     this.waitQueue = []
     this.isRunning = false
   }

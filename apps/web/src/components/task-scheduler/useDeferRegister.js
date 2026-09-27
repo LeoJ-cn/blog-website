@@ -28,7 +28,7 @@ export function useDeferRegister(config) {
   function doRegister() {
     isReady.value = false
 
-    // 已有任务：先移除旧任务，重新注册
+    // restart 可能在旧任务执行前被多次调用；先撤销可保证一个组件最多保留一个排队任务。
     if (taskId) {
       schedulerInstance.removeTask(taskId)
       taskId = null
@@ -49,6 +49,7 @@ export function useDeferRegister(config) {
   })
 
   onUnmounted(() => {
+    // 防止组件销毁后排队回调仍修改已失去消费者的响应式状态。
     resetState()
   })
 

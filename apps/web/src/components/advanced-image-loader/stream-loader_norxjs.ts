@@ -91,6 +91,7 @@ class MemoizeCache {
   deleteItem(key: string) {
     const item = this.get(key)
     if (!item) return
+    // Blob URL 持有底层二进制数据，淘汰缓存时必须显式释放，避免长列表持续占用内存。
     if (SUPPORT_BLOB_OBJECT && item.startsWith('blob:')) {
       URL.revokeObjectURL(item)
     }
@@ -106,6 +107,7 @@ class MemoizeCache {
 }
 
 function toInt(n: number | string) {
+  // Canvas 使用偶数尺寸可减少缩放时落在半像素上的模糊边缘。
   return 2 * Math.round(+n / 2)
 }
 
@@ -143,7 +145,7 @@ function runWithScheduler<T>(
       }
     })
 
-    // 将 scheduler 句柄挂到 rejectFn 上，取消时可调用
+    // Promise 本身不可取消，因此保存 scheduler 句柄，让外部取消同时终止调度并拒绝 Promise。
     ;(rejectFn as any).__scheduler = scheduler
   })
 
@@ -210,6 +212,7 @@ class TaskQueue<TInput, TOutput> {
   }
 
   abortByKey(key: number | string) {
+    // 同一个业务任务可能处于等待或执行阶段，两处都清理才能保证取消语义一致。
     this.queue = this.queue.filter((task) => {
       if (task.key !== key) return true
       task.controller.abort()
@@ -316,7 +319,7 @@ function fetchImage(imageUrl: string, signal?: AbortSignal): Promise<Response> {
       signal,
     })
 
-  // retry once
+  // 网络或缓存读取可能瞬时失败，只重试一次以提高成功率，同时避免无限占用并发槽位。
   return doFetch().catch(() => doFetch())
 }
 
@@ -338,7 +341,7 @@ async function createImageLoader(
         const blob = await response.blob()
         return { error: null, buffer: blob }
       } catch (e) {
-        // fetch 出错，降级为 img 标签，并关闭快速渲染
+        // fetch/Blob 路径失败往往意味着当前环境不兼容，后续统一降级可避免每张图重复失败。
         SUPPORT_FASTER_RENDER = false
         const img = await loadImageByTag(url, signal)
         return { error: e, buffer: img }
@@ -361,7 +364,7 @@ function getDrawSize(
   let renderWidth = cutWidth
   let renderHeight = cutHeight
   if (size && size.width && size.height && !size.origin) {
-    // 解决小图不清晰问题
+    // 按 DPR 反推 Canvas 尺寸，避免小图被浏览器二次放大后变模糊。
     const devicePixelRatio = pixelRatio || window.devicePixelRatio || 1
     const radio = Math.max(
       cutWidth / (size.width * devicePixelRatio),
@@ -378,6 +381,7 @@ function getCropOptions(image: HTMLImageElement | Blob, options: DrawOptions): C
   const targetX = 0
   const targetY = 0
 
+  // box 使用 0~1 的归一化坐标，乘原图尺寸后得到 Canvas drawImage 所需的像素裁剪区域。
   const ret = {
     x1: origin.width! * box[0],
     y1: origin.height! * box[1],
@@ -497,6 +501,7 @@ function createImageBitmapFromBlob(
       resizeQuality: 'high',
     }
 
+    // createImageBitmap 没有原生 AbortSignal；完成后用标记拒绝已取消任务的迟到结果。
     let aborted = false
     const onAbort = () => {
       aborted = true
@@ -537,6 +542,7 @@ function cropWithResponseBlob(
   return createImageBitmapFromBlob(buffer, cropOptions, signal).then((image) => {
     const { cvsHeight, cvsWidth, width, height, targetX, targetY } = cropOptions
 
+    // 部分浏览器接受 resize 参数却不执行缩放，通过结果尺寸判断是否需要 2D Canvas 兜底。
     const supportCreateImageBitmapOption = image.width === cvsWidth && image.height === cvsHeight
 
     canvas.width = cvsWidth
@@ -578,6 +584,7 @@ async function createRender(
 
   let lastError: any = null
 
+  // 解码/Canvas 初始化可能短暂失败；限制为七次尝试，避免坏图永久占据渲染队列。
   for (let i = 0; i <= 6; i++) {
     if (signal?.aborted) {
       return { error: new Error('aborted') }
@@ -602,7 +609,7 @@ async function createRender(
 const canvasCache = new MemoizeCache()
 
 /**
- * 替代 RxJS 的两个队列：加载队列和渲染队列
+ * 替代 RxJS 的两个队列：网络/解码与 Canvas 渲染消耗的资源不同，分队列才能分别限流。
  */
 const loaderQueue = new TaskQueue<
   ImageLoaderOptions,
@@ -640,6 +647,7 @@ function drawImageToCanvas(
       ? (canvasWrapperGetter as () => HTMLElement)
       : () => canvasWrapperGetter
 
+  // 缓存必须包含原图、裁剪框和输出尺寸；任一参数变化都应生成不同结果。
   const cacheKey = JSON.stringify([imageUrl, originSize, box, size])
   const cachedUrl = canvasCache.get(cacheKey)
   if (cachedUrl) {
@@ -712,6 +720,7 @@ function drawImageToCanvas(
 
   // 返回 abort 函数
   return function abort() {
+    // controller 负责当前异步链，key 同时清理仍在两个全局队列中的阶段任务。
     canceled = true
     controller.abort()
     loaderQueue.abortByKey(uuid)

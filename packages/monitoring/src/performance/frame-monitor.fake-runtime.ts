@@ -27,6 +27,7 @@ export function createFakeFrameMonitorRuntime(
   let visibilityState: FrameMonitorVisibilityState = 'visible'
   let frameId = 0
   const pendingFrames = new Map<number, (timestamp: number) => void>()
+  // 保留被取消的回调，专门模拟真实浏览器中取消与回调执行发生竞争的极端时序。
   const cancelledFrames = new Map<number, (timestamp: number) => void>()
   const visibilityListeners = new Set<() => void>()
   const longAnimationFrameListeners = new Set<(entry: LongAnimationFrameEntry) => void>()
@@ -89,6 +90,7 @@ export function createFakeFrameMonitorRuntime(
       }
     },
     runCancelledFrame(id, elapsed = 0) {
+      // 测试可主动执行旧回调，以验证 generation 令牌确实会拒绝过期采样。
       if (id === undefined) {
         return
       }

@@ -61,6 +61,7 @@ import { ref, onMounted, toRefs, computed } from 'vue'
 
 // ============ 全局配置 ============
 const CONFIG = {
+  // 以下参数只为稳定制造一段 CPU/渲染压力，不代表业务计算的推荐配置。
   // 密集计算持续时间（毫秒）
   DENSE_DURATION: 50, // 5秒，可调整为 3000、8000、10000 等
 
@@ -184,6 +185,7 @@ function heavyFloatSum(base) {
 
 // 主计算函数 (密集模式)
 function denseCalc(base) {
+  // 混合不同运算类型，降低单一循环被引擎特殊优化后导致演示结果失真的概率。
   // 浮点密集计算
   const floatSum = heavyFloatSum(base)
 
@@ -237,6 +239,7 @@ function generateList() {
     }
 
     index = end
+    // 替换数组引用以触发 Vue 分批渲染，让调度效果在界面上可观察。
     items.value = [...result]
     progress.value = Math.round((index / total) * 100)
 
@@ -244,10 +247,10 @@ function generateList() {
     const elapsed = performance.now() - startTime.value
 
     if (index < total && elapsed < DENSE_DURATION) {
-      // 未到设定时间，继续分批生成
+      // 让出当前宏任务，使浏览器有机会在批次之间绘制并响应交互。
       setTimeout(generateBatch, 0)
     } else if (index < total && elapsed >= DENSE_DURATION) {
-      // 已到设定时间但未完成，快速完成剩余数据
+      // 压力观察窗口结束后扩大批次，缩短用户等待剩余列表完成的时间。
       quickFinish()
     } else {
       // 已完成

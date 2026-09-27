@@ -110,6 +110,7 @@ class TextLabeling {
 
   private pendingRange: Range | null = null
 
+  // 部分浏览器在弹出右键菜单时会折叠 Selection，因此保留最近一次合法 Range 作为回退。
   private lastValidRange: Range | null = null
 
   private readonly handleSelectionChange = (): void => {
@@ -127,6 +128,7 @@ class TextLabeling {
 
     if (this.useMenu) {
       const currentRange = this.getCurrentRange()
+      // 只有右键坐标仍落在原选区内时才复用缓存，避免对已经失效的选择误加标注。
       const activeRange =
         currentRange && !currentRange.collapsed && this.rangeBelongsToContainer(currentRange)
           ? currentRange
@@ -389,6 +391,7 @@ class TextLabeling {
       }
     }
 
+    // 从后向前改写 DOM，避免前面的包装节点改变后续 offset 对应的文本边界。
     accepted
       .sort((left, right) => right.startOffset - left.startOffset)
       .forEach((annotation) => {
@@ -557,6 +560,7 @@ class TextLabeling {
       return null
     }
 
+    // offset 统一以容器的 canonical text 为坐标系，避免依赖易受 DOM 包装影响的节点路径。
     const beforeStart = document.createRange()
     beforeStart.selectNodeContents(this.container)
     beforeStart.setEnd(range.startContainer, range.startOffset)
@@ -576,6 +580,7 @@ class TextLabeling {
       return this.isIgnoredTextNode(root as Text) ? '' : (root.nodeValue ?? '')
     }
 
+    // 标注删除按钮和菜单属于交互 UI，不是原文；排除它们才能保证增删标注前后的 offset 稳定。
     const ownerDocument = root.ownerDocument ?? document
     const walker = ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode: (node) =>
@@ -631,6 +636,7 @@ class TextLabeling {
         this.isIgnoredTextNode(node as Text) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
     })
 
+    // 按与 getCanonicalText 完全相同的遍历规则累计字符数，将全局 offset 还原为 DOM 边界。
     let consumed = 0
     let lastTextNode: Text | null = null
     let currentNode = walker.nextNode()
@@ -703,6 +709,7 @@ class TextLabeling {
   }
 
   private hasOverlap(startOffset: number, endOffset: number): boolean {
+    // 使用半开区间 [start, end)：首尾相接允许，任意实际交集都禁止。
     for (const annotation of this.annotations.values()) {
       if (startOffset < annotation.endOffset && endOffset > annotation.startOffset) {
         return true
@@ -731,6 +738,7 @@ class TextLabeling {
       return 'out-of-bounds'
     }
 
+    // selectedText 是 offset 之外的内容校验，原文变化后不应把旧位置静默套到新文本上。
     if (
       sourceText.slice(annotation.startOffset, annotation.endOffset) !== annotation.selectedText
     ) {
@@ -764,6 +772,7 @@ class TextLabeling {
   private getSerializableActionData(
     actionConfig: TextLabelingActionConfig,
   ): TextLabelingActionData | undefined {
+    // 回调函数、DOM 引用和运行时派生字段不可安全持久化，只保留 JSON 可表达的业务数据。
     const source = actionConfig.actionData ?? actionConfig
     const seen = new WeakSet<object>()
 

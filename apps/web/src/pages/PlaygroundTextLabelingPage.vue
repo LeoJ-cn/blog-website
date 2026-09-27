@@ -79,6 +79,7 @@ function restoreStoredAnnotations() {
     if (result.failed.length > 0 || discardedCount > 0) {
       feedback.value = `已恢复 ${result.restored.length} 条标注，跳过 ${result.failed.length + discardedCount} 条失效记录。`
       feedbackTone.value = 'warning'
+      // 清除格式非法或因原文变化而失效的数据，避免每次刷新都重复报告同一批失败记录。
       persistAnnotations()
     } else if (result.restored.length > 0) {
       feedback.value = `已从本地恢复 ${result.restored.length} 条标注。`
@@ -94,6 +95,7 @@ function restoreStoredAnnotations() {
 onMounted(() => {
   if (!articleElement.value) return
 
+  // localStorage 只用于此演示页验证刷新恢复；核心类仅暴露快照和恢复 API，不感知存储介质。
   labeling = new TextLabeling({
     container: articleElement.value,
     useMenu: true,
@@ -152,6 +154,7 @@ onBeforeUnmount(() => {
         <span>拖动选中正文 → 鼠标右键 → 添加标注。点击高亮内的 × 可删除。</span>
       </div>
 
+      <!-- 标注器会直接包装正文 DOM；v-once 防止 Vue 后续 patch 覆盖这些命令式修改。 -->
       <div ref="articleElement" v-once class="labeling-document">
         <template v-for="(block, index) in articleBlocks" :key="`${block.type}-${index}`">
           <h1 v-if="block.type === 'title'" id="labeling-document-title">

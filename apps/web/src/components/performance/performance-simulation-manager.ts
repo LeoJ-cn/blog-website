@@ -28,6 +28,7 @@ export const LONG_TASK_PRESSURE_OPTIONS = [50, 100, 200] as const
 
 const LONG_TASK_INTERVAL = 1000
 
+// 该管理器故意制造可控的主线程压力，用于观察监控指标变化，不应复用于业务动画。
 class PerformanceSimulationManager {
   private boxes = new Map<number, MovingBox>()
   private animationId: number | null = null
@@ -139,6 +140,7 @@ class PerformanceSimulationManager {
   }
 
   setFrameWorkMs(duration: number): void {
+    // 单帧负载限制在 32ms 内，既能模拟掉帧，又避免误操作造成页面长时间无响应。
     this.frameWorkMs = Math.max(0, Math.min(duration, 32))
     this.emitState()
   }
@@ -155,6 +157,7 @@ class PerformanceSimulationManager {
   }
 
   setLongTaskWorkMs(duration: number): void {
+    // 长任务允许更高上限以触发 LoAF，但仍设硬限制保护演示页面。
     this.longTaskWorkMs = Math.max(0, Math.min(duration, 500))
     this.emitState()
   }
@@ -223,6 +226,7 @@ class PerformanceSimulationManager {
     const maxX = Math.max(window.innerWidth - size, 0)
     const maxY = Math.max(window.innerHeight - size, 0)
 
+    // 将动画限制在右下半区，避免遮挡左上方页面内容和控制区。
     return {
       minX: Math.min(window.innerWidth / 2, maxX),
       maxX,
@@ -250,6 +254,7 @@ class PerformanceSimulationManager {
     const startedAt = performance.now()
     let value = this.cpuAccumulator
 
+    // busy loop 是刻意阻塞主线程；累加值可阻止引擎把循环视为无副作用而优化掉。
     while (performance.now() - startedAt < duration) {
       value = Math.sqrt(value * value + 1.000001)
     }
@@ -262,6 +267,7 @@ class PerformanceSimulationManager {
       return
     }
 
+    // 递归 setTimeout 从上次任务结束后再计时，避免 setInterval 在阻塞后集中补触发。
     this.longTaskTimerId = window.setTimeout(() => {
       this.longTaskTimerId = null
 

@@ -47,6 +47,7 @@ export function createFramePerformanceMonitor(
   const listeners = new Set<FramePerformanceListener>()
   let snapshot = createEmptySnapshot('idle', runtime?.now() ?? 0)
   let frameId: number | null = null
+  // cancelAnimationFrame 无法绝对保证旧回调不会进入；代际令牌用于识别并丢弃过期回调。
   let generation = 0
   let unsubscribeVisibility: (() => void) | null = null
   let windowStartedAt = runtime?.now() ?? 0
@@ -57,6 +58,7 @@ export function createFramePerformanceMonitor(
   let supportsLongAnimationFrames = false
   let longAnimationFrameEntries: LongAnimationFrameEntry[] = []
 
+  // 不向订阅者暴露内部对象引用，避免外部修改破坏后续采样状态。
   const copySnapshot = (): FramePerformanceSnapshot => ({
     ...snapshot,
     sample: { ...snapshot.sample },
@@ -70,6 +72,7 @@ export function createFramePerformanceMonitor(
     try {
       listener(copySnapshot())
     } catch (error) {
+      // 单个消费者异常不能阻断监控循环或其他消费者。
       options.onListenerError?.(error)
     }
   }
@@ -148,6 +151,7 @@ export function createFramePerformanceMonitor(
       frameId = null
 
       if (timestamp >= windowStartedAt && (lastFrameTime === null || timestamp > lastFrameTime)) {
+        // 第一帧只能建立时间基准，因此帧数会比可计算的帧间隔数多一个。
         if (lastFrameTime !== null) {
           frameIntervals.push(timestamp - lastFrameTime)
         }
@@ -155,6 +159,7 @@ export function createFramePerformanceMonitor(
         frameCount += 1
 
         const elapsed = timestamp - windowStartedAt
+        // 加入极小容差，避免浮点误差让恰好到达边界的窗口多等待一帧。
         if (elapsed + 0.001 >= sampleInterval) {
           const sample = calculateFrameSample(frameIntervals, elapsed, frameCount)
           snapshot = {
@@ -179,6 +184,7 @@ export function createFramePerformanceMonitor(
     }
 
     if (runtime.getVisibilityState() === 'hidden') {
+      // 后台页签会被浏览器节流；丢弃未完成窗口，避免恢复后产生一个虚假的超长帧。
       cancelScheduledFrame()
       stopLongAnimationFrameObserver()
       resetWindow(runtime.now())
@@ -239,6 +245,7 @@ export function createFramePerformanceMonitor(
     getSnapshot: copySnapshot,
     subscribe(listener) {
       listeners.add(listener)
+      // 监控生命周期由订阅者共同持有：首个订阅自动启动，最后一个退出后释放资源。
       start()
       notifyListener(listener)
 
