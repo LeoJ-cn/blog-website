@@ -25,6 +25,8 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  'add-animation': []
+  'clear-animations': []
   record: []
   'change-pressure': [duration: number]
 }>()
@@ -57,6 +59,11 @@ function getFpsLevel(fps: number) {
         <dd :class="getFpsLevel(props.snapshot.fps)">{{ props.snapshot.fps }}</dd>
       </div>
     </dl>
+
+    <div class="performance-panel__animation-actions" aria-label="动画控制">
+      <button type="button" @click="emit('add-animation')">增加动画</button>
+      <button type="button" @click="emit('clear-animations')">取消所有动画</button>
+    </div>
 
     <div class="performance-panel__history">
       <div class="performance-panel__history-header">
@@ -165,6 +172,28 @@ function getFpsLevel(fps: number) {
   font-family: monospace;
   font-size: 13px;
   margin: 0;
+}
+
+.performance-panel__animation-actions {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 8px;
+}
+
+.performance-panel__animation-actions button {
+  background: #123d29;
+  border: 1px solid #257d50;
+  border-radius: 4px;
+  color: #8dffbd;
+  cursor: pointer;
+  font: 10px monospace;
+  padding: 6px 4px;
+}
+
+.performance-panel__animation-actions button:hover {
+  background: #17653f;
+  color: #e7fff1;
 }
 
 .performance-panel__history {

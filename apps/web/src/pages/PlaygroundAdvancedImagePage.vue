@@ -44,6 +44,14 @@ function setCpuPressure(duration: number) {
   movingBoxManager.setCpuWorkMs(duration)
 }
 
+function addAnimation() {
+  movingBoxManager.create()
+}
+
+function clearAnimations() {
+  movingBoxManager.clear()
+}
+
 onUnmounted(() => {
   unsubscribeMovingBoxState()
 })
@@ -64,6 +72,8 @@ onBeforeRouteLeave(() => {
       :recording-seconds-left="recordingSecondsLeft"
       :pressure-options="CPU_PRESSURE_OPTIONS"
       :active-pressure="movingBoxState.cpuWorkMs"
+      @add-animation="addAnimation"
+      @clear-animations="clearAnimations"
       @record="startRecording"
       @change-pressure="setCpuPressure"
     />
@@ -82,11 +92,6 @@ onBeforeRouteLeave(() => {
           <span>INTERACTIVE DEMO</span>
         </div>
         <div class="demo-stage__actions" data-testid="animation-controls">
-          <div class="animation-actions" aria-label="动画控制">
-            <button type="button" @click="movingBoxManager.create()">增加动画</button>
-            <button type="button" @click="movingBoxManager.clear()">取消所有动画</button>
-          </div>
-          <span>|</span>
           <div class="loader-mode-switch" aria-label="渲染模式">
             <button
               type="button"
@@ -192,7 +197,6 @@ onBeforeRouteLeave(() => {
   justify-content: flex-end;
 }
 
-.animation-actions,
 .loader-mode-switch {
   border: 1px solid #263453;
   border-radius: 5px;
@@ -200,7 +204,6 @@ onBeforeRouteLeave(() => {
   overflow: hidden;
 }
 
-.animation-actions button,
 .loader-mode-switch button {
   background: transparent;
   border: 0;
@@ -211,14 +214,8 @@ onBeforeRouteLeave(() => {
   padding: 6px 10px;
 }
 
-.animation-actions button + button,
 .loader-mode-switch button + button {
   border-left: 1px solid #263453;
-}
-
-.animation-actions button:hover {
-  background: #18243e;
-  color: #f4f7ff;
 }
 
 .loader-mode-switch button.is-active {
