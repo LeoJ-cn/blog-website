@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
 const framePerformanceMonitor = createFramePerformanceMonitor({ targetFps: 60 })
 const simulationManager = createPerformanceSimulationManager()
 const simulationState = ref(simulationManager.getState())
-const minimized = ref(false)
+const minimized = ref(true)
 const { snapshot, recordedSnapshots, recording, recordingSecondsLeft, startRecording } =
   usePerformancePanel(framePerformanceMonitor, {
     recordingDuration: props.recordingDuration,
@@ -90,170 +90,172 @@ function getFrameIntervalLevel(interval: number) {
 
     <div v-if="!minimized" class="performance-panel__body">
       <dl class="performance-panel__metrics" aria-live="polite">
-      <div>
-        <dt>实时 FPS</dt>
-        <dd data-testid="performance-fps" :class="getFpsLevel(snapshot.sample.fps)">
-          {{ snapshot.sample.fps }}
-        </dd>
-      </div>
-      <div>
-        <dt>P95 帧间隔</dt>
-        <dd
-          data-testid="performance-p95"
-          :class="getFrameIntervalLevel(snapshot.sample.p95FrameInterval)"
-        >
-          {{ snapshot.sample.p95FrameInterval.toFixed(1) }}ms
-        </dd>
-      </div>
-      <!-- <div>
+        <div>
+          <dt>实时 FPS</dt>
+          <dd data-testid="performance-fps" :class="getFpsLevel(snapshot.sample.fps)">
+            {{ snapshot.sample.fps }}
+          </dd>
+        </div>
+        <div>
+          <dt>P95 帧间隔</dt>
+          <dd
+            data-testid="performance-p95"
+            :class="getFrameIntervalLevel(snapshot.sample.p95FrameInterval)"
+          >
+            {{ snapshot.sample.p95FrameInterval.toFixed(1) }}ms
+          </dd>
+        </div>
+        <!-- <div>
         <dt>最大帧间隔</dt>
         <dd data-testid="performance-max-interval">
           {{ snapshot.sample.maxFrameInterval.toFixed(1) }}ms
         </dd>
       </div> -->
-      <div v-if="snapshot.target">
-        <dt>{{ snapshot.target.fps }} FPS 目标</dt>
-        <dd data-testid="performance-target-rate">
-          {{ Math.round(snapshot.target.achievementRate * 100) }}%
-        </dd>
-      </div>
-      <div v-if="snapshot.target">
-        <dt>未达目标帧</dt>
-        <dd data-testid="performance-missed-frames">{{ snapshot.target.missedFrames }}</dd>
-      </div>
-      <div v-if="snapshot.longAnimationFrames">
-        <dt>LoAF / 阻塞</dt>
-        <dd data-testid="performance-loaf">
-          {{ snapshot.longAnimationFrames.count }} /
-          {{ snapshot.longAnimationFrames.totalBlockingDuration.toFixed(1) }}ms
-        </dd>
-      </div>
+        <div v-if="snapshot.target">
+          <dt>{{ snapshot.target.fps }} FPS 目标</dt>
+          <dd data-testid="performance-target-rate">
+            {{ Math.round(snapshot.target.achievementRate * 100) }}%
+          </dd>
+        </div>
+        <div v-if="snapshot.target">
+          <dt>未达目标帧</dt>
+          <dd data-testid="performance-missed-frames">{{ snapshot.target.missedFrames }}</dd>
+        </div>
+        <div v-if="snapshot.longAnimationFrames">
+          <dt>LoAF / 阻塞</dt>
+          <dd data-testid="performance-loaf">
+            {{ snapshot.longAnimationFrames.count }} /
+            {{ snapshot.longAnimationFrames.totalBlockingDuration.toFixed(1) }}ms
+          </dd>
+        </div>
       </dl>
 
       <div class="performance-panel__history">
-      <div class="performance-panel__history-header">
-        <span>触发后 {{ props.recordingDuration }} 秒性能</span>
-        <button type="button" :disabled="recording" @click="startRecording">
-          {{ recording ? `记录中 ${recordingSecondsLeft}s` : '记录' }}
-        </button>
-      </div>
-      <div v-if="recordedSnapshots.length === 0" class="performance-panel__history-empty">
-        {{ recording ? '正在采集完整性能窗口…' : `点击“记录”后采集 ${props.recordingDuration} 秒` }}
-      </div>
-      <div v-else class="performance-panel__history-table-wrap" aria-live="polite">
-        <table class="performance-panel__history-table">
-          <thead>
-            <tr>
-              <th scope="col">秒</th>
-              <th scope="col" title="平均 FPS">FPS</th>
-              <th scope="col" title="P95 帧间隔">P95</th>
-              <th scope="col" title="60 FPS 目标达成率">目标</th>
-              <th scope="col" title="未达目标帧">未达</th>
-              <th scope="col" title="LoAF 次数 / 阻塞时长">LoAF</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(recordedSnapshot, index) in recordedSnapshots" :key="index">
-              <th scope="row">{{ index + 1 }}s</th>
-              <td :class="getFpsLevel(recordedSnapshot.sample.fps)">
-                {{ recordedSnapshot.sample.fps }}
-              </td>
-              <td :class="getFrameIntervalLevel(recordedSnapshot.sample.p95FrameInterval)">
-                {{ recordedSnapshot.sample.p95FrameInterval.toFixed(1) }}
-              </td>
-              <td>
-                {{
-                  recordedSnapshot.target
-                    ? `${Math.round(recordedSnapshot.target.achievementRate * 100)}%`
-                    : '—'
-                }}
-              </td>
-              <td>{{ recordedSnapshot.target?.missedFrames ?? '—' }}</td>
-              <td
-                :title="
-                  recordedSnapshot.longAnimationFrames
-                    ? `${recordedSnapshot.longAnimationFrames.count} 次 / ${recordedSnapshot.longAnimationFrames.totalBlockingDuration.toFixed(1)}ms`
-                    : undefined
-                "
-              >
-                {{
-                  recordedSnapshot.longAnimationFrames
-                    ? `${recordedSnapshot.longAnimationFrames.count}/${Math.round(recordedSnapshot.longAnimationFrames.totalBlockingDuration)}ms`
-                    : '—'
-                }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="performance-panel__history-header">
+          <span>触发后 {{ props.recordingDuration }} 秒性能</span>
+          <button type="button" :disabled="recording" @click="startRecording">
+            {{ recording ? `记录中 ${recordingSecondsLeft}s` : '记录' }}
+          </button>
+        </div>
+        <div v-if="recordedSnapshots.length === 0" class="performance-panel__history-empty">
+          {{
+            recording ? '正在采集完整性能窗口…' : `点击“记录”后采集 ${props.recordingDuration} 秒`
+          }}
+        </div>
+        <div v-else class="performance-panel__history-table-wrap" aria-live="polite">
+          <table class="performance-panel__history-table">
+            <thead>
+              <tr>
+                <th scope="col">秒</th>
+                <th scope="col" title="平均 FPS">FPS</th>
+                <th scope="col" title="P95 帧间隔">P95</th>
+                <th scope="col" title="60 FPS 目标达成率">目标</th>
+                <th scope="col" title="未达目标帧">未达</th>
+                <th scope="col" title="LoAF 次数 / 阻塞时长">LoAF</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(recordedSnapshot, index) in recordedSnapshots" :key="index">
+                <th scope="row">{{ index + 1 }}s</th>
+                <td :class="getFpsLevel(recordedSnapshot.sample.fps)">
+                  {{ recordedSnapshot.sample.fps }}
+                </td>
+                <td :class="getFrameIntervalLevel(recordedSnapshot.sample.p95FrameInterval)">
+                  {{ recordedSnapshot.sample.p95FrameInterval.toFixed(1) }}
+                </td>
+                <td>
+                  {{
+                    recordedSnapshot.target
+                      ? `${Math.round(recordedSnapshot.target.achievementRate * 100)}%`
+                      : '—'
+                  }}
+                </td>
+                <td>{{ recordedSnapshot.target?.missedFrames ?? '—' }}</td>
+                <td
+                  :title="
+                    recordedSnapshot.longAnimationFrames
+                      ? `${recordedSnapshot.longAnimationFrames.count} 次 / ${recordedSnapshot.longAnimationFrames.totalBlockingDuration.toFixed(1)}ms`
+                      : undefined
+                  "
+                >
+                  {{
+                    recordedSnapshot.longAnimationFrames
+                      ? `${recordedSnapshot.longAnimationFrames.count}/${Math.round(recordedSnapshot.longAnimationFrames.totalBlockingDuration)}ms`
+                      : '—'
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="performance-panel__simulation">
-      <span class="performance-panel__section-title">压力模拟</span>
-      <div class="performance-panel__animation-actions" aria-label="动画控制">
-        <button type="button" @click="simulationManager.create()">增加动画</button>
-        <button type="button" @click="simulationManager.clear()">取消所有动画</button>
-      </div>
+        <span class="performance-panel__section-title">压力模拟</span>
+        <div class="performance-panel__animation-actions" aria-label="动画控制">
+          <button type="button" @click="simulationManager.create()">增加动画</button>
+          <button type="button" @click="simulationManager.clear()">取消所有动画</button>
+        </div>
 
-      <div class="performance-panel__pressure">
-        <div class="performance-panel__pressure-header">
-          <span>帧内负载</span>
-          <button
-            type="button"
-            role="switch"
-            :aria-label="`帧内负载 ${simulationState.frameTaskEnabled ? '开启' : '关闭'}`"
-            :aria-checked="simulationState.frameTaskEnabled"
-            :disabled="simulationState.runningBoxes === 0"
-            :class="{ 'is-active': simulationState.frameTaskEnabled }"
-            @click="simulationManager.setFrameTaskEnabled(!simulationState.frameTaskEnabled)"
-          >
-            {{ simulationState.frameTaskEnabled ? '开启' : '关闭' }}
-          </button>
+        <div class="performance-panel__pressure">
+          <div class="performance-panel__pressure-header">
+            <span>帧内负载</span>
+            <button
+              type="button"
+              role="switch"
+              :aria-label="`帧内负载 ${simulationState.frameTaskEnabled ? '开启' : '关闭'}`"
+              :aria-checked="simulationState.frameTaskEnabled"
+              :disabled="simulationState.runningBoxes === 0"
+              :class="{ 'is-active': simulationState.frameTaskEnabled }"
+              @click="simulationManager.setFrameTaskEnabled(!simulationState.frameTaskEnabled)"
+            >
+              {{ simulationState.frameTaskEnabled ? '开启' : '关闭' }}
+            </button>
+          </div>
+          <small v-if="simulationState.runningBoxes === 0">请先增加动画</small>
+          <div class="performance-panel__pressure-options">
+            <button
+              v-for="duration in FRAME_PRESSURE_OPTIONS"
+              :key="duration"
+              type="button"
+              :class="{ 'is-active': simulationState.frameWorkMs === duration }"
+              :disabled="simulationState.runningBoxes === 0 || !simulationState.frameTaskEnabled"
+              @click="simulationManager.setFrameWorkMs(duration)"
+            >
+              {{ duration }}ms
+            </button>
+          </div>
         </div>
-        <small v-if="simulationState.runningBoxes === 0">请先增加动画</small>
-        <div class="performance-panel__pressure-options">
-          <button
-            v-for="duration in FRAME_PRESSURE_OPTIONS"
-            :key="duration"
-            type="button"
-            :class="{ 'is-active': simulationState.frameWorkMs === duration }"
-            :disabled="simulationState.runningBoxes === 0 || !simulationState.frameTaskEnabled"
-            @click="simulationManager.setFrameWorkMs(duration)"
-          >
-            {{ duration }}ms
-          </button>
-        </div>
-      </div>
 
-      <div class="performance-panel__pressure">
-        <div class="performance-panel__pressure-header">
-          <span>偶发长任务 · 每秒</span>
-          <button
-            type="button"
-            role="switch"
-            :aria-label="`偶发长任务 ${simulationState.longTaskEnabled ? '开启' : '关闭'}`"
-            :aria-checked="simulationState.longTaskEnabled"
-            :disabled="simulationState.runningBoxes === 0"
-            :class="{ 'is-active': simulationState.longTaskEnabled }"
-            @click="simulationManager.setLongTaskEnabled(!simulationState.longTaskEnabled)"
-          >
-            {{ simulationState.longTaskEnabled ? '开启' : '关闭' }}
-          </button>
+        <div class="performance-panel__pressure">
+          <div class="performance-panel__pressure-header">
+            <span>偶发长任务 · 每秒</span>
+            <button
+              type="button"
+              role="switch"
+              :aria-label="`偶发长任务 ${simulationState.longTaskEnabled ? '开启' : '关闭'}`"
+              :aria-checked="simulationState.longTaskEnabled"
+              :disabled="simulationState.runningBoxes === 0"
+              :class="{ 'is-active': simulationState.longTaskEnabled }"
+              @click="simulationManager.setLongTaskEnabled(!simulationState.longTaskEnabled)"
+            >
+              {{ simulationState.longTaskEnabled ? '开启' : '关闭' }}
+            </button>
+          </div>
+          <small v-if="simulationState.runningBoxes === 0">请先增加动画</small>
+          <div class="performance-panel__pressure-options">
+            <button
+              v-for="duration in LONG_TASK_PRESSURE_OPTIONS"
+              :key="duration"
+              type="button"
+              :class="{ 'is-active': simulationState.longTaskWorkMs === duration }"
+              :disabled="simulationState.runningBoxes === 0 || !simulationState.longTaskEnabled"
+              @click="simulationManager.setLongTaskWorkMs(duration)"
+            >
+              {{ duration }}ms
+            </button>
+          </div>
         </div>
-        <small v-if="simulationState.runningBoxes === 0">请先增加动画</small>
-        <div class="performance-panel__pressure-options">
-          <button
-            v-for="duration in LONG_TASK_PRESSURE_OPTIONS"
-            :key="duration"
-            type="button"
-            :class="{ 'is-active': simulationState.longTaskWorkMs === duration }"
-            :disabled="simulationState.runningBoxes === 0 || !simulationState.longTaskEnabled"
-            @click="simulationManager.setLongTaskWorkMs(duration)"
-          >
-            {{ duration }}ms
-          </button>
-        </div>
-      </div>
       </div>
     </div>
   </aside>

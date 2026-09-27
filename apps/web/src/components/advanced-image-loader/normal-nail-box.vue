@@ -2,7 +2,9 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import noImage from './no-image.png'
 
+// 归一化裁剪框依次为 [左, 上, 右, 下]，每一项均按原图尺寸的 0~1 比例表达。
 type CropBox = [number, number, number, number]
+// loading：等待图片；done：图片或 Canvas 已展示；failure：当前加载路径失败并显示占位图。
 type LoadStatus = 'loading' | 'done' | 'failure'
 
 interface NailBoxImage {

@@ -3,10 +3,15 @@ import './TextLabeling.css'
 export type TextLabelingActionData = Record<string, unknown>
 
 export interface TextAnnotation {
+  /** 一条标注的稳定标识，用于关联持久化数据和页面中的 wrapper。 */
   id: string
+  /** 标注起点在容器 canonical text 中的字符偏移，包含该位置。 */
   startOffset: number
+  /** 标注终点在容器 canonical text 中的字符偏移，不包含该位置。 */
   endOffset: number
+  /** 创建标注时的原文快照，恢复时用于判断正文是否已经变化。 */
   selectedText: string
+  /** 可安全 JSON 序列化的业务扩展数据，不包含函数和 DOM 引用。 */
   actionData?: TextLabelingActionData
 }
 
@@ -16,13 +21,17 @@ export interface TextLabelingStyle {
 }
 
 export interface TextLabelingActionConfig extends TextLabelingActionData {
+  /** 以下四项由标注器在校验回调执行前写入，调用方不需要手动维护。 */
   currentLabelingStr?: string
   annotationId?: string
   startOffset?: number
   endOffset?: number
+  /** 明确指定需要持久化的业务数据；未提供时会从当前配置中过滤可序列化字段。 */
   actionData?: TextLabelingActionData
   labelingStyle?: TextLabelingStyle
+  /** 返回 false 时拒绝创建标注，不产生 DOM 或 annotation 记录。 */
   isAddValid?: (actionConfig: TextLabelingActionConfig) => boolean
+  /** 返回 false 时保留现有标注，不执行 DOM 解包。 */
   isRemoveValid?: (actionConfig: TextLabelingActionConfig) => boolean
 }
 
@@ -40,10 +49,17 @@ export interface TextLabelingConfig {
 }
 
 export type RestoreFailureReason =
+  // 标注缺少 id、offset 非整数、区间无效或 selectedText 类型错误。
   | 'invalid-annotation'
+  // endOffset 超出当前正文 canonical text 的长度。
   | 'out-of-bounds'
+  // offset 对应的当前正文内容与保存时的 selectedText 不一致，通常表示原文已变化。
   | 'text-mismatch'
+  // 与本次已接受、页面已有的标注区间重叠，或者 annotation id 已存在。
   | 'overlap'
+  // 起止位置分属不同文本块；当前单 wrapper 模型不支持跨段落恢复。
+  | 'cross-block'
+  // offset 无法映射为有效 DOM Range，或者 Range 内容无法安全包装。
   | 'range-unavailable'
 
 export interface RestoreFailure {
@@ -52,7 +68,9 @@ export interface RestoreFailure {
 }
 
 export interface RestoreResult {
+  /** 已通过格式、原文、区间、重叠和同文本块校验并完成 DOM 恢复的标注。 */
   restored: TextAnnotation[]
+  /** 未恢复的标注及明确原因；调用方可据此清理或迁移持久化数据。 */
   failed: RestoreFailure[]
 }
 
@@ -69,6 +87,9 @@ interface InstanceCacheItem {
 const LABEL_CLASS = 'tips-area'
 const TEXT_CLASS = 'ta-text'
 const DELETE_CLASS = 'ta-del-button'
+// 当前单 wrapper 模型只允许在这些语义文本块内部标注，不能跨越两个不同块。
+const TEXT_BLOCK_SELECTOR =
+  'p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th, dt, dd, figcaption'
 const IGNORED_SELECTOR =
   `script, style, .${DELETE_CLASS}, .text-labeling-menu, ` +
   '.text-labeling-box, [data-text-labeling-ignore]'
@@ -160,6 +181,13 @@ class TextLabeling {
   private readonly handleMenuClick = (event: Event): void => {
     const target = this.getEventElement(event)?.closest('.tlm-add-btn')
     if (!target) {
+      return
+    }
+
+    if (this.pendingRange && !this.isWithinSameTextBlock(this.pendingRange)) {
+      this.pendingRange = null
+      this.hideMenu()
+      window.alert('暂不支持跨段落标注，请在同一文本块内重新选择。')
       return
     }
 
@@ -264,7 +292,11 @@ class TextLabeling {
     sourceRange: Range | null = this.getCurrentRange(),
   ): TextAnnotation | null {
     const range = sourceRange
-    if (!range || !this.rangeBelongsToContainer(range)) {
+    if (
+      !range ||
+      !this.rangeBelongsToContainer(range) ||
+      !this.isWithinSameTextBlock(range)
+    ) {
       return null
     }
 
@@ -401,6 +433,11 @@ class TextLabeling {
           return
         }
 
+        if (!this.isWithinSameTextBlock(range)) {
+          result.failed.push({ annotation, reason: 'cross-block' })
+          return
+        }
+
         const actionConfig: TextLabelingActionConfig = {
           ...(annotation.actionData ?? {}),
         }
@@ -421,7 +458,11 @@ class TextLabeling {
 
   isAllowAdditions(sourceRange: Range | null = this.getCurrentRange()): boolean {
     const range = sourceRange
-    if (!range || !this.rangeBelongsToContainer(range)) {
+    if (
+      !range ||
+      !this.rangeBelongsToContainer(range) ||
+      !this.isWithinSameTextBlock(range)
+    ) {
       return false
     }
 
@@ -552,6 +593,23 @@ class TextLabeling {
       this.container &&
         this.isChildOf(range.startContainer, this.container) &&
         this.isChildOf(range.endContainer, this.container),
+    )
+  }
+
+  private getTextBlock(node: Node): Element | null {
+    const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement
+    return element?.closest(TEXT_BLOCK_SELECTOR) ?? null
+  }
+
+  private isWithinSameTextBlock(range: Range): boolean {
+    const startBlock = this.getTextBlock(range.startContainer)
+    const endBlock = this.getTextBlock(range.endContainer)
+
+    // 一条 annotation 仍只对应一个行内 wrapper；跨块选择必须在修改 DOM 前拒绝。
+    return Boolean(
+      startBlock &&
+        startBlock === endBlock &&
+        this.container?.contains(startBlock),
     )
   }
 

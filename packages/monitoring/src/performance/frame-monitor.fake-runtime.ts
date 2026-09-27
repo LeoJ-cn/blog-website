@@ -16,6 +16,7 @@ export interface FakeFrameMonitorRuntime extends FrameMonitorRuntime {
 }
 
 export interface FakeFrameMonitorRuntimeOptions {
+  /** 是否模拟浏览器支持 Long Animation Frame PerformanceObserver。 */
   longAnimationFrameSupported?: boolean
 }
 

@@ -5,6 +5,7 @@ import advancedImageLoaderSource from '../components/advanced-image-loader/strea
 import schedulerDemoSource from '../components/task-scheduler/Demo.vue?raw'
 import renderSchedulerSource from '../components/task-scheduler/task-scheduler.js?raw'
 import schedulerComposableSource from '../components/task-scheduler/useDeferRegister.js?raw'
+import textLabelingStyleSource from '../components/text-labeling/TextLabeling.css?raw'
 import textLabelingSource from '../components/text-labeling/TextLabeling.ts?raw'
 import textLabelingArticleSource from '../components/text-labeling/text.txt?raw'
 import type { ProjectCategory, ProjectDefinition } from '../types/project'
@@ -106,6 +107,12 @@ export const projects: ProjectDefinition[] = [
         path: 'apps/web/src/components/text-labeling/TextLabeling.ts',
         language: 'typescript',
         content: textLabelingSource,
+      },
+      {
+        label: 'TextLabeling.css',
+        path: 'apps/web/src/components/text-labeling/TextLabeling.css',
+        language: 'css',
+        content: textLabelingStyleSource,
       },
       {
         label: 'text.txt',

@@ -44,7 +44,9 @@ const LOADING = 'loading'
 const DONE = 'done'
 const FAILURE = 'failure'
 
+// loading：等待加载/解码；done：目标节点已绘制；failure：主路径与降级路径均不可用。
 type LoadStatus = typeof LOADING | typeof DONE | typeof FAILURE
+// 归一化裁剪框依次为 [左, 上, 右, 下]，每一项均按原图尺寸的 0~1 比例表达。
 type CropBox = [number, number, number, number]
 
 interface ImageModel {
@@ -65,6 +67,7 @@ interface NailBoxImage {
 interface ImageSize {
   width: number
   height: number
+  /** true 表示按裁剪区域原始比例计算展示尺寸，而不是使用固定缩略图尺寸。 */
   origin?: boolean
 }
 

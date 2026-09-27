@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import CodeBlock from '../components/CodeBlock.vue'
 import articleSource from '../components/text-labeling/text.txt?raw'
 import TextLabeling, { type TextAnnotation } from '../components/text-labeling/TextLabeling'
 import { projects } from '../data/projects'
@@ -9,8 +10,18 @@ type ArticleBlock =
   | { type: 'section'; content: string }
   | { type: 'paragraph'; content: string }
 
+const tabs = [
+  { id: 'demo', label: 'Demo' },
+  { id: 'principle', label: '实现原理' },
+  { id: 'source', label: '源码' },
+  { id: 'compatibility', label: '兼容性' },
+] as const
+
 const STORAGE_KEY = 'blog-web:text-labeling:smart-planter'
 const project = projects.find((item) => item.slug === 'text-labeling')!
+const activeTab = ref<(typeof tabs)[number]['id']>('demo')
+const activeSourceIndex = ref(0)
+const activeSource = computed(() => project.sources[activeSourceIndex.value])
 const articleElement = ref<HTMLElement | null>(null)
 const annotationCount = ref(0)
 const feedback = ref('选中正文后点击鼠标右键，即可创建标注。')
@@ -37,6 +48,7 @@ function isStoredAnnotation(value: unknown): value is TextAnnotation {
   if (!value || typeof value !== 'object') return false
 
   const annotation = value as Partial<TextAnnotation>
+  // 此处只验证恢复 API 必需的持久化字段；边界、原文和重叠由核心类结合当前正文判断。
   return (
     typeof annotation.id === 'string' &&
     Number.isInteger(annotation.startOffset) &&
@@ -164,6 +176,74 @@ onBeforeUnmount(() => {
           <p v-else>{{ block.content }}</p>
         </template>
       </div>
+    </section>
+
+    <nav class="content-tabs" aria-label="技术内容" role="tablist">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        type="button"
+        :class="{ 'is-active': activeTab === tab.id }"
+        :aria-selected="activeTab === tab.id"
+        role="tab"
+        @click="activeTab = tab.id"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
+
+    <section v-if="activeTab === 'source'" class="tab-panel tab-panel--source" role="tabpanel">
+      <div class="source-viewer">
+        <nav class="source-files" aria-label="源码文件">
+          <button
+            v-for="(source, index) in project.sources"
+            :key="source.path"
+            type="button"
+            :class="{ 'is-active': activeSourceIndex === index }"
+            @click="activeSourceIndex = index"
+          >
+            <span>{{ source.label }}</span>
+            <small>{{ source.path }}</small>
+          </button>
+        </nav>
+        <CodeBlock
+          :code="activeSource.content"
+          :language="activeSource.language"
+          :filename="activeSource.label"
+        />
+      </div>
+    </section>
+
+    <section v-else-if="activeTab === 'principle'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">HOW IT WORKS</p>
+      <h3>用稳定文本坐标保存位置，再从当前 DOM 重建 Range。</h3>
+      <p>
+        创建标注时，组件把 Selection 对应的 Range 转换为正文 canonical text 中的 [startOffset,
+        endOffset) 半开区间，同时保存 selectedText。恢复时先校验原文快照、边界、重叠和文本块，再把
+        offset 映射回 Text 节点并重新包装高亮。多条记录从后向前恢复，避免前一次 DOM
+        包装改变后续位置。
+      </p>
+    </section>
+
+    <section v-else-if="activeTab === 'compatibility'" class="tab-panel" role="tabpanel">
+      <p class="eyebrow">COMPATIBILITY</p>
+      <h3>依赖标准 Selection 与 Range API，并为持久化变化提供安全降级。</h3>
+      <p>
+        现代浏览器可直接使用 Selection、Range、TreeWalker 和 crypto.randomUUID；缺少 randomUUID
+        时会生成时间戳标识。localStorage 仅是本 Demo 的存储适配层，不属于标注核心。当前单 wrapper
+        模型不支持跨段落、标题或列表项标注，失效的历史记录会在恢复时跳过。
+      </p>
+    </section>
+
+    <section v-else class="tab-panel tab-panel--demo" role="tabpanel">
+      <p class="eyebrow">DEMO OVERVIEW</p>
+      <h3>验证文本标注从创建、删除到刷新恢复的完整生命周期。</h3>
+      <p>
+        在同一文本块内拖动选择正文，点击鼠标右键并添加标注；点击高亮末尾的 × 可删除。标注使用全局
+        offset 和原文快照保存到
+        localStorage，刷新页面后自动恢复。重叠选择和跨文本块选择会被拒绝，避免生成歧义区间或非法
+        DOM。
+      </p>
     </section>
   </article>
 </template>

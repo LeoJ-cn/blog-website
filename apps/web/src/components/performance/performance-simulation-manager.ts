@@ -14,10 +14,15 @@ export interface CreateMovingBoxOptions {
 }
 
 export interface MovingBoxDemoState {
+  /** 是否在每次 RAF 回调内执行同步 CPU busy loop。 */
   frameTaskEnabled: boolean
+  /** 每帧主动占用主线程的目标毫秒数，内部限制为 0~32。 */
   frameWorkMs: number
+  /** 是否额外按固定间隔制造一次长任务。 */
   longTaskEnabled: boolean
+  /** 每次长任务占用主线程的目标毫秒数，内部限制为 0~500。 */
   longTaskWorkMs: number
+  /** 当前由管理器创建并驱动的动画元素数量。 */
   runningBoxes: number
 }
 

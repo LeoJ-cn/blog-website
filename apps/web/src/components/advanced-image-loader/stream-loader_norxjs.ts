@@ -28,6 +28,7 @@ let SUPPORT_FASTER_RENDER = typeof window.createImageBitmap === 'function'
 type ImageSize = {
   width?: number
   height?: number
+  /** true 表示保留裁剪区域比例，不按固定缩略图尺寸反推 Canvas 大小。 */
   origin?: boolean
 }
 
@@ -42,6 +43,7 @@ type DrawOptions = {
   url: string
   cacheKey: string
   canvas: HTMLCanvasElement
+  // 归一化裁剪框：[左, 上, 右, 下]，数值按原图尺寸的 0~1 比例表达。
   box: { [index: number]: number; length: 4 }
   size: ImageSize
   originSize: ImageSize
