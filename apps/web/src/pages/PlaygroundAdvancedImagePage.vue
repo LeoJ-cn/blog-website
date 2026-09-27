@@ -40,6 +40,10 @@ const unsubscribeMovingBoxState = movingBoxManager.subscribe((state) => {
   movingBoxState.value = state
 })
 
+function setCpuPressure(duration: number) {
+  movingBoxManager.setCpuWorkMs(duration)
+}
+
 onUnmounted(() => {
   unsubscribeMovingBoxState()
 })
@@ -61,7 +65,7 @@ onBeforeRouteLeave(() => {
       :pressure-options="CPU_PRESSURE_OPTIONS"
       :active-pressure="movingBoxState.cpuWorkMs"
       @record="startRecording"
-      @change-pressure="movingBoxManager.setCpuWorkMs"
+      @change-pressure="setCpuPressure"
     />
     <p class="eyebrow">BROWSER</p>
     <h2>{{ project.title }}</h2>
