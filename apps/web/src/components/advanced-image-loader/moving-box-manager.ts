@@ -14,6 +14,7 @@ export interface CreateMovingBoxOptions {
 }
 
 export interface MovingBoxDemoState {
+  cpuTaskEnabled: boolean
   cpuWorkMs: number
   runningBoxes: number
 }
@@ -26,6 +27,7 @@ class MovingBoxManager {
   private boxes = new Map<number, MovingBox>()
   private animationId: number | null = null
   private idCounter = 0
+  private cpuTaskEnabled = false
   private cpuWorkMs: number = CPU_PRESSURE_OPTIONS[0]
   private cpuAccumulator = 0
   private taskIdsByBox = new Map<number, Set<number>>()
@@ -58,7 +60,9 @@ class MovingBoxManager {
     }
 
     this.boxes.set(id, box)
-    this.scheduleCpuTask(id)
+    if (this.cpuTaskEnabled) {
+      this.scheduleCpuTask(id)
+    }
     this.start()
     this.emitState()
 
@@ -75,11 +79,14 @@ class MovingBoxManager {
     box.el.remove()
     this.boxes.delete(id)
     this.clearCpuTasks(id)
-    this.emitState()
 
     if (this.boxes.size === 0) {
+      this.cpuTaskEnabled = false
+      this.clearAllCpuTasks()
       this.stopIfIdle()
     }
+
+    this.emitState()
 
     return true
   }
@@ -90,6 +97,7 @@ class MovingBoxManager {
     }
 
     this.boxes.clear()
+    this.cpuTaskEnabled = false
     this.clearAllCpuTasks()
     this.stopIfIdle()
     this.emitState()
@@ -105,6 +113,7 @@ class MovingBoxManager {
 
   getState(): MovingBoxDemoState {
     return {
+      cpuTaskEnabled: this.cpuTaskEnabled,
       cpuWorkMs: this.cpuWorkMs,
       runningBoxes: this.boxes.size,
     }
@@ -128,6 +137,26 @@ class MovingBoxManager {
 
   setCpuWorkMs(duration: number): void {
     this.cpuWorkMs = Math.max(0, Math.min(duration, 64))
+    this.emitState()
+  }
+
+  setCpuTaskEnabled(enabled: boolean): void {
+    const nextEnabled = enabled && this.boxes.size > 0
+
+    if (this.cpuTaskEnabled === nextEnabled) {
+      return
+    }
+
+    this.cpuTaskEnabled = nextEnabled
+
+    if (nextEnabled) {
+      for (const boxId of this.boxes.keys()) {
+        this.scheduleCpuTask(boxId)
+      }
+    } else {
+      this.clearAllCpuTasks()
+    }
+
     this.emitState()
   }
 
@@ -211,7 +240,6 @@ class MovingBoxManager {
 
   private scheduleCpuTask(boxId: number): void {
     const taskIds = new Set<number>()
-
     this.taskIdsByBox.set(boxId, taskIds)
     this.scheduleCpuTaskLoop(boxId, taskIds)
   }
@@ -229,6 +257,7 @@ class MovingBoxManager {
       }
 
       this.runCpuTask(this.cpuWorkMs)
+
       this.scheduleCpuTaskLoop(boxId, taskIds)
     }, 0)
 

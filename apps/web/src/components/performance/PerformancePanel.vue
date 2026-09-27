@@ -11,6 +11,8 @@ interface Props {
   recordingSecondsLeft?: number
   pressureOptions?: readonly number[]
   activePressure?: number
+  cpuTaskAvailable?: boolean
+  cpuTaskEnabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,6 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
   recordingSecondsLeft: 0,
   pressureOptions: () => [],
   activePressure: undefined,
+  cpuTaskAvailable: false,
+  cpuTaskEnabled: false,
 })
 
 const emit = defineEmits<{
@@ -29,6 +33,7 @@ const emit = defineEmits<{
   'clear-animations': []
   record: []
   'change-pressure': [duration: number]
+  'change-cpu-task-enabled': [enabled: boolean]
 }>()
 
 function getFpsLevel(fps: number) {
@@ -60,11 +65,6 @@ function getFpsLevel(fps: number) {
       </div>
     </dl>
 
-    <div class="performance-panel__animation-actions" aria-label="动画控制">
-      <button type="button" @click="emit('add-animation')">增加动画</button>
-      <button type="button" @click="emit('clear-animations')">取消所有动画</button>
-    </div>
-
     <div class="performance-panel__history">
       <div class="performance-panel__history-header">
         <span>触发后 {{ props.recordingDuration }} 秒 FPS</span>
@@ -94,18 +94,40 @@ function getFpsLevel(fps: number) {
       </div>
     </div>
 
-    <div v-if="props.pressureOptions.length > 0" class="performance-panel__pressure">
-      <span>循环宏附加任务</span>
-      <div>
-        <button
-          v-for="duration in props.pressureOptions"
-          :key="duration"
-          type="button"
-          :class="{ 'is-active': props.activePressure === duration }"
-          @click="emit('change-pressure', duration)"
-        >
-          {{ duration }}ms
-        </button>
+    <div class="performance-panel__simulation">
+      <span class="performance-panel__section-title">压力模拟</span>
+      <div class="performance-panel__animation-actions" aria-label="动画控制">
+        <button type="button" @click="emit('add-animation')">增加动画</button>
+        <button type="button" @click="emit('clear-animations')">取消所有动画</button>
+      </div>
+
+      <div v-if="props.pressureOptions.length > 0" class="performance-panel__pressure">
+        <div class="performance-panel__pressure-header">
+          <span>循环宏附加任务</span>
+          <button
+            type="button"
+            role="switch"
+            :aria-checked="props.cpuTaskEnabled"
+            :disabled="!props.cpuTaskAvailable"
+            :class="{ 'is-active': props.cpuTaskEnabled }"
+            @click="emit('change-cpu-task-enabled', !props.cpuTaskEnabled)"
+          >
+            {{ props.cpuTaskEnabled ? '开启' : '关闭' }}
+          </button>
+        </div>
+        <small v-if="!props.cpuTaskAvailable">请先增加动画</small>
+        <div class="performance-panel__pressure-options">
+          <button
+            v-for="duration in props.pressureOptions"
+            :key="duration"
+            type="button"
+            :class="{ 'is-active': props.activePressure === duration }"
+            :disabled="!props.cpuTaskAvailable || !props.cpuTaskEnabled"
+            @click="emit('change-pressure', duration)"
+          >
+            {{ duration }}ms
+          </button>
+        </div>
       </div>
     </div>
   </aside>
@@ -178,22 +200,22 @@ function getFpsLevel(fps: number) {
   display: grid;
   gap: 6px;
   grid-template-columns: 1fr 1fr;
-  margin-bottom: 8px;
+  margin-bottom: 9px;
 }
 
 .performance-panel__animation-actions button {
-  background: #123d29;
-  border: 1px solid #257d50;
+  background: #102f3d;
+  border: 1px solid #25758c;
   border-radius: 4px;
-  color: #8dffbd;
+  color: #8de8ff;
   cursor: pointer;
   font: 10px monospace;
   padding: 6px 4px;
 }
 
 .performance-panel__animation-actions button:hover {
-  background: #17653f;
-  color: #e7fff1;
+  background: #18566a;
+  color: #effcff;
 }
 
 .performance-panel__history {
@@ -311,48 +333,100 @@ function getFpsLevel(fps: number) {
   background: linear-gradient(90deg, #b52f3a, #ff5d68);
 }
 
-.performance-panel__pressure {
+.performance-panel__simulation {
   border-top: 1px solid #174d34;
   margin-top: 8px;
   padding-top: 8px;
 }
 
-.performance-panel__pressure > span {
+.performance-panel__section-title {
   color: #75c999;
   display: block;
   font-size: 10px;
-  margin-bottom: 5px;
+  letter-spacing: 0.08em;
+  margin-bottom: 7px;
 }
 
-.performance-panel__pressure > div {
+.performance-panel__pressure {
+  border: 1px solid #6d4b1c;
+  border-radius: 5px;
+  padding: 7px;
+}
+
+.performance-panel__pressure-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.performance-panel__pressure-header > span {
+  color: #e6a84d;
+  font-size: 10px;
+}
+
+.performance-panel__pressure-header > button {
+  background: #312510;
+  border: 1px solid #8b6123;
+  border-radius: 999px;
+  color: #ba8b47;
+  cursor: pointer;
+  font: 9px monospace;
+  min-width: 38px;
+  padding: 3px 6px;
+}
+
+.performance-panel__pressure-header > button.is-active {
+  background: #9a5c10;
+  color: #fff2d5;
+}
+
+.performance-panel__pressure-header > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.performance-panel__pressure small {
+  color: #806b4b;
+  display: block;
+  font: 9px monospace;
+  margin-top: 4px;
+}
+
+.performance-panel__pressure-options {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
+  margin-top: 6px;
 }
 
-.performance-panel__pressure button {
+.performance-panel__pressure-options button {
   background: transparent;
-  border: 1px solid #17653f;
-  color: #75c999;
+  border: 1px solid #8b6123;
+  color: #d59b45;
   cursor: pointer;
   font: 9px monospace;
   padding: 5px 2px;
 }
 
-.performance-panel__pressure button + button {
+.performance-panel__pressure-options button + button {
   border-left: 0;
 }
 
-.performance-panel__pressure button:first-child {
+.performance-panel__pressure-options button:first-child {
   border-radius: 4px 0 0 4px;
 }
 
-.performance-panel__pressure button:last-child {
+.performance-panel__pressure-options button:last-child {
   border-radius: 0 4px 4px 0;
 }
 
-.performance-panel__pressure button.is-active {
-  background: #17653f;
-  color: #e7fff1;
+.performance-panel__pressure-options button.is-active {
+  background: #9a5c10;
+  color: #fff2d5;
+}
+
+.performance-panel__pressure-options button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
 }
 
 @media (max-width: 760px) {

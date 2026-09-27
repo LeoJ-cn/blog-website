@@ -44,6 +44,10 @@ function setCpuPressure(duration: number) {
   movingBoxManager.setCpuWorkMs(duration)
 }
 
+function setCpuTaskEnabled(enabled: boolean) {
+  movingBoxManager.setCpuTaskEnabled(enabled)
+}
+
 function addAnimation() {
   movingBoxManager.create()
 }
@@ -72,10 +76,13 @@ onBeforeRouteLeave(() => {
       :recording-seconds-left="recordingSecondsLeft"
       :pressure-options="CPU_PRESSURE_OPTIONS"
       :active-pressure="movingBoxState.cpuWorkMs"
+      :cpu-task-available="movingBoxState.runningBoxes > 0"
+      :cpu-task-enabled="movingBoxState.cpuTaskEnabled"
       @add-animation="addAnimation"
       @clear-animations="clearAnimations"
       @record="startRecording"
       @change-pressure="setCpuPressure"
+      @change-cpu-task-enabled="setCpuTaskEnabled"
     />
     <p class="eyebrow">BROWSER</p>
     <h2>{{ project.title }}</h2>
