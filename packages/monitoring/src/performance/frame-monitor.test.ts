@@ -160,4 +160,55 @@ describe('createFramePerformanceMonitor', () => {
     expect(monitor.getSnapshot().sample.fps).toBe(0)
     expect(listener).toHaveBeenCalledTimes(1)
   })
+
+  it('returns null LoAF metrics when the runtime does not support them', () => {
+    const runtime = createFakeFrameMonitorRuntime()
+    const monitor = createFramePerformanceMonitor({ runtime, sampleInterval: 100 })
+    monitor.subscribe(() => undefined)
+
+    runStableFrames(runtime, 50, 0.1)
+
+    expect(monitor.getSnapshot().longAnimationFrames).toBeNull()
+    expect(runtime.longAnimationFrameObserverCount).toBe(0)
+  })
+
+  it('aggregates supported LoAF entries per sample window', () => {
+    const runtime = createFakeFrameMonitorRuntime(0, { longAnimationFrameSupported: true })
+    const monitor = createFramePerformanceMonitor({ runtime, sampleInterval: 100 })
+    monitor.subscribe(() => undefined)
+
+    runtime.emitLongAnimationFrame({ duration: 80, blockingDuration: 30 })
+    runtime.emitLongAnimationFrame({ duration: 60, blockingDuration: 10 })
+    runStableFrames(runtime, 50, 0.1)
+
+    expect(monitor.getSnapshot().longAnimationFrames).toEqual({
+      count: 2,
+      totalBlockingDuration: 40,
+      maxDuration: 80,
+    })
+
+    runStableFrames(runtime, 50, 0.1)
+    expect(monitor.getSnapshot().longAnimationFrames).toEqual({
+      count: 0,
+      totalBlockingDuration: 0,
+      maxDuration: 0,
+    })
+  })
+
+  it('disconnects and recreates the LoAF observer across lifecycle changes', () => {
+    const runtime = createFakeFrameMonitorRuntime(0, { longAnimationFrameSupported: true })
+    const monitor = createFramePerformanceMonitor({ runtime })
+    const unsubscribe = monitor.subscribe(() => undefined)
+
+    expect(runtime.longAnimationFrameObserverCount).toBe(1)
+    runtime.setVisibility('hidden')
+    expect(runtime.longAnimationFrameObserverCount).toBe(0)
+
+    runtime.emitLongAnimationFrame({ duration: 100, blockingDuration: 50 })
+    runtime.setVisibility('visible')
+    expect(runtime.longAnimationFrameObserverCount).toBe(1)
+
+    unsubscribe()
+    expect(runtime.longAnimationFrameObserverCount).toBe(0)
+  })
 })

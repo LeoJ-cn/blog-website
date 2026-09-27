@@ -7,6 +7,9 @@ import type {
   FramePerformanceSnapshot,
   FrameMonitorRuntime,
   FrameMonitorStatus,
+  LongAnimationFrameEntry,
+  LongAnimationFrameObserver,
+  LongAnimationFrameMetrics,
 } from './frame-monitor.types'
 
 const DEFAULT_SAMPLE_INTERVAL = 1000
@@ -50,6 +53,9 @@ export function createFramePerformanceMonitor(
   let lastFrameTime: number | null = null
   let frameCount = 0
   let frameIntervals: number[] = []
+  let longAnimationFrameObserver: LongAnimationFrameObserver | null = null
+  let supportsLongAnimationFrames = false
+  let longAnimationFrameEntries: LongAnimationFrameEntry[] = []
 
   const copySnapshot = (): FramePerformanceSnapshot => ({
     ...snapshot,
@@ -79,6 +85,47 @@ export function createFramePerformanceMonitor(
     lastFrameTime = null
     frameCount = 0
     frameIntervals = []
+    longAnimationFrameEntries = []
+  }
+
+  const summarizeLongAnimationFrames = (): LongAnimationFrameMetrics | null => {
+    if (!supportsLongAnimationFrames) {
+      return null
+    }
+    return {
+      count: longAnimationFrameEntries.length,
+      totalBlockingDuration: longAnimationFrameEntries.reduce(
+        (total, entry) => total + entry.blockingDuration,
+        0,
+      ),
+      maxDuration:
+        longAnimationFrameEntries.length > 0
+          ? Math.max(...longAnimationFrameEntries.map((entry) => entry.duration))
+          : 0,
+    }
+  }
+
+  const stopLongAnimationFrameObserver = () => {
+    longAnimationFrameObserver?.disconnect()
+    longAnimationFrameObserver = null
+  }
+
+  const startLongAnimationFrameObserver = () => {
+    if (!runtime || longAnimationFrameObserver) {
+      return
+    }
+    longAnimationFrameObserver = runtime.createLongAnimationFrameObserver((entry) => {
+      if (
+        snapshot.status === 'running' &&
+        Number.isFinite(entry.duration) &&
+        entry.duration >= 0 &&
+        Number.isFinite(entry.blockingDuration) &&
+        entry.blockingDuration >= 0
+      ) {
+        longAnimationFrameEntries.push(entry)
+      }
+    })
+    supportsLongAnimationFrames = longAnimationFrameObserver !== null
   }
 
   const cancelScheduledFrame = () => {
@@ -115,7 +162,7 @@ export function createFramePerformanceMonitor(
             status: 'running',
             sample,
             target: calculateTargetMetrics(frameIntervals, sample.fps, options.targetFps),
-            longAnimationFrames: null,
+            longAnimationFrames: summarizeLongAnimationFrames(),
           }
           resetWindow(timestamp)
           emit()
@@ -133,6 +180,7 @@ export function createFramePerformanceMonitor(
 
     if (runtime.getVisibilityState() === 'hidden') {
       cancelScheduledFrame()
+      stopLongAnimationFrameObserver()
       resetWindow(runtime.now())
       snapshot = { ...snapshot, timestamp: runtime.now(), status: 'suspended' }
       emit()
@@ -141,6 +189,7 @@ export function createFramePerformanceMonitor(
 
     resetWindow(runtime.now())
     snapshot = { ...snapshot, timestamp: runtime.now(), status: 'running' }
+    startLongAnimationFrameObserver()
     emit()
     scheduleFrame()
   }
@@ -156,6 +205,9 @@ export function createFramePerformanceMonitor(
       timestamp: runtime.now(),
       status: runtime.getVisibilityState() === 'hidden' ? 'suspended' : 'running',
     }
+    if (snapshot.status === 'running') {
+      startLongAnimationFrameObserver()
+    }
     scheduleFrame()
   }
 
@@ -164,6 +216,7 @@ export function createFramePerformanceMonitor(
       return
     }
     cancelScheduledFrame()
+    stopLongAnimationFrameObserver()
     unsubscribeVisibility?.()
     unsubscribeVisibility = null
     resetWindow(runtime?.now() ?? 0)

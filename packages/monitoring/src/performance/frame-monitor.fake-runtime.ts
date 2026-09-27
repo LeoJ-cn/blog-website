@@ -1,24 +1,35 @@
 import type {
   FrameMonitorRuntime,
   FrameMonitorVisibilityState,
+  LongAnimationFrameEntry,
 } from './frame-monitor.types'
 
 export interface FakeFrameMonitorRuntime extends FrameMonitorRuntime {
   readonly pendingFrameCount: number
   readonly pendingFrameIds: readonly number[]
+  readonly longAnimationFrameObserverCount: number
   advanceFrame(interval: number): void
   advanceTime(duration: number): void
   setVisibility(state: FrameMonitorVisibilityState): void
   runCancelledFrame(id: number | undefined, elapsed?: number): void
+  emitLongAnimationFrame(entry: LongAnimationFrameEntry): void
 }
 
-export function createFakeFrameMonitorRuntime(initialNow = 0): FakeFrameMonitorRuntime {
+export interface FakeFrameMonitorRuntimeOptions {
+  longAnimationFrameSupported?: boolean
+}
+
+export function createFakeFrameMonitorRuntime(
+  initialNow = 0,
+  options: FakeFrameMonitorRuntimeOptions = {},
+): FakeFrameMonitorRuntime {
   let now = initialNow
   let visibilityState: FrameMonitorVisibilityState = 'visible'
   let frameId = 0
   const pendingFrames = new Map<number, (timestamp: number) => void>()
   const cancelledFrames = new Map<number, (timestamp: number) => void>()
   const visibilityListeners = new Set<() => void>()
+  const longAnimationFrameListeners = new Set<(entry: LongAnimationFrameEntry) => void>()
 
   return {
     now: () => now,
@@ -39,11 +50,23 @@ export function createFakeFrameMonitorRuntime(initialNow = 0): FakeFrameMonitorR
       visibilityListeners.add(listener)
       return () => visibilityListeners.delete(listener)
     },
+    createLongAnimationFrameObserver(listener) {
+      if (!options.longAnimationFrameSupported) {
+        return null
+      }
+      longAnimationFrameListeners.add(listener)
+      return {
+        disconnect: () => longAnimationFrameListeners.delete(listener),
+      }
+    },
     get pendingFrameCount() {
       return pendingFrames.size
     },
     get pendingFrameIds() {
       return Array.from(pendingFrames.keys())
+    },
+    get longAnimationFrameObserverCount() {
+      return longAnimationFrameListeners.size
     },
     advanceFrame(interval) {
       now += interval
@@ -73,6 +96,11 @@ export function createFakeFrameMonitorRuntime(initialNow = 0): FakeFrameMonitorR
       const callback = cancelledFrames.get(id)
       cancelledFrames.delete(id)
       callback?.(now)
+    },
+    emitLongAnimationFrame(entry) {
+      for (const listener of longAnimationFrameListeners) {
+        listener(entry)
+      }
     },
   }
 }

@@ -39,5 +39,7 @@ export type {
   FrameSampleMetrics,
   FrameTargetMetrics,
   LongAnimationFrameMetrics,
+  LongAnimationFrameEntry,
+  LongAnimationFrameObserver,
 } from './performance/frame-monitor.types'
 export type { MonitoringOptions, MonitoringReporter, PerformanceMetric } from './types'

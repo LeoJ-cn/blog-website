@@ -32,12 +32,24 @@ export interface FramePerformanceSnapshot {
 
 export type FrameMonitorVisibilityState = 'visible' | 'hidden'
 
+export interface LongAnimationFrameEntry {
+  duration: number
+  blockingDuration: number
+}
+
+export interface LongAnimationFrameObserver {
+  disconnect(): void
+}
+
 export interface FrameMonitorRuntime {
   now(): number
   requestFrame(callback: (timestamp: number) => void): number
   cancelFrame(id: number): void
   getVisibilityState(): FrameMonitorVisibilityState
   subscribeVisibilityChange(listener: () => void): () => void
+  createLongAnimationFrameObserver(
+    listener: (entry: LongAnimationFrameEntry) => void,
+  ): LongAnimationFrameObserver | null
 }
 
 export interface FramePerformanceMonitorOptions {

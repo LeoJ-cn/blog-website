@@ -20,5 +20,25 @@ export function createBrowserFrameMonitorRuntime(): FrameMonitorRuntime | null {
       document.addEventListener('visibilitychange', listener)
       return () => document.removeEventListener('visibilitychange', listener)
     },
+    createLongAnimationFrameObserver(listener) {
+      if (
+        typeof PerformanceObserver === 'undefined' ||
+        !PerformanceObserver.supportedEntryTypes.includes('long-animation-frame')
+      ) {
+        return null
+      }
+
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          const longFrame = entry as PerformanceEntry & { blockingDuration?: number }
+          listener({
+            duration: longFrame.duration,
+            blockingDuration: longFrame.blockingDuration ?? 0,
+          })
+        }
+      })
+      observer.observe({ type: 'long-animation-frame', buffered: true })
+      return { disconnect: () => observer.disconnect() }
+    },
   }
 }
