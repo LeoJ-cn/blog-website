@@ -5,6 +5,8 @@ import advancedImageLoaderSource from '../components/advanced-image-loader/strea
 import schedulerDemoSource from '../components/task-scheduler/Demo.vue?raw'
 import renderSchedulerSource from '../components/task-scheduler/task-scheduler.js?raw'
 import schedulerComposableSource from '../components/task-scheduler/useDeferRegister.js?raw'
+import textLabelingSource from '../components/text-labeling/TextLabeling.ts?raw'
+import textLabelingArticleSource from '../components/text-labeling/text.txt?raw'
 import type { ProjectCategory, ProjectDefinition } from '../types/project'
 
 export const categoryMetadata: Record<
@@ -84,6 +86,32 @@ export const projects: ProjectDefinition[] = [
         path: 'apps/web/src/components/task-scheduler/useDeferRegister.js',
         language: 'javascript',
         content: schedulerComposableSource,
+      },
+    ],
+  },
+  {
+    slug: 'text-labeling',
+    title: '文本标引',
+    summary: '基于 Range 与全局 offset 的可持久化文本标注',
+    description:
+      '选中文本后通过右键菜单创建标注，使用全局字符 offset 记录位置，并在页面刷新后恢复高亮。',
+    category: 'browser',
+    status: 'active',
+    tags: ['Selection API', 'Range', 'LocalStorage'],
+    featured: false,
+    updatedAt: '2026-09-27',
+    sources: [
+      {
+        label: 'TextLabeling.ts',
+        path: 'apps/web/src/components/text-labeling/TextLabeling.ts',
+        language: 'typescript',
+        content: textLabelingSource,
+      },
+      {
+        label: 'text.txt',
+        path: 'apps/web/src/components/text-labeling/text.txt',
+        language: 'markup',
+        content: textLabelingArticleSource,
       },
     ],
   },

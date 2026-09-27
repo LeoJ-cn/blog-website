@@ -39,6 +39,11 @@ const router = createRouter({
           name: 'playground-device-performance-probe',
           component: () => import('../../pages/PlaygroundDevicePerformanceProbePage.vue'),
         },
+        {
+          path: 'browser/text-labeling',
+          name: 'playground-text-labeling',
+          component: () => import('../../pages/PlaygroundTextLabelingPage.vue'),
+        },
       ],
     },
     {

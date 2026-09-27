@@ -30,7 +30,7 @@ test('Browser 内部切换保留动画，进入 Performance 时清除动画', as
   await page.getByRole('button', { name: '增加动画' }).click()
   await expect(page.getByTestId('managed-moving-box')).toHaveCount(1)
 
-  await page.getByRole('button', { name: '原生Image模式' }).click()
+  await page.getByRole('button', { name: 'Image模式' }).click()
   await expect(page.getByTestId('managed-moving-box')).toHaveCount(1)
 
   await page.getByRole('button', { name: '取消所有动画' }).click()

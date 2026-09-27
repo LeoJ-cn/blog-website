@@ -50,7 +50,7 @@ function startPerformanceRecording() {
               :class="{ 'is-active': renderMode === 'normal' }"
               @click="renderMode = 'normal'"
             >
-              原生Image模式
+              Image模式
             </button>
             <button
               type="button"
