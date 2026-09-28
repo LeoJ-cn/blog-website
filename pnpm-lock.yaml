@@ -56,6 +56,9 @@ importers:
       '@blog/http':
         specifier: workspace:^
         version: link:../../packages/http
+      '@blog/low-code':
+        specifier: workspace:2.0.0
+        version: link:../../packages/low-code
       '@blog/monitoring':
         specifier: workspace:^
         version: link:../../packages/monitoring

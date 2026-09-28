@@ -21,6 +21,11 @@ const router = createRouter({
           component: () => import('../../pages/PlaygroundPerformancePage.vue'),
         },
         {
+          path: 'low-code',
+          name: 'playground-low-code',
+          component: () => import('../../pages/PlaygroundLowCodePage.vue'),
+        },
+        {
           path: 'browser',
           redirect: '/playground/browser/advanced-image-loader',
         },

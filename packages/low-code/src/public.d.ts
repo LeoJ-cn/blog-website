@@ -1,6 +1,19 @@
-export { default as LogicEditor } from './logic-editor/LogicEditor'
-export { LogicEditorService } from './logic-editor/service/logic-service'
-export { createLowCodeContext } from './compatibility/context'
+import type { GraphData } from '@antv/g6'
+import type { DefineComponent } from 'vue'
+import type { LowCodeCompatibilityContext } from './compatibility/types'
+
+export const LogicEditor: DefineComponent<{
+  modelValue: GraphData
+  context: LowCodeCompatibilityContext
+}>
+
+export class LogicEditorService {
+  constructor(graphData: GraphData, rootMethodId: string)
+  blockly: string
+  translateErrorList: unknown[]
+}
+
+export function createLowCodeContext(options: LowCodeCompatibilityContext): LowCodeCompatibilityContext
 
 export type {
   LowCodeCompatibilityContext,

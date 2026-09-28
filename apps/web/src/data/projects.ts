@@ -28,6 +28,18 @@ export const categoryMetadata: Record<
 
 export const projects: ProjectDefinition[] = [
   {
+    slug: 'low-code',
+    title: '低代码逻辑编辑器',
+    summary: '图形化逻辑编排与流程数据生成',
+    description: '通过完整节点、连线与配置交互，生成兼容旧协议的 SimpleProcessData[] 和 blockData。',
+    category: 'browser',
+    status: 'active',
+    tags: ['Vue 3', 'G6', 'Low Code'],
+    featured: true,
+    updatedAt: '2026-09-28',
+    sources: [],
+  },
+  {
     slug: 'advanced-image-loader',
     title: 'Advanced Image Loader',
     summary: '并发加载、Canvas 裁剪与失败降级',

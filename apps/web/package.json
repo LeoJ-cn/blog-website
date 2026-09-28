@@ -42,6 +42,7 @@
   "dependencies": {
     "@blog/config": "workspace:*",
     "@blog/http": "workspace:^",
+    "@blog/low-code": "workspace:2.0.0",
     "@blog/monitoring": "workspace:^",
     "@blog/ui": "workspace:*",
     "@blog/websocket": "workspace:^",
