@@ -6,8 +6,12 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
+    "@antv/g-base": "0.5.16",
+    "@antv/g-canvas": "0.5.17",
     "@antv/g6": "4.7.10",
-    "lodash": "4.17.21"
+    "@antv/g6-core": "0.7.10",
+    "lodash": "4.17.21",
+    "uuid": "7.0.3"
   },
   "peerDependencies": {
     "element-plus": "2.9.5",

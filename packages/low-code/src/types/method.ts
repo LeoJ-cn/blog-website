@@ -34,6 +34,8 @@ export interface Method {
   }
   funcName: string
   funcLabel?: string
+  /** 兼容旧运行时中作为展示名称读取的别名字段。 */
+  label?: string
   sync?: boolean
   explanatory: string
   parameters: Data[]

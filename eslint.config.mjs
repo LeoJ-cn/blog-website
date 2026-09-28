@@ -42,4 +42,15 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  {
+    // 迁移区必须保留旧逻辑的声明、分支结构和调试变量，避免 lint 自动修复改变执行语义。
+    files: ['packages/low-code/src/logic-editor/service/**/*.ts', 'packages/low-code/src/logic-editor/runtime/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-wrapper-object-types': 'off',
+      'no-case-declarations': 'off',
+      'no-irregular-whitespace': 'off',
+      'prefer-const': 'off',
+    },
+  },
 )
