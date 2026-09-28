@@ -347,3 +347,35 @@ models/page/ProcessPageModel
 | `on-change` / `on-on-*` | Vue 3 `onChange` 或字符串 listener 展开 | 自定义连字符事件名保持不变 |
 | 字符串组件名 + 全局 depends | 静态 import；operation tree 使用 `resolveDynamicComponent` | 动态 operation 组件仍由宿主注册表解析 |
 | `$Message` / `$Modal` / `$app.dispatcher` | `context.feedback` / `context.dispatcher` | 反馈和事件发生位置保持不变 |
+
+## 最终静态验证记录（2026-09-28）
+
+### 文件覆盖与注册表
+
+| 区域 | 源文件数 | 迁移文件数 | 结果 |
+| --- | ---: | ---: | --- |
+| `graph/behavior` | 10 | 10 | 一致 |
+| `graph/shape/nodes` | 39 | 39 | 一致 |
+| `graph/shape/edges` | 2 | 2 | 一致 |
+| `handler/config-builder` | 8 | 8 | 一致 |
+| `service/translate-new` | 40 | 40 | 一致 |
+
+- 节点注册、边注册、behavior 注册和翻译器 `BlockNames_DTS` 键分别提取排序后无差异。
+- 源目录包含 55 个 SVG；目标目录包含这 55 个原资源，并额外包含目录外依赖的 API 图标，共 56 个。
+- 生产代码扫描未发现 `packages/gui`、源仓库标识、`vue-property-decorator`、`@idg/iview` 或 `@idg/idg` import。
+
+### 协议与构建
+
+- `BlockNames_DTS`、`AnchorTag_DTS`、`SideQuests_DTS`、`DescInfo_DTS`、锚点索引及 `SimpleProcessData` 字段沿用源值；转换仅调整 import 和宿主适配入口。
+- `pnpm --filter @blog/web typecheck`：通过。
+- `pnpm lint`：通过；清理了迁移后不再需要的 `no-require-imports` 抑制注释。
+- `pnpm build:vite`：通过。构建保留了源逻辑中的动态表达式 `eval`，Rollup 会给出安全/压缩提示；这是旧 operation 配置和值输入语义的一部分，本次未改写。
+- 未运行任何 Webpack 命令，也未启动页面或执行浏览器自动化。
+
+### 预期兼容差异
+
+- Vue 2 class decorator 转为 Vue 3 `defineComponent` + Options API + TSX。
+- iView 组件映射到 Element Plus，事件名在 TSX 层做等价转换。
+- 动态 `require` 资源改为显式静态映射，以适配 Vite 和 Webpack 5。
+- Store、controller、dispatcher、国际化及反馈改由 `LowCodeCompatibilityContext` 注入。
+- package 使用 `public.d.ts` 固定公共类型边界，避免应用类型检查穿透到 G6 4.x 的旧源码声明；运行时仍从同一 `src/index.ts` 进入。

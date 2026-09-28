@@ -1,6 +1,4 @@
 import { resolveLogicEditorAsset } from '../graph/icon-map';
-/* 旧编辑器依赖打包器的 SVG require 返回值；Task 5 迁移资源前必须保留该配置语义。 */
-/* eslint-disable @typescript-eslint/no-require-imports */
 import { LogicCategory } from '../interface';
 import { DataType } from '../../types/schema';
 import { BlockNames_DTS } from '../service/interface';
