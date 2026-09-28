@@ -47,7 +47,7 @@ packages/gui/components/logic-editor
 
 1. 调整 import 路径和类型来源；
 2. 将 Webpack `require()` 资源加载转换为 Vite 与 Webpack 5 均可处理的静态 ESM 引用；
-3. 将 Vue 2 class-style TSX 转换成 Vue 3 组件写法；
+3. 将 Vue 2 class-style TSX 转换成 Vue 3 `defineComponent` + Options API + TSX，保留 render 结构；
 4. 通过兼容层替代旧仓库提供的 Store、mixin、controller、dispatcher、国际化和反馈组件；
 5. 替换无法在 Vue 3 中直接使用的 `@idg/iview` 展示组件，同时保持状态和事件语义。
 
@@ -99,11 +99,11 @@ packages/low-code/
 └── src/
     ├── index.ts
     ├── logic-editor/
-    │   ├── LogicEditor.vue
-    │   ├── LogicEditorLeftBar.vue
-    │   ├── LogicEditorRightBar.vue
-    │   ├── LogicEditorStage.vue
-    │   ├── LogicServiceListManage.vue
+    │   ├── LogicEditor.tsx
+    │   ├── LogicEditorLeftBar.tsx
+    │   ├── LogicEditorRightBar.tsx
+    │   ├── LogicEditorStage.tsx
+    │   ├── LogicServiceListManage.tsx
     │   ├── const/
     │   ├── graph/
     │   │   ├── behavior/
@@ -180,27 +180,30 @@ service/
 
 | 旧文件 | 新文件 |
 | --- | --- |
-| `FrontLogicEditor.tsx` | `LogicEditor.vue` |
-| `LogicEditorLeftBar.tsx` | `LogicEditorLeftBar.vue` |
-| `LogicEditorRightBar.tsx` | `LogicEditorRightBar.vue` |
-| `LogicEditorStage.tsx` | `LogicEditorStage.vue` |
-| `LogicServiceListManage.tsx` | `LogicServiceListManage.vue` |
+| `FrontLogicEditor.tsx` | `LogicEditor.tsx` |
+| `LogicEditorLeftBar.tsx` | `LogicEditorLeftBar.tsx` |
+| `LogicEditorRightBar.tsx` | `LogicEditorRightBar.tsx` |
+| `LogicEditorStage.tsx` | `LogicEditorStage.tsx` |
+| `LogicServiceListManage.tsx` | `LogicServiceListManage.tsx` |
 
 语法映射如下：
 
-| Vue 2 写法 | Vue 3 写法 |
+| Vue 2 class-style TSX | Vue 3 Options API TSX |
 | --- | --- |
-| class 字段 | `ref` 或 `reactive` |
-| getter | `computed` |
-| `@Prop` | `defineProps` |
-| `@Watch` | `watch` |
-| `this.$emit` | `defineEmits` |
-| `mounted` | `onMounted` |
-| `beforeDestroy` | `onBeforeUnmount` |
-| `this.$refs` | template ref |
-| TSX render | Vue template |
+| `@Component` class | `defineComponent({...})` |
+| class 字段 | `data()` 返回字段 |
+| getter | `computed` 选项 |
+| `@Prop` | `props` 选项和 `PropType` |
+| `@Watch` | `watch` 选项 |
+| class method | `methods` 选项 |
+| `mounted` | `mounted` 选项 |
+| `beforeDestroy` | `beforeUnmount` 选项 |
+| `this.$refs` | Vue 3 组件实例 `$refs` |
+| TSX `render()` | Vue 3 TSX `render()` |
 
-组件中的业务方法继续使用原名称，并保持方法体的业务判断和调用顺序。模板层只负责完成等价渲染和事件绑定。
+组件中的业务方法继续使用原名称，并保持方法体的业务判断和调用顺序。`render()` 继续使用 TSX，只转换 Vue 3 与 Element Plus 要求的 slot、`v-model` 和事件属性写法，不改成 template。
+
+当前工程已经配置 `@vitejs/plugin-vue-jsx`，`apps/web/tsconfig.json` 使用 `jsx: preserve` 和 `jsxImportSource: vue`，Webpack 5 管线也具备 Vue JSX/Babel 依赖，因此不需要为本次迁移新增 JSX 工具链。
 
 ### 5.3 静态资源
 
@@ -305,7 +308,7 @@ interface LowCodeCompatibilityContext {
 `src/index.ts` 只暴露稳定能力：
 
 ```ts
-export { default as LogicEditor } from './logic-editor/LogicEditor.vue'
+export { default as LogicEditor } from './logic-editor/LogicEditor'
 export { LogicEditorService } from './logic-editor/service/logic-service'
 export { createLowCodeContext } from './compatibility/context'
 

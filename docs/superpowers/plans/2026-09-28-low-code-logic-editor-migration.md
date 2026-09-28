@@ -32,7 +32,7 @@
 1. **节点与翻译器遗漏：** 旧、新注册表中的节点 ID、边类型和翻译器键必须一一对应；Task 4、Task 5 使用排序清单对照。
 2. **锚点协议漂移：** 锚点索引、输入输出方向、`_isEntry`、`_isExit`、`_sideQuests` 和 `_desc` 不得改变；Task 3、Task 5 使用字段清单和差异审查固定。
 3. **同图不同产物：** 相同 `GraphData` 必须保留 `SimpleProcessData[]` 字段结构、流程顺序和 `blockData` 序列化语义；Task 4 做源文件差异审查，Task 8 提供用户手动对比步骤。
-4. **Vue 3 时序变化：** visible、stageMode、当前页面、选中节点和保存事件的 watch/lifecycle 顺序必须与旧组件一致；Task 7 建立逐方法映射，Task 8 手动验收。
+4. **Vue 3 时序变化：** visible、stageMode、当前页面、选中节点和保存事件的 watch/lifecycle 顺序必须与旧组件一致；Task 7 使用 `defineComponent` + Options API + TSX 并建立逐方法映射，Task 8 手动验收。
 5. **资源动态选择失真：** 参数类型、输入输出方向、连接状态和激活状态必须继续选中原图标；Task 5 生成显式资源映射并与旧动态路径集合对照。
 
 ---
@@ -369,56 +369,64 @@ git commit -m "feat: add low-code host compatibility layer"
 
 ---
 
-### Task 7: 将 Vue 2 TSX 外壳等价转换为 Vue 3 SFC
+### Task 7: 将 Vue 2 class-style TSX 等价转换为 Vue 3 Options API TSX
 
 **Files:**
-- Create: `packages/low-code/src/logic-editor/LogicEditor.vue`
-- Create: `packages/low-code/src/logic-editor/LogicEditorLeftBar.vue`
-- Create: `packages/low-code/src/logic-editor/LogicEditorRightBar.vue`
-- Create: `packages/low-code/src/logic-editor/LogicEditorStage.vue`
-- Create: `packages/low-code/src/logic-editor/LogicServiceListManage.vue`
-- Create: `packages/low-code/src/logic-editor/node-config/*.vue`
-- Create: `packages/low-code/src/logic-editor/operation/*.vue`
+- Create: `packages/low-code/src/logic-editor/LogicEditor.tsx`
+- Create: `packages/low-code/src/logic-editor/LogicEditorLeftBar.tsx`
+- Create: `packages/low-code/src/logic-editor/LogicEditorRightBar.tsx`
+- Create: `packages/low-code/src/logic-editor/LogicEditorStage.tsx`
+- Create: `packages/low-code/src/logic-editor/LogicServiceListManage.tsx`
+- Create: `packages/low-code/src/logic-editor/node-config/*.tsx`
+- Create: `packages/low-code/src/logic-editor/operation/*.tsx`
 - Create: `packages/low-code/src/logic-editor/styles/graph.module.scss`
 - Create: `packages/low-code/src/logic-editor/styles/logic-editor.module.scss`
 
 **Interfaces:**
 - Consumes: Task 5 的 G6 注册/交互，Task 6 的 compatibility context。
-- Produces: `LogicEditor` Vue 3 组件；props `modelValue`、`context`；emits `update:modelValue`、`save`、`select-node`、`change-graph`。
+- Produces: 基于 `defineComponent` + Options API + TSX 的 `LogicEditor` Vue 3 组件；props `modelValue`、`context`；emits `update:modelValue`、`save`、`select-node`、`change-graph`。
 
-- [ ] **Step 1: 转换顶层 LogicEditor**
+- [ ] **Step 1: 确认现有 JSX 工具链**
 
-逐项映射原 `stageMode`、`mode`、`curSelectedNodeConfig`、`preStageMode`、visible、methodList、allDatas 和 lifeCycles。保留 `watchCurPageUuid`、`radioChange`、`onGraphChange`、`saveLogicData`、`easyLayout` 的条件和触发顺序。
+确认 `@vitejs/plugin-vue-jsx`、`jsx: preserve`、`jsxImportSource: vue` 以及 Webpack 侧 Vue JSX/Babel 配置仍然存在。本任务不新增另一套 JSX 编译器。
 
-- [ ] **Step 2: 转换左侧面板**
+- [ ] **Step 2: 转换顶层 LogicEditor**
 
-保留 tab、搜索 debounce、展开面板、远程分类、内置节点、自定义方法、自定义变量、拖动 `data-type/data-model` 和 locale 显示规则。组件库替换只改变模板 API。
+使用 `defineComponent` + Options API：class 字段映射到 `data()`，getter 映射到 `computed`，`@Watch` 映射到 `watch`，class method 映射到 `methods`。逐项保留原 `stageMode`、`mode`、`curSelectedNodeConfig`、`preStageMode`、visible、methodList、allDatas 和 lifeCycles，以及 `watchCurPageUuid`、`radioChange`、`onGraphChange`、`saveLogicData`、`easyLayout` 的条件和触发顺序。保留 TSX `render()`，不转换成 template。
 
-- [ ] **Step 3: 转换画布组件**
+- [ ] **Step 3: 转换左侧面板**
+
+保留 tab、搜索 debounce、展开面板、远程分类、内置节点、自定义方法、自定义变量、拖动 `data-type/data-model` 和 locale 显示规则。组件库替换只改变 TSX props、slot 和事件 API。
+
+- [ ] **Step 4: 转换画布组件**
 
 保留 graph 实例字段、三种 StageMode 缓存、当前方法、当前节点、插件创建、事件注册、删除确认、布局、保存、updateBlockly、图切换和 storeAllGraphData 顺序。
 
-- [ ] **Step 4: 转换右侧配置组件**
+- [ ] **Step 5: 转换右侧配置组件**
 
 保留 watch 条件、NodeConfigServicesFactory 查询和不同配置组件选择规则。
 
-- [ ] **Step 5: 转换节点配置与 operation 组件**
+- [ ] **Step 6: 转换节点配置与 operation 组件**
 
 保持配置字段、图更新调用、当前方法 graphData 写回和变量值处理。不得重新设计为新的 schema form。
 
-- [ ] **Step 6: 转换服务列表组件**
+- [ ] **Step 7: 转换服务列表组件**
 
 保留分类/API 查询、加载状态、选择和拖动数据；远程数据由 controller adapter 提供。
 
-- [ ] **Step 7: 迁移样式**
+- [ ] **Step 8: 迁移样式**
 
 保留三栏布局、画布和 minimap 定位、面板滚动、节点列表尺寸。仅将无法由当前构建处理的 Less 语法等价改写为 SCSS，不做视觉重设计。
 
-- [ ] **Step 8: 建立旧新方法映射表**
+- [ ] **Step 9: 转换 Vue 3 TSX 专属语法**
 
-在 `MIGRATION_BASELINE.md` 中为五个主组件列出旧 public method/watch/lifecycle 与新函数/watch/hook 的一一对应，确认无遗漏。
+逐处转换 Vue 2 的 `slot`/`scopedSlots`、`nativeOnClick`、`value`/旧 `v-model`、`on-on-*` 事件属性和组件解析方式。每一处必须记录旧写法、新写法和事件时机，不能借语法转换改写条件渲染结构。
 
-- [ ] **Step 9: 提交 Vue 3 转换**
+- [ ] **Step 10: 建立旧新方法映射表**
+
+在 `MIGRATION_BASELINE.md` 中为五个主组件列出旧 public method/watch/lifecycle 与新 `methods`/`watch`/lifecycle 选项的一一对应，确认无遗漏。
+
+- [ ] **Step 11: 提交 Vue 3 TSX 转换**
 
 ```bash
 git add packages/low-code/src/logic-editor packages/low-code/MIGRATION_BASELINE.md
