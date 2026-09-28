@@ -10,6 +10,8 @@ import { OperationComponentTree } from '../../../types/edit-page';
 import { LifecycleConfigService } from './lifecycle-config-service';
 // import { CreateObjectConfigService } from './create-object-service';
 import { ApiConfigService } from './api-config-service';
+import { LogicBlockBaseTplMap } from '../../service/const';
+import { TemplateConfigService } from './template-config-service';
 
 export class NodeConfigServicesFactory {
   private static map = new Map<BlockNames_DTS | string, INodeConfigService>([
@@ -79,4 +81,22 @@ export class NodeConfigServicesFactory {
   public static injectINodeConfigService(nodeType: BlockNames_DTS, config: INodeConfigService) {
     this.map.set(nodeType, config);
   }
+
+  /**
+   * 原宿主会在接口返回后动态覆盖这些服务；本地默认注册只补齐当前没有生成器的节点。
+   */
+  public static registerTemplateConfigServices() {
+    Object.keys(LogicBlockBaseTplMap).forEach((nodeType) => {
+      const type = nodeType as BlockNames_DTS;
+      const current = this.map.get(type);
+      if (!current?.getConfig) {
+        const fallback = new TemplateConfigService(type);
+        fallback.intro = current?.intro;
+        fallback.operationTree = current?.operationTree;
+        this.map.set(type, fallback);
+      }
+    });
+  }
 }
+
+NodeConfigServicesFactory.registerTemplateConfigServices();
