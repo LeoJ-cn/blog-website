@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { startMonitoring } from '@blog/monitoring'
+import 'element-plus/dist/index.css'
 
 import App from './app/App.vue'
 import router from './app/router'

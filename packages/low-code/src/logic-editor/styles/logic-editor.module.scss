@@ -1,8 +1,18 @@
 // @import url('../../../../dev-space/styles/new-components.module.less');
 .logic-editor-drawer {
-  :global(.ivu-drawer-header) {
+  :global(.el-drawer__header) {
+    box-sizing: border-box;
+    min-height: 56px;
+    margin-bottom: 0;
+    padding: 16px 20px;
     background: #fafafa;
-    border-color: rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  }
+
+  :global(.el-drawer__body) {
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
   }
 }
 
@@ -66,26 +76,34 @@
 }
 
 .drawer-content {
-  margin: -16px;
-  height: calc(100% + 32px);
   display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
-:global(#ui__dispaly__menu).left-bar {
+.left-bar {
+  display: flex;
+  flex: 0 0 232px;
+  flex-direction: column;
+  box-sizing: border-box;
   width: 232px;
+  height: 100%;
+  min-height: 0;
+  padding: 12px;
+  gap: 12px;
+  overflow: hidden;
   background: #f5f5f5;
-  :global(.ivu-input) {
-    font-size: 14px;
-    padding: 0;
+
+  :global(.el-radio-group) {
+    flex: 0 0 auto;
   }
-  :global(.ivu-select-selected-value),
-  :global(.ivu-select-placeholder) {
-    font-size: 14px;
-  }
-  :global(.ivu-select-input) {
-    padding: 0;
-    font-size: 14px;
+
+  > :global(.el-collapse) {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .content-container {
@@ -95,149 +113,17 @@
 }
 
 .stage {
-  flex-grow: 1;
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* 右侧配置 */
 .right-bar {
-  // =================================== Iview =======================================
-  // 输入框
-  :global(.ivu-input) {
-    font-size: 14px;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 24px;
-    border: 0;
-    border-radius: 0;
-    // border-bottom: 1px solid rgba(0, 0, 0, 0.45);
-    border-bottom: 1px solid #8c8c8c;
-    background-color: transparent;
-    padding: 0;
-    box-shadow: none;
-    height: 24px;
-    transition: border-bottom-color 0.3s;
-    &:hover:not(:global(.ivu-color-picker-input)) {
-      border-bottom: 1px solid #2d8cf0;
-    }
-  }
-  :global(.ivu-input-wrapper) > :global(.ivu-input-suffix) {
-    text-align: right;
-    top: 4px;
-    > span {
-      color: rgba(0, 0, 0, 0.25) !important;
-    }
-  }
-  // 数字输入框
-  :global(.ivu-input-number) {
-    width: 100%;
-    height: 22px;
-    border: 0;
-    // border-bottom: 1px solid rgba(0, 0, 0, 0.45);
-    border-bottom: 1px solid #8c8c8c;
-    border-radius: 0;
-    box-shadow: none;
-    background-color: transparent;
-    transition: border-bottom-color 0.3s;
-    &:hover {
-      border-bottom: 1px solid #2d8cf0;
-    }
-  }
-  :global(.ivu-input-number-input) {
-    font-size: 14px;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 22px;
-    height: 22px;
-    padding: 0;
-  }
-  :global(.ivu-input-number-handler-wrap) {
-    background: transparent;
-    border: 0;
-    width: 14px;
-  }
-  :global(.ivu-input-number) :global(.ivu-input-number-handler) :global(.ivu-icon) {
-    color: rgb(140, 140, 140) !important;
-  }
-  :global(.ivu-input-number-handler-down) :global(.ivu-icon) {
-    margin-top: -9px;
-  }
-  :global(.ivu-input-number-handler-up) :global(.ivu-icon)::before {
-    content: '\F343';
-  }
-  :global(.ivu-input-number-handler-down) :global(.ivu-icon)::before {
-    content: '\F33D';
-  }
-  :global(.ivu-input-number-handler),
-  :global(.ivu-input-number-handler-up):hover,
-  :global(.ivu-input-number-handler-down):hover,
-  :global(.ivu-input-number-handler-wrap):hover :global(.ivu-input-number-handler) {
-    height: 50% !important;
-  }
-  :global(.ivu-input-number-handler-down) {
-    border-top: 0;
-  }
-  :global(.ivu-icon) {
-    right: 0;
-  }
-  // 下拉框
-  :global(.ivu-select-selection) {
-    border: 0;
-    border-radius: 0;
-    // border-bottom: 1px solid rgba(0, 0, 0, 0.45);
-    border-bottom: 1px solid #8c8c8c;
-    background-color: transparent;
-    box-shadow: none;
-  }
-  :global(.ivu-select > .ivu-select-selection) {
-    height: 24px;
-    line-height: 24px;
-  }
-  :global(.ivu-select-multiple .ivu-select-selection) {
-    height: unset;
-    line-height: unset;
-  }
-  :global(.ivu-select-multiple .ivu-select-selection) {
-    min-height: 24px;
-  }
-  :global(.ivu-select-multiple .ivu-tag) {
-    line-height: 20px;
-    height: 20px;
-  }
-  :global(.ivu-select-multiple .ivu-tag .ivu-icon-ios-close) {
-    line-height: 16px;
-  }
-  :global(.ivu-select-input),
-  :global(.ivu-select-selected-value),
-  :global(.ivu-select-placeholder) {
-    font-size: 14px;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 22px !important;
-    padding: 0 !important;
-    height: 22px !important;
-    text-align: start;
-  }
-  :global(.ivu-select-arrow) {
-    right: 0;
-    display: block !important;
-  }
-  :global(.ivu-select-group-title) {
-    padding-left: 8px;
-    font-size: 12px;
-    color: #999;
-    height: 30px;
-    line-height: 30px;
-  }
-  // radido
-  // :global(.ivu-radio-wrapper):global(.ivu-radio-group-item),
-  // :global(.ivu-radio-wrapper-checked) {
-  //   border-bottom: none !important;
-  //   box-shadow: none !important;
-  //   height: 22px !important;
-  //   :global(.ivu-radio-focus) {
-  //     border-bottom-width: 1px;
-  //     box-shadow: none !important;
-  //   }
-  // }
-
   display: flex;
+  flex: 0 0 264px;
   flex-direction: column;
   box-sizing: border-box;
   width: 264px;
@@ -252,11 +138,10 @@
     overflow-x: hidden;
   }
 
-  &:global(#ui__display__editor) > :global(.ivu-radio-group) {
-    display: block;
-    :global(.ivu-radio-group-item) {
-      box-shadow: none !important;
-    }
+  > :global(.el-radio-group) {
+    flex: 0 0 auto;
+    padding: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
   }
 
   .prop-desc {

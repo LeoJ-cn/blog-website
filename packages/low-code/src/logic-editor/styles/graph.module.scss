@@ -7,14 +7,15 @@
   .editor {
     height: 100%;
     width: 100%;
-    position: fixed;
+    position: absolute;
+    inset: 0;
   }
   .breadcrumb {
     user-select: none;
     position: absolute;
     top: 12px;
     left: 18px;
-    :global(.ivu-breadcrumb-item-link) {
+    :global(.el-breadcrumb__inner) {
       cursor: pointer;
     }
   }
@@ -27,4 +28,3 @@
     z-index: 999;
   }
 }
-
