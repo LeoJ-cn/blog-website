@@ -215,6 +215,9 @@ importers:
       '@antv/g6-core':
         specifier: 0.7.10
         version: 0.7.10
+      '@antv/g6-pc':
+        specifier: 0.7.10
+        version: 0.7.10
       lodash:
         specifier: 4.17.21
         version: 4.17.21

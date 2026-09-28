@@ -44,12 +44,21 @@ export default tseslint.config(
   },
   {
     // 迁移区必须保留旧逻辑的声明、分支结构和调试变量，避免 lint 自动修复改变执行语义。
-    files: ['packages/low-code/src/logic-editor/service/**/*.ts', 'packages/low-code/src/logic-editor/runtime/**/*.ts'],
+    files: [
+      'packages/low-code/src/logic-editor/service/**/*.ts',
+      'packages/low-code/src/logic-editor/runtime/**/*.ts',
+      'packages/low-code/src/logic-editor/graph/**/*.ts',
+      'packages/low-code/src/logic-editor/handler/**/*.ts',
+      'packages/low-code/src/logic-editor/compat/parse.ts',
+    ],
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-wrapper-object-types': 'off',
       'no-case-declarations': 'off',
       'no-irregular-whitespace': 'off',
+      'no-empty': 'off',
       'prefer-const': 'off',
     },
   },

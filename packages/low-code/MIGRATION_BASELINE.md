@@ -314,3 +314,11 @@ models/page/ProcessPageModel
 ```
 
 这些模块包含 `generateId`、`createSimpleProcessData`、`generate` 和作用域相关运行时逻辑，将在 Task 4 随生成链路一对一迁移；Task 2 只固定其输入输出协议，避免把运行时实现伪装成纯类型。
+
+## 图交互与资源迁移对照
+
+- `graph/shape/nodes` 的 39 个 TypeScript 文件（含被 `LogicEditorStage` 生产依赖的历史文件 `test.ts`）已按原文件名迁移。
+- `register-nodes.ts` 的注册调用、全部边类型和 behavior 注册名已通过排序清单对照，旧新集合一致。
+- 旧图逻辑引用的 56 个 SVG 以及额外的 API 图标已原内容迁移；`require(...)` 仅转换为 `icon-map.ts` 的静态 import 映射，动态选择条件保持不变。
+- 原 `graph/img` 中 6 个 PNG 没有被逻辑编辑器的 TS、TSX 或 Less 引用，因此不进入最小闭环包；若后续发现宿主通过字符串约定读取，再按原文件补入。
+- `graph/shape/nodes/test.ts` 虽名为 `test.ts`，但由原 `LogicEditorStage.tsx` 直接 import，属于生产代码，不是新增测试。

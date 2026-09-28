@@ -1,5 +1,8 @@
 import type { DataType, Schema } from './schema'
 
+export { DataType } from './schema'
+export type { Schema } from './schema'
+
 export interface AccessModifier {
   accessible?: boolean
   editable?: boolean
