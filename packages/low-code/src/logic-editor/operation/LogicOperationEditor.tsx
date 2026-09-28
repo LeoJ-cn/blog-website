@@ -40,8 +40,8 @@ export default defineComponent({
   },
   render() {
     return (
-      <div class={style['node-config-panel']}>
-        <div class={style['content-container']}>
+      <div class={style.nodeConfigPanel}>
+        <div class={style.contentContainer}>
           {this.operationTree.map((component) => (
             <LogicOperationItem
               key={component.id || component.ins_id}
@@ -51,7 +51,7 @@ export default defineComponent({
             />
           ))}
         </div>
-        <div class={style['config-actions']}>
+        <div class={style.configActions}>
           <ElButton onClick={() => this.$emit('select-node', null)}>取消</ElButton>
           <ElButton type="primary" onClick={this.confirmBtnClick}>确定</ElButton>
         </div>

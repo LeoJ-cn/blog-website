@@ -28,10 +28,10 @@ export default defineComponent({
   },
   render() {
     return (
-      <section class={style['logic-menu-overflow']}>
+      <section class={style.logicMenuOverflow}>
         <ElInput modelValue={this.keyword} onInput={(value) => { this.keyword = String(value) }} placeholder="搜索 API" clearable />
         {!this.filtered.length ? <ElEmpty description="暂无 API" /> : this.filtered.map((service) => (
-          <div class={style['logic-list-item']} draggable onDragstart={(event) => this.onDragstart(event, service)}>
+          <div class={style.logicListItem} draggable onDragstart={(event) => this.onDragstart(event, service)}>
             <span>{service.label || service.name}</span>
           </div>
         ))}

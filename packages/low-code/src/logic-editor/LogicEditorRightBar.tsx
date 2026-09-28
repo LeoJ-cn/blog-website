@@ -45,7 +45,7 @@ export default defineComponent({
   },
   render() {
     return (
-      <aside class={style['right-bar']}>
+      <aside class={style.rightBar}>
         <ElRadioGroup modelValue={this.mode}>
           <ElRadioButton value="config">节点配置</ElRadioButton>
         </ElRadioGroup>

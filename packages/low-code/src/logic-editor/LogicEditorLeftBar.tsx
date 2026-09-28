@@ -82,7 +82,7 @@ export default defineComponent({
     renderCategoryItem(nodes: LogicCategoryItem[]) {
       return nodes.map((node) => (
         <div
-          class={style['logic-list-item']}
+          class={style.logicListItem}
           draggable
           data-type={node.type}
           data-model={JSON.stringify(node.meta)}
@@ -96,7 +96,7 @@ export default defineComponent({
   },
   render() {
     return (
-      <aside class={style['left-bar']}>
+      <aside class={style.leftBar}>
         <ElRadioGroup modelValue={this.topCurTab} onChange={(value) => { this.topCurTab = value as 'methodLib' | 'apiLib' }}>
           <ElRadioButton value="methodLib">节点库</ElRadioButton>
           <ElRadioButton value="apiLib">API 库</ElRadioButton>

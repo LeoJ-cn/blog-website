@@ -91,10 +91,10 @@ export default defineComponent({
       'onUpdate:modelValue': (value: boolean) => this.context.store.set('ui_logic_visible', value),
     }
     return (
-      <ElDrawer modelValue={this.visible} size="90%" class={style['logic-editor-drawer']} {...drawerListeners}>
+      <ElDrawer modelValue={this.visible} size="90%" class={style.logicEditorDrawer} {...drawerListeners}>
         {{
           header: () => (
-            <div class={style['drawer-header']}>
+            <div class={style.drawerHeader}>
               <h2>{this.context.translate('logicEditor.title')}</h2>
               <ElRadioGroup modelValue={this.mode} onChange={this.radioChange}>
                 <ElRadioButton value="method">{this.context.translate('logicEditor.methodList')}</ElRadioButton>
@@ -104,7 +104,7 @@ export default defineComponent({
             </div>
           ),
           default: () => (
-            <div class={style['drawer-content']}>
+            <div class={style.drawerContent}>
               <LogicEditorLeftBar stageMode={this.stageMode} methodList={this.methodList} allDatas={this.allDatas} />
               <LogicEditorStage
                 modelValue={this.modelValue}

@@ -256,7 +256,7 @@ export default defineComponent({
   render() {
     return (
       <div class={style.stage}>
-        <div class={styles['logic-editor']}>
+        <div class={styles.logicEditor}>
           <div id="logicEditorContainer" class={styles.editor} />
           {(this.stageMode === StageMode.METHOD_LIST || this.stageMode === StageMode.METHOD_DETAIL) && (
             <ElBreadcrumb class={styles.breadcrumb}>

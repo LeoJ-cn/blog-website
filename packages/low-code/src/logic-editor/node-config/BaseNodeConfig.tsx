@@ -39,9 +39,9 @@ export default defineComponent({
   },
   render() {
     return (
-      <div class={style['node-config-panel']}>
-        <div class={style['content-container']}>{this.$slots.default?.()}</div>
-        <div class={style['config-actions']}>
+      <div class={style.nodeConfigPanel}>
+        <div class={style.contentContainer}>{this.$slots.default?.()}</div>
+        <div class={style.configActions}>
           <ElButton onClick={() => this.$emit('select-node', null)}>取消</ElButton>
           <ElButton type="primary" onClick={() => this.$emit('confirm')}>确定</ElButton>
         </div>

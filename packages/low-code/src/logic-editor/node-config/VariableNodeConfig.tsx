@@ -73,17 +73,17 @@ export default defineComponent({
   },
   render() {
     const anchor = this.curSelectedNodeConfig.data?.anchors?.[0]
-    if (!anchor) return <div class={style['config-empty']}>该变量没有可配置锚点</div>
+    if (!anchor) return <div class={style.configEmpty}>该变量没有可配置锚点</div>
     return (
-      <div class={style['node-config-panel']}>
-        <div class={style['content-container']}>
+      <div class={style.nodeConfigPanel}>
+        <div class={style.contentContainer}>
           <h3>{this.dataItem?.label || '变量'}</h3>
           <label>变量名称</label>
           <ElInput modelValue={anchor.data.label} onInput={(value) => { anchor.data.label = String(value) }} />
           <label>变量值</label>
           <ElInput type="textarea" rows={12} modelValue={this.valueStr} onInput={(value) => { this.valueStr = String(value) }} />
         </div>
-        <div class={style['config-actions']}>
+        <div class={style.configActions}>
           <ElButton onClick={() => this.$emit('select-node', null)}>取消</ElButton>
           <ElButton type="primary" onClick={this.confirmBtnClick}>确定</ElButton>
         </div>

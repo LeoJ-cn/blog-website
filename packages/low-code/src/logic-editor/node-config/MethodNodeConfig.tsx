@@ -92,16 +92,16 @@ export default defineComponent({
     },
   },
   render() {
-    if (!this.method) return <div class={style['config-empty']}>未找到对应方法</div>
+    if (!this.method) return <div class={style.configEmpty}>未找到对应方法</div>
     return (
-      <div class={style['node-config-panel']}>
-        <div class={style['content-container']}>
+      <div class={style.nodeConfigPanel}>
+        <div class={style.contentContainer}>
           <h3>{this.method.funcLabel || '自定义方法'}</h3>
           <label>方法名称</label>
           <ElInput modelValue={this.method.funcLabel} onInput={(value) => { if (this.method) this.method.funcLabel = String(value) }} />
-          <div class={style['config-section-title']}><span>参数</span><ElButton link onClick={this.methodParamAdd}>添加</ElButton></div>
+          <div class={style.configSectionTitle}><span>参数</span><ElButton link onClick={this.methodParamAdd}>添加</ElButton></div>
           {this.method.parameters.map((parameter, index) => (
-            <div class={style['config-group']} key={`${parameter.name}-${index}`}>
+            <div class={style.configGroup} key={`${parameter.name}-${index}`}>
               <ElInput modelValue={parameter.label} onInput={(value) => { parameter.label = String(value) }} />
               <ElSelect modelValue={parameter.type} onChange={(value) => { parameter.type = value as DataType }}>
                 {dataTypeOptions.map(([value, label]) => <ElOption key={value} value={value} label={label} />)}
@@ -123,7 +123,7 @@ export default defineComponent({
             <ElInput type="textarea" modelValue={this.returnValue} onInput={(value) => { this.returnValue = String(value) }} />
           )}
         </div>
-        <div class={style['config-actions']}>
+        <div class={style.configActions}>
           <ElButton onClick={() => this.$emit('select-node', null)}>取消</ElButton>
           <ElButton type="primary" onClick={this.confirmBtnClick}>确定</ElButton>
         </div>
