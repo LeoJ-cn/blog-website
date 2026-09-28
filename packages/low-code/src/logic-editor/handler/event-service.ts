@@ -3,18 +3,19 @@ import { EdgeConfig, IEdge, IShapeBase } from '@antv/g6';
 import { INode } from '@antv/g6-core/lib/interface/item';
 import { IG6GraphEvent, Item } from '@antv/g6-core/lib/types';
 import _ from 'lodash';
-import { DataType, Schema } from '../../../interfaces/front_end_data';
-import { Method } from '../../../interfaces/front_end_method';
-import methodMixin from '../../../mixins/method';
+import { DataType, Schema } from '../../types/data';
+import { Method } from '../../types/method';
+import methodMixin from '../compat/method';
 import { createEdgeModel, getNodeModel, isClickApiHelper, isClickMethodDetial, isVariableNode } from '../graph/util';
 import { AnchorTag, IApiConfig, IFuncNodeConfig, IIGroup, INodeConfig, IPositon, StageMode } from '../interface';
 import LogicEditorStage from '../LogicEditorStage';
 import { BlockNames_DTS, ConstOrVariable_DTS } from './../service/interface';
 import { NodeConfigServicesFactory } from './config-builder/node-config-services-factory';
-import dataMixin from '../../../mixins/data';
+import dataMixin from '../compat/data';
 import { LOGIC_VARIABLE_EDGE } from '../graph/shape/edges/logic-variable-edge';
 import { GraphUtil } from '../graph/graph-util';
-import { Log, Store } from '../../../common';
+import { Log } from '../compat/locales';
+import { Store } from '../compat/store';
 
 export async function onDrop(vm: LogicEditorStage, e: IG6GraphEvent) {
   const originalEvent = e.originalEvent as DragEvent;
@@ -645,4 +646,3 @@ export function onBeforeItemDelete(item: Item) {
 export function beforeAnchorShow(vm: LogicEditorStage, e: IG6GraphEvent) {
   e.item.setState('anchorShow', vm.stageMode !== StageMode.VARIABLE_LIST);
 }
-
