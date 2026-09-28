@@ -16,11 +16,16 @@ const project = projects.find((item) => item.slug === 'render-scheduler')!
 const activeTab = ref<(typeof tabs)[number]['id']>('demo')
 const activeSourceIndex = ref(0)
 const activeSource = computed(() => project.sources[activeSourceIndex.value])
+const performancePanel = ref<InstanceType<typeof PerformancePanel> | null>(null)
+
+function startPerformanceRecording() {
+  performancePanel.value?.startRecording()
+}
 </script>
 
 <template>
   <article class="playground-content scheduler-page" data-page="render-scheduler">
-    <PerformancePanel />
+    <PerformancePanel ref="performancePanel" />
     <p class="eyebrow">BROWSER</p>
     <h2>{{ project.title }}</h2>
     <p class="playground-description">{{ project.description }}</p>
@@ -37,7 +42,7 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
         </div>
         <span>200ms 调度间隔</span>
       </div>
-      <SchedulerDemo />
+      <SchedulerDemo @performance-recording-request="startPerformanceRecording" />
     </div>
 
     <nav class="content-tabs" aria-label="技术内容" role="tablist">

@@ -4,6 +4,10 @@ import Left from './Left.vue'
 import Right from './Right.vue'
 import { useDeferRegister } from './useDeferRegister'
 
+const emit = defineEmits({
+  'performance-recording-request': null,
+})
+
 const showMain = ref(true)
 
 const { isReady: readyA, restart: restartA } = useDeferRegister({
@@ -31,6 +35,7 @@ function toggleMain() {
   restartA()
   restartB()
   showMain.value = true
+  emit('performance-recording-request')
 }
 </script>
 

@@ -6,7 +6,7 @@ class RenderScheduler {
     this.instanceName = instanceName
     this.waitQueue = []
     this.isRunning = false
-    this.taskIntervalMs = 200
+    this.taskIntervalMs = 400
   }
 
   register(task) {
