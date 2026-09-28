@@ -20,7 +20,6 @@ export enum BlockNames_DTS {
   LOGIC_TRY_CATCH_NODE = 'logic-try-catch-node', // try catch块
   LOGIC_START_NODE = 'logic-start-node', // 开始块
   LOGIC_END_NODE = 'logic-end-node', // 结束块
-  LOGIC_LIFECYCLE_NODE = 'logic-lifecycle-node', // 生命周期
   LOGIC_FUNC_NODE = 'logic-func-node', // 自定义函数
   LOGIC_API_NODE = 'logic-api-node', // 调用API
   LOGIC_NET_NODE = 'logic-net-node', // 网络请求

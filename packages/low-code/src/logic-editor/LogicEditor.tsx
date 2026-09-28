@@ -4,7 +4,7 @@ import type { GraphData } from '@antv/g6'
 import type { LowCodeCompatibilityContext } from '../compatibility/types'
 import { createLowCodeContext, provideLowCodeContext } from '../compatibility/context'
 import { GraphUtil } from './graph/graph-util'
-import type { INodeConfig, LifeCircleItem } from './interface'
+import type { INodeConfig } from './interface'
 import { StageMode } from './interface'
 import style from './styles/logic-editor.module.scss'
 import LogicEditorLeftBar from './LogicEditorLeftBar'
@@ -39,9 +39,6 @@ export default defineComponent({
     },
     allDatas() {
       return this.context.data
-    },
-    lifeCycles(): LifeCircleItem[] {
-      return (this.context.store.get('lifeCycles') as LifeCircleItem[] | undefined) || []
     },
   },
   created() {
@@ -110,7 +107,6 @@ export default defineComponent({
                 modelValue={this.modelValue}
                 stageMode={this.stageMode}
                 methodList={this.methodList}
-                lifeCycles={this.lifeCycles}
                 allDatas={this.allDatas}
                 {...{
                   'onChange-graph': this.onGraphChange,

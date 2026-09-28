@@ -8,7 +8,6 @@ import LOGIC_CALC_NODE from './nodes/logic-calc-node';
 import LOGIC_END_NODE from './nodes/logic-end-node';
 import LOGIC_FUNC_NODE from './nodes/logic-func-node';
 import LOGIC_IFELSE_NODE from './nodes/logic-ifelse-node';
-import LOGIC_LIFECYCLE_NODE from './nodes/logic-lifecycle-node';
 import LOGIC_MESSAGE_NODE from './nodes/logic-message-node';
 import LOGIC_NET_NODE from './nodes/logic-net-node';
 import LOGIC_ROUTER_NODE from './nodes/logic-router-node';
@@ -48,7 +47,6 @@ const registerNode: (G6: IG6) => void = (G6) => {
   LOGIC_START_NODE(G6);
   LOGIC_END_NODE(G6);
   LOGIC_NET_NODE(G6);
-  LOGIC_LIFECYCLE_NODE(G6);
   LOGIC_FUNC_NODE(G6);
   LOGIC_API_NODE(G6);
   LOGIC_VARIABLE_DETAIL_NODE(G6);
@@ -91,4 +89,3 @@ const registerNode: (G6: IG6) => void = (G6) => {
 };
 
 export default registerNode;
-

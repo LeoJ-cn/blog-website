@@ -20,7 +20,6 @@ import {
   INodeConfig,
   IPositon,
   IVarNodeConfig,
-  LifeCircleItem,
   LogicTransferData,
 } from '../../interface/index';
 import { LogicEditorService } from '../../service/logic-service';
@@ -183,7 +182,7 @@ export async function getNodeModel(transferData: string, position: IPositon): Pr
   const data: LogicTransferData = JSON.parse(transferData);
   const nodeType = data.type;
   const s_cfg = data.model;
-  const cfg = JSON.parse(s_cfg) as INodeConfig;
+  const cfg = s_cfg ? JSON.parse(s_cfg) as INodeConfig : undefined;
 
   const nodeConfigService = NodeConfigServicesFactory.getINodeConfigService(nodeType);
 
@@ -493,74 +492,9 @@ export function isClickApiHelper(e: IG6GraphEvent) {
 }
 
 /**
- * 渲染生命周期方法为图数据
- * @param lifeCircles 生命周期
- * @returns
+ * 将所有自定义方法渲染到方法列表。
  */
-export function lifeCycleMethod2Graph(lifeCircles: LifeCircleItem[]): GraphData {
-  const graphData: GraphData = { nodes: [], edges: [] };
-
-  // 生命周期块
-  const lifeCycleCfg = NodeConfigServicesFactory.getINodeConfigService(BlockNames_DTS.LOGIC_LIFECYCLE_NODE).getConfig({
-    x: 220,
-    y: 140,
-  });
-
-  lifeCycleCfg.data.anchors.forEach((anchor, index) => {
-    const lifes = lifeCircles.filter((item: LifeCircleItem) => item.type === anchor.data.value);
-    const graph = method2Graph(lifes.map((c) => c.method)) as NodeConfig[];
-
-    if (graph.length) {
-      _.forEach(graph, (node, index) => {
-        node.x = 500 + 300 * index;
-        node.y = 140 + index * 250;
-      });
-
-      graphData.nodes.push(...graph);
-      // 创建边
-      const edges = [];
-      for (let index = 0; index < graph.length; index++) {
-        const cur = graph[index];
-        const next = graph[index + 1];
-        if (next) {
-          const edge = createEdgeModel({
-            type: LOGIC_STATEMENT_EDGE,
-            id: getRandomNodeId(),
-            source: cur.id,
-            target: next.id,
-            sourceAnchor: 1,
-            targetAnchor: 0,
-          });
-          edges.push(edge);
-        }
-      }
-      graphData.edges.push(
-        createEdgeModel({
-          type: LOGIC_STATEMENT_EDGE,
-          id: getRandomNodeId(),
-          source: BlockNames_DTS.LOGIC_LIFECYCLE_NODE,
-          target: graph[0].id,
-          sourceAnchor: index, // 生命周期 - 页面创建时
-          targetAnchor: 0,
-        }),
-        ...edges,
-      );
-    }
-  });
-
-  graphData.nodes.unshift(lifeCycleCfg as NodeConfig);
-  return graphData;
-}
-
-/**
- * 方法列表 - 渲染除生命周期其他的函数
- * @param lifeCircles 生命周期钩子函数
- * @param methods 所有的函数
- */
-export function customMethod2Graph(lifeCircles: LifeCircleItem[], methods: Method[]): GraphData {
-  const lifeCirclyIds = lifeCircles.map((i) => i.method.id);
-  // 剔除掉生命周期方法
-  methods = methods.filter((m) => !lifeCirclyIds.includes(m.id));
+export function customMethod2Graph(methods: Method[]): GraphData {
   const nodes = method2Graph(methods) as NodeConfig[];
   nodes.forEach((item, index) => {
     item.x = 220;
@@ -583,21 +517,11 @@ export function getVariableGraph(allDatas: Data[]): GraphData {
 
 /**
  * 构建方法列表GraphData
- * @param lifeCircles 生命周期
  * @param methodList 方法列表
  * @returns
  */
-export function getMethodListGraph(lifeCircles: LifeCircleItem[], methodList: Method[]): GraphData {
-  let methodListGraph: GraphData = {
-    nodes: [],
-    edges: [],
-  };
-
-  const lifeCycleGraphData = lifeCycleMethod2Graph(lifeCircles);
-  const customMethodGraphData = customMethod2Graph(lifeCircles, methodList);
-  methodListGraph.nodes = [...lifeCycleGraphData.nodes, ...customMethodGraphData.nodes];
-  methodListGraph.edges = [...lifeCycleGraphData.edges, ...customMethodGraphData.edges];
-  return methodListGraph;
+export function getMethodListGraph(methodList: Method[]): GraphData {
+  return customMethod2Graph(methodList);
 }
 
 /**

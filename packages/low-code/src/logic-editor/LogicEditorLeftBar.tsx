@@ -76,7 +76,12 @@ export default defineComponent({
   methods: {
     onNodeDragStart(event: DragEvent, node: LogicCategoryItem) {
       if (!event.dataTransfer) return
-      const model = typeof node.meta === 'string' ? node.meta : JSON.stringify(node.meta || {})
+      // 未携带 meta 表示新建节点，不能序列化成 `{}`，否则配置服务会误判为复制已有节点。
+      const model = node.meta === undefined
+        ? undefined
+        : typeof node.meta === 'string'
+          ? node.meta
+          : JSON.stringify(node.meta)
       event.dataTransfer.setData('dragComponent', JSON.stringify({ type: node.type, model }))
     },
     renderCategoryItem(nodes: LogicCategoryItem[]) {

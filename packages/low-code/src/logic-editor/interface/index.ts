@@ -4,7 +4,6 @@ import { IShape } from '@antv/g-base/src/interfaces';
 import { ShapeAttrs } from '@antv/g-canvas';
 import G6, { IGroup, Item, ModelConfig, UpdateType } from '@antv/g6';
 import { NodeConfig } from '@antv/g6-core/lib/types';
-import { Method } from '../../types/method';
 import { CallApiProcessNodeFrontAttrApi } from '../../types/api';
 import { AnchorBaseConfig_DTS, BlockNames_DTS } from '../service/interface';
 
@@ -101,19 +100,6 @@ export interface AnchorItemCfg {
   tag: AnchorTag;
   connected: boolean; // 是否被链接
   data: AnchorData;
-}
-
-export interface LifeCircle {
-  value: string;
-  label: string;
-  mold?: number; //  在当前mold类型页面才显示
-}
-
-export interface LifeCircleItem {
-  type: string;
-  label: string;
-  uuid: string;
-  method: Method;
 }
 
 export interface DefaultStyleConfig {
@@ -275,7 +261,8 @@ export interface IPositon {
 
 export interface LogicTransferData {
   type: BlockNames_DTS;
-  model: string;
+  /** 已有节点的序列化配置；缺省时表示创建对应类型的新节点。 */
+  model?: string;
 }
 
 export type AnchorBaseConfigWithPosition = [number, number, AnchorBaseConfig_DTS];

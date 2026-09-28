@@ -60,7 +60,6 @@ logic-greater-node.ts
 logic-ifelse-node.ts
 logic-less-equal-node.ts
 logic-less-node.ts
-logic-lifecycle-node.ts
 logic-message-node.ts
 logic-method-ref-node.ts
 logic-multiplication-node.ts
@@ -94,7 +93,6 @@ LOGIC_BASE_NODE
 LOGIC_START_NODE
 LOGIC_END_NODE
 LOGIC_NET_NODE
-LOGIC_LIFECYCLE_NODE
 LOGIC_FUNC_NODE
 LOGIC_API_NODE
 LOGIC_VARIABLE_DETAIL_NODE
@@ -158,7 +156,6 @@ select-node.ts
 api-config-service.ts
 base-config-service.ts
 interface/index.ts
-lifecycle-config-service.ts
 method-config-service.ts
 node-config-services-factory.ts
 variable-config-service.ts
@@ -328,12 +325,12 @@ models/page/ProcessPageModel
 | 旧组件 | 旧成员 | Vue 3 对应位置 |
 | --- | --- | --- |
 | `FrontLogicEditor` | `stageMode`、`mode`、`curSelectedNodeConfig`、`preStageMode` | `LogicEditor.data()` |
-| `FrontLogicEditor` | `visible`、`methodList`、`allDatas`、`lifeCycles` | `LogicEditor.computed` |
+| `FrontLogicEditor` | `visible`、`methodList`、`allDatas` | `LogicEditor.computed` |
 | `FrontLogicEditor` | `watchCurPageUuid`、`radioChange`、`onGraphChange`、`saveLogicData`、`easyLayout` | `LogicEditor.methods`；调用顺序保持不变 |
 | `LogicEditorLeftBar` | `watchMode`、`watchDatas` | `watch.stageMode`、`watch.allDatas` |
 | `LogicEditorLeftBar` | 分类构建、搜索、拖动、远程分类方法 | 同名或等价命名的 `methods`；拖动仍写入 `data-type` / `data-model` |
 | `LogicEditorStage` | `watchCurPageUuid`、`watchVisible`、`watchMode` | `mounted` 初始化、`beforeUnmount` 清理及 `watch.stageMode` |
-| `LogicEditorStage` | `getPlugins`、`initGraphEvent`、`deleteNode`、`save`、`layout`、`updateLifeCircle`、`updateBlockly`、`onMethdListClick`、`storeAllGraphData`、`onVisible`、`updateGraphData` | `LogicEditorStage.methods` |
+| `LogicEditorStage` | `getPlugins`、`initGraphEvent`、`deleteNode`、`save`、`layout`、`updateBlockly`、`onMethdListClick`、`storeAllGraphData`、`onVisible`、`updateGraphData` | `LogicEditorStage.methods` |
 | `LogicEditorRightBar` | `watchCurSelectedNodeConfig`、`renderNodeConfigPanel`、`renderRadioSelected`、`renderEmpty` | 直接由响应式 prop 派生的 `renderNodeConfigPanel` 与 `render()`；取消了仅用于缓存 `nodeType` 的重复状态 |
 | `LogicServiceListManage` | `onNodeDragStart`、列表渲染、远程分类/API 查询 | Vue 3 `methods` 与 `render()`；宿主请求改由 controller adapter 提供 |
 

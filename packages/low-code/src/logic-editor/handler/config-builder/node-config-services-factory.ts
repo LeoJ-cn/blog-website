@@ -7,7 +7,6 @@ import { VariableDetialConfigService } from './variable-detial-config-service';
 
 import { OperationComponentTree } from '../../../types/edit-page';
 
-import { LifecycleConfigService } from './lifecycle-config-service';
 // import { CreateObjectConfigService } from './create-object-service';
 import { ApiConfigService } from './api-config-service';
 import { LogicBlockBaseTplMap } from '../../service/const';
@@ -24,8 +23,6 @@ export class NodeConfigServicesFactory {
     [BlockNames_DTS.LOGIC_OBJECT_NODE, new VariableConfigService()],
     // 变量详情
     [BlockNames_DTS.LOGIC_VARIABLE_DETIAL_NODE, new VariableDetialConfigService()],
-    // 生命周期
-    [BlockNames_DTS.LOGIC_LIFECYCLE_NODE, new LifecycleConfigService()],
     // 开始
     [
       BlockNames_DTS.LOGIC_START_NODE,

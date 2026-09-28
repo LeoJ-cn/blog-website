@@ -237,7 +237,6 @@ export class GraphUtil {
             BlockNames_DTS.LOGIC_ARRAY_NODE,
             BlockNames_DTS.LOGIC_OBJECT_NODE,
             BlockNames_DTS.LOGIC_VARIABLE_DETIAL_NODE,
-            BlockNames_DTS.LOGIC_LIFECYCLE_NODE,
             BlockNames_DTS.LOGIC_START_NODE,
             BlockNames_DTS.LOGIC_END_NODE,
             BlockNames_DTS.LOGIC_API_NODE,

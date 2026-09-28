@@ -10,7 +10,6 @@ import help from './img/help.svg'
 import ifElse from './img/if-else.svg'
 import judgeCondition from './img/judge-condition.svg'
 import lan from './img/lan.svg'
-import lifecycle from './img/lifecycle.svg'
 import loop from './img/loop.svg'
 import message from './img/message.svg'
 import methodRef from './img/method-ref.svg'
@@ -68,7 +67,6 @@ const iconMap: Record<string, string> = {
   'if-else.svg': ifElse,
   'judge-condition.svg': judgeCondition,
   'lan.svg': lan,
-  'lifecycle.svg': lifecycle,
   'loop.svg': loop,
   'message.svg': message,
   'method-ref.svg': methodRef,
@@ -123,4 +121,3 @@ export function resolveLogicEditorAsset(path: string): string {
   }
   return asset
 }
-

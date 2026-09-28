@@ -23,7 +23,7 @@ import {
   onDrop,
   onNodeDragend,
 } from './handler/event-service'
-import type { IFuncNodeConfig, INodeConfig, IVarNodeConfig, LifeCircleItem, NodeConfigData } from './interface'
+import type { IFuncNodeConfig, INodeConfig, IVarNodeConfig, NodeConfigData } from './interface'
 import { StageMode } from './interface'
 import { BlockNames_DTS } from './service/interface'
 import { LogicEditorService } from './service/logic-service'
@@ -35,7 +35,6 @@ export default defineComponent({
   props: {
     modelValue: { type: Object as PropType<GraphData>, required: true },
     methodList: { type: Array as PropType<Method[]>, default: () => [] },
-    lifeCycles: { type: Array as PropType<LifeCircleItem[]>, default: () => [] },
     stageMode: { type: String as PropType<StageMode>, required: true },
     allDatas: { type: Array as PropType<Data[]>, default: () => [] },
   },
@@ -92,7 +91,12 @@ export default defineComponent({
           trigger: 'contextmenu',
           itemTypes: ['node', 'edge'],
           getContent: () => '<div style="width:80px;height:24px;line-height:24px;cursor:pointer;background:#fff">删除节点</div>',
-          handleMenuClick(_target: HTMLElement, item: INode) { stage.deleteNode(item) },
+          handleMenuClick(target: HTMLElement, item: INode) {
+            // 删除流程包含异步确认，不能依赖 click 冒泡到 body 后再由 G6 隐藏菜单。
+            const menu = target.closest<HTMLElement>('.g6-component-contextmenu')
+            if (menu) menu.style.visibility = 'hidden'
+            stage.deleteNode(item)
+          },
         }),
         new G6.Minimap({ size: [200, 150], container: 'minimapContainer' }),
         new G6.Grid({}),
@@ -120,7 +124,7 @@ export default defineComponent({
     async deleteNode(item: INode) {
       if (!this.graph) return
       const model = item.get<INodeConfig>('model')
-      const cannotDelete = [BlockNames_DTS.LOGIC_LIFECYCLE_NODE, BlockNames_DTS.LOGIC_START_NODE, BlockNames_DTS.LOGIC_END_NODE]
+      const cannotDelete = [BlockNames_DTS.LOGIC_START_NODE, BlockNames_DTS.LOGIC_END_NODE]
       if (cannotDelete.includes(model.type as BlockNames_DTS)) {
         this.context.feedback.warning('当前节点不可以删除！')
         return
@@ -162,39 +166,13 @@ export default defineComponent({
         nodesepFunc: () => (this.stageMode !== StageMode.VARIABLE_LIST ? 50 : 25),
       })
     },
-    updateLifeCircle() {
-      if (!this.methodListGraph) return
-      const { nodes = [], edges = [] } = this.methodListGraph
-      const lifeCycles = (this.context.store.get('ui_bind_lifecircle') as Record<string, string[]> | undefined) || {}
-      const node = nodes.find((item) => item.type === BlockNames_DTS.LOGIC_LIFECYCLE_NODE) as INodeConfig | undefined
-      if (!node) return
-      node.data.anchors.forEach((anchor) => {
-        let edge = edges.find((item) => item.source === node.id && item.sourceAnchor === anchor.index)
-        if (!edge) {
-          delete lifeCycles[`${anchor.data.value}_method_ids`]
-          return
-        }
-        let target = nodes.find((item) => item.id === edge?.target) as INodeConfig | undefined
-        const methodIds: string[] = []
-        while (target) {
-          methodIds.push((target.data as unknown as IFuncNodeConfig).funcId)
-          edge = edges.find((item) => item.type === LOGIC_STATEMENT_EDGE && item.source === target?.id)
-          target = edge ? nodes.find((item) => item.id === edge?.target) as INodeConfig : undefined
-        }
-        lifeCycles[`${anchor.data.value}_method_ids`] = methodIds
-      })
-      this.context.store.set('ui_bind_lifecircle', lifeCycles)
-    },
     async updateBlockly() {
       const update = (method: Method) => {
         if (!method.graphData) return
         method.blockData = new LogicEditorService(JSON.parse(method.graphData), method.id || '').blockly
       }
       if (this.stageMode === StageMode.METHOD_DETAIL && this.curEditMethod) update(this.curEditMethod)
-      else {
-        this.updateLifeCircle()
-        this.methodList.forEach(update)
-      }
+      else this.methodList.forEach(update)
     },
     onMethdListClick() {
       this.curSelectedNodeConfig = null
@@ -242,7 +220,7 @@ export default defineComponent({
         cache = this.methodDetailGraphList[this.curEditMethod.id]
       }
       if (cache?.nodes?.length && this.curEditMethod) this.graphData = getMethodDetialGraphData(this.curEditMethod, cache)
-      else if (targetMode === StageMode.METHOD_LIST) this.graphData = this.methodListGraph = getMethodListGraph(this.lifeCycles, this.methodList)
+      else if (targetMode === StageMode.METHOD_LIST) this.graphData = this.methodListGraph = getMethodListGraph(this.methodList)
       else if (targetMode === StageMode.METHOD_DETAIL && this.curEditMethod) {
         this.graphData = getMethodDetialGraphData(this.curEditMethod)
         if (this.curEditMethod.id) this.methodDetailGraphList[this.curEditMethod.id] = this.graphData
