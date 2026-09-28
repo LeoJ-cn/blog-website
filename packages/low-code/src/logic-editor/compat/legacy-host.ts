@@ -8,6 +8,9 @@ export const AtomCenter = {
 export const PageCenter = {
   cur_page: undefined as undefined | { extra1?: string },
   localeManager: {
-    getPageLocaleArray: (): Array<{ value: string; label: string }> => [],
+    getPageLocaleArray: (pageUuid?: string): Array<{ value: string; label: string }> => {
+      void pageUuid
+      return []
+    },
   },
 }
