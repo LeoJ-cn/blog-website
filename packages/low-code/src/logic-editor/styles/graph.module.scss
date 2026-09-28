@@ -1,0 +1,30 @@
+.logic-editor {
+  width: 100%;
+  height: 100%;
+  transform: scale(1, 1);
+  position: relative;
+
+  .editor {
+    height: 100%;
+    width: 100%;
+    position: fixed;
+  }
+  .breadcrumb {
+    user-select: none;
+    position: absolute;
+    top: 12px;
+    left: 18px;
+    :global(.ivu-breadcrumb-item-link) {
+      cursor: pointer;
+    }
+  }
+  .minimap {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    z-index: 999;
+  }
+}
+

@@ -28,7 +28,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.{js,mjs,ts,vue}'],
+    files: ['**/*.{js,mjs,ts,tsx,vue}'],
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
     },
@@ -49,6 +49,7 @@ export default tseslint.config(
       'packages/low-code/src/logic-editor/runtime/**/*.ts',
       'packages/low-code/src/logic-editor/graph/**/*.ts',
       'packages/low-code/src/logic-editor/handler/**/*.ts',
+      'packages/low-code/src/logic-editor/**/*.tsx',
       'packages/low-code/src/logic-editor/compat/parse.ts',
     ],
     rules: {
@@ -60,6 +61,8 @@ export default tseslint.config(
       'no-irregular-whitespace': 'off',
       'no-empty': 'off',
       'prefer-const': 'off',
+      '@typescript-eslint/no-this-alias': 'off',
+      'vue/no-mutating-props': 'off',
     },
   },
 )

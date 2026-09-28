@@ -8,7 +8,8 @@ import { Method } from '../../types/method';
 import methodMixin from '../compat/method';
 import { createEdgeModel, getNodeModel, isClickApiHelper, isClickMethodDetial, isVariableNode } from '../graph/util';
 import { AnchorTag, IApiConfig, IFuncNodeConfig, IIGroup, INodeConfig, IPositon, StageMode } from '../interface';
-import LogicEditorStage from '../LogicEditorStage';
+// Vue 3 Options API 组件实例由事件层按原字段协议访问；运行时不依赖组件构造函数。
+type LogicEditorStage = any;
 import { BlockNames_DTS, ConstOrVariable_DTS } from './../service/interface';
 import { NodeConfigServicesFactory } from './config-builder/node-config-services-factory';
 import dataMixin from '../compat/data';

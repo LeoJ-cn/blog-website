@@ -322,3 +322,28 @@ models/page/ProcessPageModel
 - 旧图逻辑引用的 56 个 SVG 以及额外的 API 图标已原内容迁移；`require(...)` 仅转换为 `icon-map.ts` 的静态 import 映射，动态选择条件保持不变。
 - 原 `graph/img` 中 6 个 PNG 没有被逻辑编辑器的 TS、TSX 或 Less 引用，因此不进入最小闭环包；若后续发现宿主通过字符串约定读取，再按原文件补入。
 - `graph/shape/nodes/test.ts` 虽名为 `test.ts`，但由原 `LogicEditorStage.tsx` 直接 import，属于生产代码，不是新增测试。
+
+## Vue 2 class-style TSX 到 Vue 3 Options API TSX 映射
+
+| 旧组件 | 旧成员 | Vue 3 对应位置 |
+| --- | --- | --- |
+| `FrontLogicEditor` | `stageMode`、`mode`、`curSelectedNodeConfig`、`preStageMode` | `LogicEditor.data()` |
+| `FrontLogicEditor` | `visible`、`methodList`、`allDatas`、`lifeCycles` | `LogicEditor.computed` |
+| `FrontLogicEditor` | `watchCurPageUuid`、`radioChange`、`onGraphChange`、`saveLogicData`、`easyLayout` | `LogicEditor.methods`；调用顺序保持不变 |
+| `LogicEditorLeftBar` | `watchMode`、`watchDatas` | `watch.stageMode`、`watch.allDatas` |
+| `LogicEditorLeftBar` | 分类构建、搜索、拖动、远程分类方法 | 同名或等价命名的 `methods`；拖动仍写入 `data-type` / `data-model` |
+| `LogicEditorStage` | `watchCurPageUuid`、`watchVisible`、`watchMode` | `mounted` 初始化、`beforeUnmount` 清理及 `watch.stageMode` |
+| `LogicEditorStage` | `getPlugins`、`initGraphEvent`、`deleteNode`、`save`、`layout`、`updateLifeCircle`、`updateBlockly`、`onMethdListClick`、`storeAllGraphData`、`onVisible`、`updateGraphData` | `LogicEditorStage.methods` |
+| `LogicEditorRightBar` | `watchCurSelectedNodeConfig`、`renderNodeConfigPanel`、`renderRadioSelected`、`renderEmpty` | 直接由响应式 prop 派生的 `renderNodeConfigPanel` 与 `render()`；取消了仅用于缓存 `nodeType` 的重复状态 |
+| `LogicServiceListManage` | `onNodeDragStart`、列表渲染、远程分类/API 查询 | Vue 3 `methods` 与 `render()`；宿主请求改由 controller adapter 提供 |
+
+### Vue 3 TSX 语法转换记录
+
+| Vue 2 写法 | Vue 3 写法 | 时机约束 |
+| --- | --- | --- |
+| `@Prop` / class 字段 | `props` / `data()` | 初始化仍发生在组件创建阶段 |
+| `@Watch(..., { immediate, deep })` | `watch` 选项 | 保留 `immediate`、`deep` |
+| `v-model` | `modelValue` + `onUpdate:modelValue` | 输入事件仍在值变化时写回 |
+| `on-change` / `on-on-*` | Vue 3 `onChange` 或字符串 listener 展开 | 自定义连字符事件名保持不变 |
+| 字符串组件名 + 全局 depends | 静态 import；operation tree 使用 `resolveDynamicComponent` | 动态 operation 组件仍由宿主注册表解析 |
+| `$Message` / `$Modal` / `$app.dispatcher` | `context.feedback` / `context.dispatcher` | 反馈和事件发生位置保持不变 |
