@@ -39,6 +39,3 @@ runs-on: ubuntu-latest
 
       - name: Build Vite
         run: pnpm build:vite
-
-      - name: Build Webpack
-        run: pnpm build:webpack

@@ -528,6 +528,8 @@ class TextLabeling {
   }
 
   init(): void {
+    // destroy 后允许同一实例重新启用；实例缓存参与选区所属容器的判断，恢复时必须同步注册。
+    TextLabeling.addInstanceToCache(this.container, this)
     this.bindEvent()
   }
 
@@ -723,13 +725,14 @@ class TextLabeling {
       const fragment = range.extractContents()
       const wrapper = document.createElement('span')
       const textBox = document.createElement('span')
-      const deleteButton = document.createElement('span')
+      const deleteButton = document.createElement('button')
 
       wrapper.classList.add(LABEL_CLASS)
       wrapper.dataset.annotationId = annotation.id
       textBox.classList.add(TEXT_CLASS)
       deleteButton.classList.add(DELETE_CLASS)
-      deleteButton.textContent = 'x'
+      deleteButton.type = 'button'
+      deleteButton.setAttribute('aria-label', '删除标注')
       textBox.appendChild(fragment)
       wrapper.append(textBox, deleteButton)
       this.applyLabelingStyle(wrapper, actionConfig.labelingStyle)

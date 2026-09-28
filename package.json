@@ -42,7 +42,7 @@
     "lint:staged": "只检查 Git 暂存文件",
     "format": "使用 Prettier 格式化项目文件",
     "test:e2e": "执行 Playwright 端到端测试",
-    "verify:ci:docker": "在 Docker Linux 环境中模拟 CI 安装和双构建",
+    "verify:ci:docker": "在 Docker Linux 环境中模拟 CI 安装和 Vite 构建",
     "prepare": "初始化 Husky Git hooks"
   },
   "scripts": {

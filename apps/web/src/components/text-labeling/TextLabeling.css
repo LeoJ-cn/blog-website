@@ -12,24 +12,52 @@
 .tips-area .ta-del-button {
   align-items: center;
   background: rgb(24 32 48 / 22%);
+  border: 0;
   border-radius: 50%;
   color: #182030;
   cursor: pointer;
-  display: inline-block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  font-weight: 800;
+  display: inline-flex;
   height: 16px;
-  line-height: 16px;
+  justify-content: center;
   margin-left: 5px;
-  text-align: center;
-  transition: background 0.16s ease;
-  user-select: none;
+  padding: 0;
+  position: relative;
+  top: -2px;
+  transition:
+    background 0.16s ease,
+    transform 0.16s ease;
+  vertical-align: middle;
   width: 16px;
+}
+
+.tips-area .ta-del-button::before,
+.tips-area .ta-del-button::after {
+  background: currentcolor;
+  border-radius: 1px;
+  content: '';
+  height: 1.5px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  width: 8px;
+}
+
+.tips-area .ta-del-button::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.tips-area .ta-del-button::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .tips-area .ta-del-button:hover {
   background: rgb(24 32 48 / 40%);
+  transform: scale(1.06);
+}
+
+.tips-area .ta-del-button:focus-visible {
+  outline: 2px solid #182030;
+  outline-offset: 1px;
 }
 
 /* 标引右键菜单 */

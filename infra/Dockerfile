@@ -15,7 +15,6 @@ RUN pnpm build:vite
 
 FROM base AS ci
 RUN pnpm build:vite
-RUN pnpm build:webpack
 
 FROM nginx:1.27.3-alpine AS runtime
 COPY infra/nginx.conf /etc/nginx/conf.d/default.conf

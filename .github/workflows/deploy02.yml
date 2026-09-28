@@ -42,9 +42,6 @@ jobs:
       - name: Build Vite production bundle
         run: pnpm build:vite
 
-      # - name: Verify Webpack production bundle
-      #   run: pnpm build:webpack
-
       - name: Deploy Vite bundle
         uses: JamesIves/github-pages-deploy-action@v4
         with:

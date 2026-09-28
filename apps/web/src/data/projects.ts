@@ -8,6 +8,7 @@ import schedulerComposableSource from '../components/task-scheduler/useDeferRegi
 import textLabelingStyleSource from '../components/text-labeling/TextLabeling.css?raw'
 import textLabelingSource from '../components/text-labeling/TextLabeling.ts?raw'
 import textLabelingArticleSource from '../components/text-labeling/text.txt?raw'
+import xpathSelectionSource from '../components/text-labeling/xpath-selection.ts?raw'
 import type { ProjectCategory, ProjectDefinition } from '../types/project'
 
 export const categoryMetadata: Record<
@@ -125,6 +126,12 @@ export const projects: ProjectDefinition[] = [
         path: 'apps/web/src/components/text-labeling/TextLabeling.css',
         language: 'css',
         content: textLabelingStyleSource,
+      },
+      {
+        label: 'xpath-selection.ts',
+        path: 'apps/web/src/components/text-labeling/xpath-selection.ts',
+        language: 'typescript',
+        content: xpathSelectionSource,
       },
       {
         label: 'text.txt',
