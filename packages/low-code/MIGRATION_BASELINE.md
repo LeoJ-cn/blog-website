@@ -262,3 +262,55 @@ styles/logic-editor.module.less
 ## 后续对照记录
 
 后续任务须在本文件追加：目录外 import 分类、旧新组件方法映射、节点与翻译器注册对照、资源路径对照以及兼容性差异。
+
+## 目录外 import 分类
+
+### 纯类型与持久化协议
+
+| 源模块 | 使用方式 | 新位置 |
+| --- | --- | --- |
+| `core/interfaces/schema` | `DataType` 运行时枚举；`Schema`、`EnumList` 类型 | `src/types/schema.ts` |
+| `core/interfaces/process` | `SimpleProcessData` 类型 | `src/types/process.ts` |
+| `core/interfaces/data`、`interfaces/front_end_data` | `DataCategory` 运行时枚举；`Data` 类型 | `src/types/data.ts` |
+| `interfaces/front_end_method` | `MethodType`、`MethodWatchType` 运行时枚举；`Method` 类型 | `src/types/method.ts` |
+| `interfaces/edit-page` | `EditPageMold` 运行时枚举；`OperationComponentTree` 类型 | `src/types/edit-page.ts` |
+| `models/node/nodes/process/front/CallApiProcessNodeFront` | API 节点配置类型 | `src/types/api.ts` |
+| `core/interfaces/db_category` | 远程分类查询类型 | `src/types/api.ts` |
+| `core/interfaces/db_library` | 服务库记录类型 | `src/types/api.ts` |
+| `core/interfaces/db_method` | 服务方法记录类型 | `src/types/api.ts` |
+| `interfaces/index` 的 `Language` | locale 运行时枚举 | `src/types/api.ts` |
+
+### 宿主运行时能力
+
+以下模块不是领域协议，由 Task 6 的 compatibility 层承接：
+
+```text
+common/Store
+common/Global
+common/PageCenter
+mixins/data
+mixins/method
+mixins/render
+controllers/CategoryController
+controllers/LogicNodeController
+controllers/ServiceFieldController
+$app.dispatcher
+$l / locale
+$Message / $Modal
+```
+
+### 流程产物运行时构造逻辑
+
+以下 class 被翻译器实例化并参与产物生成，不能用空类型替代：
+
+```text
+models/process/nodes/ProcessBaseNode
+models/process/nodes/common/FuncCallNode
+models/process/nodes/common/ForLoopNode
+models/process/nodes/common/ControlsIfNode
+models/process/nodes/common/CallApiNode
+models/process/nodes/front/ShowMessageNode
+models/page/ProcessPageModel
+```
+
+这些模块包含 `generateId`、`createSimpleProcessData`、`generate` 和作用域相关运行时逻辑，将在 Task 4 随生成链路一对一迁移；Task 2 只固定其输入输出协议，避免把运行时实现伪装成纯类型。
