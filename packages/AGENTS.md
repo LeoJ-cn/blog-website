@@ -1,5 +1,7 @@
 # packages 开发约束
 
+- 继承仓库根目录 `AGENTS.md` 的全部约束。
+- 本文件只补充 `packages/**` 的通用规则；与根规则冲突时，以更具体且不违反用户要求的规则为准。
 - Package 必须有明确职责、边界和公共入口。
 - `packages/shared` 必须保持 framework-agnostic，不得依赖 Vue、Pinia 或 Element Plus。
 - 跨 Package 的公共类型放在 `packages/types`；Feature 私有类型留在 Feature 内。

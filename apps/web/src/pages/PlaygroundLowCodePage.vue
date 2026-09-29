@@ -2,14 +2,13 @@
 import {
   DataType,
   LogicEditor,
-  LogicEditorService,
   MethodType,
   createLowCodeContext,
   type LowCodeCompatibilityContext,
   type GraphData,
   type Method,
-  type SimpleProcessData,
 } from '@blog/low-code'
+import { ElButton } from 'element-plus'
 import { computed, reactive, ref, shallowRef } from 'vue'
 
 const initialMethod: Method = {
@@ -30,11 +29,10 @@ const initialMethod: Method = {
 const graphData = shallowRef<GraphData>({ nodes: [], edges: [] })
 const methods = reactive<Method[]>([initialMethod])
 const data = reactive<LowCodeCompatibilityContext['data']>([])
-const storeValues = new Map<string, unknown>([['ui_logic_visible', true]])
+// 使用响应式 Map 承载兼容层状态，确保外部按钮更新后编辑器抽屉能立即响应。
+const storeValues = reactive(new Map<string, unknown>([['ui_logic_visible', false]]))
 const listeners = new Map<string, Set<(...args: any[]) => void>>()
-const savedGraph = ref('')
-const savedProcess = ref('')
-const savedBlockData = ref('')
+const processData = ref('')
 
 const context = createLowCodeContext({
   methods,
@@ -73,21 +71,26 @@ const context = createLowCodeContext({
   },
 })
 
-const hasSavedResult = computed(() => Boolean(savedGraph.value || savedBlockData.value))
+const hasProcessData = computed(() => Boolean(processData.value))
+
+function openLogicEditor() {
+  context.store.set('ui_logic_visible', true)
+}
 
 function handleSave(value: GraphData) {
   graphData.value = value
-  savedGraph.value = JSON.stringify(value, null, 2)
   const method = methods.find((item) => item.id === initialMethod.id) || methods[0]
-  if (!method) return
-  const methodGraph = method?.graphData ? JSON.parse(method.graphData) as GraphData : value
-  const service = new LogicEditorService(methodGraph, method?.id || '')
-  method.blockData = service.blockly
-  savedBlockData.value = service.blockly
   try {
-    savedProcess.value = JSON.stringify(JSON.parse(service.blockly) as SimpleProcessData[], null, 2)
-  } catch {
-    savedProcess.value = service.blockly
+    const savedProcessData = method?.blockData || '[]'
+
+    try {
+      processData.value = JSON.stringify(JSON.parse(savedProcessData), null, 2)
+    } catch {
+      // 兼容迁移期的非 JSON blockData，避免保存成功后首页没有任何结果反馈。
+      processData.value = savedProcessData
+    }
+  } finally {
+    context.store.set('ui_logic_visible', false)
   }
 }
 </script>
@@ -101,15 +104,14 @@ function handleSave(value: GraphData) {
     </p>
 
     <section class="low-code-host">
+      <ElButton type="primary" @click="openLogicEditor">编辑方法</ElButton>
       <LogicEditor v-model="graphData" :context="context" @save="handleSave" />
-      <p>编辑器将以抽屉形式打开。双击方法节点进入方法详情，再拖入节点并连接。</p>
+      <p>点击“编辑方法”打开逻辑编辑器。保存后，生成的 processData 会显示在下方。</p>
     </section>
 
-    <section v-if="hasSavedResult" class="low-code-results">
-      <h3>保存结果</h3>
-      <details open><summary>GraphData</summary><pre>{{ savedGraph }}</pre></details>
-      <details><summary>SimpleProcessData[]</summary><pre>{{ savedProcess }}</pre></details>
-      <details><summary>blockData</summary><pre>{{ savedBlockData }}</pre></details>
+    <section v-if="hasProcessData" class="low-code-results">
+      <h3>processData</h3>
+      <pre>{{ processData }}</pre>
     </section>
   </article>
 </template>
@@ -123,12 +125,12 @@ function handleSave(value: GraphData) {
   background: rgba(15, 23, 42, 0.36);
 }
 
-.low-code-results {
-  margin-top: 24px;
+.low-code-host p {
+  margin: 16px 0 0;
 }
 
-.low-code-results details {
-  margin: 12px 0;
+.low-code-results {
+  margin-top: 24px;
 }
 
 .low-code-results pre {
