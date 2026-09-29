@@ -89,7 +89,7 @@
     "name": "projects"
   },
   "index-legacy.html": {
-    "file": "assets/entry-index-legacy-flKCi75r.js",
+    "file": "assets/entry-index-legacy-CqKgfQVe.js",
     "name": "index",
     "src": "index-legacy.html",
     "isEntry": true,
@@ -109,7 +109,7 @@
     ]
   },
   "index.html": {
-    "file": "assets/entry-index-tTy4srC8.js",
+    "file": "assets/entry-index-CLm62uAd.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -244,7 +244,7 @@
     ]
   },
   "src/pages/PlaygroundLowCodePage-legacy.vue": {
-    "file": "assets/chunk-legacy-CUw1Mlw7.js",
+    "file": "assets/chunk-legacy-yX9cB_qb.js",
     "name": "PlaygroundLowCodePage",
     "src": "src/pages/PlaygroundLowCodePage-legacy.vue",
     "isDynamicEntry": true,
@@ -259,7 +259,7 @@
     ]
   },
   "src/pages/PlaygroundLowCodePage.vue": {
-    "file": "assets/chunk-Wcq8OA4O.js",
+    "file": "assets/chunk-BJ_eWZ0d.js",
     "name": "PlaygroundLowCodePage",
     "src": "src/pages/PlaygroundLowCodePage.vue",
     "isDynamicEntry": true,
@@ -270,7 +270,7 @@
       "_chunk-DlAUqK2U.js"
     ],
     "css": [
-      "assets/PlaygroundLowCodePage-DRcs5ZKW.css"
+      "assets/PlaygroundLowCodePage-CVZV43ce.css"
     ],
     "assets": [
       "assets/variable-1dlQ64QY.svg"
