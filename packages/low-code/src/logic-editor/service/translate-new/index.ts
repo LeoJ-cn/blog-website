@@ -119,8 +119,8 @@ export class TranslateService extends TranslateBaseService {
   }
   public destroy() {
     this.blockly = '';
+    this.processData = [];
     this.translateErrorList = [];
     this.init();
   }
 }
-

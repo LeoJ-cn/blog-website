@@ -1,7 +1,9 @@
 import { GraphData, EdgeConfig } from '@antv/g6';
 import { find, filter, map } from 'lodash'
 import { LogicCache_DTS, ScopeNode_DTS, ScopeQueryCache_DTS } from './interface'
-import { INodeConfig } from '../interface/index'
+import { assertNodeConfig, INodeConfig } from '../interface/index'
+
+type ValidatedGraphData = Omit<GraphData, 'nodes'> & { nodes: INodeConfig[] }
 
 export class CacheService {
   /**
@@ -12,7 +14,7 @@ export class CacheService {
   /**
    * 图表数据
    */
-  graphData: GraphData = { nodes: [], edges: [] }
+  graphData: ValidatedGraphData = { nodes: [], edges: [] }
 
 
   /**
@@ -32,14 +34,18 @@ export class CacheService {
 
 
   constructor(graphData: GraphData) {
-    this.graphData = graphData
+    const nodes = (graphData.nodes || []).map((node, index) => {
+      assertNodeConfig(node, `CacheService graphData.nodes[${index}]`)
+      return node
+    })
+    this.graphData = { ...graphData, nodes }
   }
 
   /**
    * 设置作用域关系树
    */
   public initScope(nodelist: ScopeNode_DTS[]) {
-    this.scopeMaping = nodelist.reduce((acc, el, i) => {
+    this.scopeMaping = nodelist.reduce<Record<string, number>>((acc, el, i) => {
       acc[el.nodeId] = i;
       el.children = []
       return acc;
@@ -123,18 +129,14 @@ export class CacheService {
    * nodeId 查找 块数据
    */
   public getNode_FromCache(nodeId: string): INodeConfig {
-    let result = this.logicCache.nodes[nodeId]
+    let result: INodeConfig | undefined = this.logicCache.nodes[nodeId]
     if (result) return result
-    result = find(
-      this.graphData.nodes,
-      { id: nodeId }
-    ) as INodeConfig
+    result = this.graphData.nodes.find((node) => node.id === nodeId)
     if (result) {
       this.logicCache.nodes[nodeId] = result
       return result
     }
-    // throw new Error(`查询“块[${nodeId}]”不存在，翻译失败`)
-    return {}
+    throw new Error(`查询“块[${nodeId}]”不存在，翻译失败`)
   }
 
   /**
@@ -144,7 +146,7 @@ export class CacheService {
     nodeId: string,
     anchorIndex: number,
     currentAnchorIsSource = false, // 当前锚点是 “起始点”，还是 “目标点”
-  ): EdgeConfig {
+  ): EdgeConfig | undefined {
 
     let nodeName = '';
     let anchorName = '';
@@ -179,7 +181,7 @@ export class CacheService {
   /**
    * edgId 查找边
    */
-  public getEdge_FromCache(edgeId: string): EdgeConfig {
+  public getEdge_FromCache(edgeId: string): EdgeConfig | undefined {
     let result = this.logicCache.edges[edgeId]
     if (result) return result
     result = find(
@@ -194,4 +196,3 @@ export class CacheService {
   }
 
 }
-

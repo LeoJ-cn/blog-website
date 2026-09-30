@@ -36,7 +36,7 @@ export class TranslateFunctionNodeService extends TranslateBaseService {
       throw new Error(`异常：逻辑翻译错误，未匹配到 ${nodeInfo.type} ${nodeInfo.nodeId}  的自定义函数！！！`)
     }
 
-    let params = [];
+    const params: Array<{ param: string; type: 'variable'; variable: string[] }> = [];
     const paramNodes = filter(
       nodeInfo.data.anchors,
       {
@@ -111,4 +111,3 @@ export class TranslateFunctionNodeService extends TranslateBaseService {
   }
 
 }
-

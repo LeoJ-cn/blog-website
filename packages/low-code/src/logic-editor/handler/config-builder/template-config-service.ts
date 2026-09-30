@@ -11,7 +11,7 @@ import type { OperationComponentTree } from '../../../types/edit-page'
  */
 export class TemplateConfigService implements INodeConfigService {
   intro?: { zh_cn: string; en_us: string }
-  operationTree?: OperationComponentTree
+  operationTree?: OperationComponentTree | OperationComponentTree[]
 
   constructor(private readonly nodeType: BlockNames_DTS) {}
 

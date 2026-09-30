@@ -9,12 +9,12 @@ export default (G6: IG6) => {
   const nodeDefinition: IShapeOptions = {
     itemType: itemType,
 
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 134;
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
 
@@ -164,7 +164,7 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig): AnchorBaseConfigWithPosition[] {
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
       return [

@@ -45,7 +45,7 @@ export class TranslateIfelseNodeService extends TranslateBaseService {
     }
 
     // DO语句 以及 else语句
-    const processData_value = {
+    const processData_value: Record<string, SimpleProcessData[]> = {
       // DO0, DO1, DO2, DO3 .... DON
       ELSE: this.workFlow2ProcessData({
         methodWorkFlow: method.sideQuests?.[SideQuests_DTS.IFELSE_ELSE]?.[0] || [],
@@ -93,6 +93,5 @@ export class TranslateIfelseNodeService extends TranslateBaseService {
     this.result = ControlsIfProcessData;
   }
 }
-
 
 

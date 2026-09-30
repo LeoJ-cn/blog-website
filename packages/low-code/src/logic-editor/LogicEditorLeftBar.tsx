@@ -44,13 +44,13 @@ export default defineComponent({
         label: method.funcLabel || method.funcName,
         name: method.funcName,
         meta: method2NodeConfig(method),
-      })) as LogicCategoryItem[]
+      }))
       const dataChildren = this.allDatas.map((data) => ({
         type: `logic-${data.type}-node`,
         label: data.label || data.name,
         name: data.name,
         meta: data2NodeConfig(data),
-      })) as LogicCategoryItem[]
+      }))
       return [
         ...this.remoteCategories,
         ...builtIn,

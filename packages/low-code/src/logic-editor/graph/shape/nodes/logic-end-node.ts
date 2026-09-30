@@ -2,7 +2,7 @@ import { resolveLogicEditorAsset } from '../../icon-map';
 import { IGroup, ShapeOptions } from '@antv/g6';
 import _ from 'lodash';
 import {
-  AnchorBaseConfigWithPosition, AnchorTag, IG6, INodeConfig,
+  AnchorBaseConfigWithPosition, AnchorTag, IG6, IModelConfig, INodeConfig,
   IShapeOptions
 } from '../../../interface';
 import { AnchorBaseConfig_DTS, AnchorTag_DTS, BlockNames_DTS } from '../../../service/interface';
@@ -13,17 +13,17 @@ export default (G6: IG6) => {
   const nodeDefinition: IShapeOptions = {
     itemType,
 
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 122;
-      const all = this.getAnchorPoints(cfg);
+      const all = this.getAnchorPoints?.(cfg as IModelConfig) ?? [];
       const len = all.length;
       if (len) {
         cfg.nodeHeight = 44 + (len + 1) * 30;
       }
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
 
@@ -80,7 +80,7 @@ export default (G6: IG6) => {
         draggable: true,
       });
 
-      const all = this.getAnchorPoints(cfg) as AnchorBaseConfigWithPosition[];
+      const all = this.getAnchorPoints?.(cfg) ?? [];
       _.forEach(all, (anchor: AnchorBaseConfigWithPosition) => {
         const config: AnchorBaseConfig_DTS = anchor[2];
         const { connected = false } = config;
@@ -122,7 +122,7 @@ export default (G6: IG6) => {
               y: offsetY + 75 + 30 * config.index - 8,
               width: 14,
               height: 14,
-              img: getImgByType(config.data.type, 'out', config.connected || false),
+              img: getImgByType(String(config.data.type ?? ''), 'out', config.connected || false),
               cursor: 'pointer',
             },
             anchorTag: AnchorTag.VAR_INPUT,
@@ -151,19 +151,13 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): any[] {
+    getAnchorPoints(cfg: IModelConfig): AnchorBaseConfigWithPosition[] {
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
 
-      return _.map<AnchorBaseConfig_DTS, AnchorBaseConfigWithPosition>(anchors, (anchor: AnchorBaseConfig_DTS) => {
-        if (anchor.tag === AnchorTag_DTS.STATEMENT_INPUT) {
-          return [0, (44 + 30 * (anchor.index + 1)) / cfg.nodeHeight, anchor];
-        }
-
-        if (anchor.tag === AnchorTag_DTS.VAR_INPUT) {
-          return [0, (44 + 30 * (anchor.index + 1)) / cfg.nodeHeight, anchor];
-        }
-      });
+      return anchors
+        .filter((anchor) => anchor.tag === AnchorTag_DTS.STATEMENT_INPUT || anchor.tag === AnchorTag_DTS.VAR_INPUT)
+        .map((anchor) => [0, (44 + 30 * (anchor.index + 1)) / cfg.nodeHeight, anchor]);
     },
   };
   G6.registerNode(itemType, nodeDefinition as ShapeOptions, BlockNames_DTS.LOGIC_BASE_NODE);

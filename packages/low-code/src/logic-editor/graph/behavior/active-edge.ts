@@ -1,4 +1,12 @@
+import type { IG6GraphEvent, IGraph } from '@antv/g6';
 import { IG6 } from '../../interface';
+import { getEventItem } from './event-guard';
+
+interface ActiveEdgeBehavior {
+  graph: IGraph;
+  shouldBegin: (e?: IG6GraphEvent) => boolean;
+  _clearSelected: () => void;
+}
 
 export default (G6: IG6) => {
   G6.registerBehavior('active-edge', {
@@ -17,56 +25,60 @@ export default (G6: IG6) => {
         'edge:mouseleave': 'onMouseLeave',
       };
     },
-    shouldBegin(e) {
+    shouldBegin(_e?: IG6GraphEvent) {
       return true;
     },
-    onCanvasClick(e) {
+    onCanvasClick(this: ActiveEdgeBehavior) {
       this._clearSelected();
     },
-    onEdgeClick(e) {
+    onEdgeClick(this: ActiveEdgeBehavior, e: IG6GraphEvent) {
       if (!this.shouldBegin(e)) return;
-      e.item.toFront();
+      const item = getEventItem(e, '点击边事件');
+      item.toFront();
       this._clearSelected();
       // 设置当前节点的 click 状态为 true
-      e.item.setState('edgeState', 'selected');
+      item.setState('edgeState', 'selected');
       // this.graph.setItemState(e.item, 'edgeState', 'selected');
       // 将点击事件发送给 graph 实例
       this.graph.emit('after-edge-selected', e);
     },
-    ondblEdgeClick(e) {
+    ondblEdgeClick(this: ActiveEdgeBehavior, e: IG6GraphEvent) {
       if (!this.shouldBegin(e)) return;
+      const item = getEventItem(e, '双击边事件');
 
       this._clearSelected();
       // 设置当前节点的 click 状态为 true
-      e.item.setState('edgeState', 'selected');
+      item.setState('edgeState', 'selected');
       // 将点击事件发送给 graph 实例
       this.graph.emit('after-edge-dblclick', e);
     },
     // hover edge
-    onMouseEnter(e) {
+    onMouseEnter(this: ActiveEdgeBehavior, e: IG6GraphEvent) {
       if (!this.shouldBegin(e)) return;
+      const item = getEventItem(e, '边移入事件');
 
-      if (!e.item.hasState('edgeState:hover') && !e.item.hasState('edgeState:selected')) {
-        e.item.setState('edgeState', 'hover');
+      if (!item.hasState('edgeState:hover') && !item.hasState('edgeState:selected')) {
+        item.setState('edgeState', 'hover');
       }
       this.graph.emit('on-edge-mouseenter', e);
     },
-    onMouseMove(e) {
+    onMouseMove(this: ActiveEdgeBehavior, e: IG6GraphEvent) {
       if (!this.shouldBegin(e)) return;
 
       this.graph.emit('on-edge-mousemove', e);
     },
     // out edge
-    onMouseLeave(e) {
+    onMouseLeave(this: ActiveEdgeBehavior, e: IG6GraphEvent) {
       if (!this.shouldBegin(e)) return;
+      const item = getEventItem(e, '边移出事件');
 
-      if (!e.item.hasState('edgeState:selected')) {
-        e.item.setState('edgeState', 'default');
+      if (!item.hasState('edgeState:selected')) {
+        item.setState('edgeState', 'default');
       }
       this.graph.emit('on-edge-mouseleave', e);
     },
     // 清空已选
-    _clearSelected() {
+    _clearSelected(this: ActiveEdgeBehavior) {
       const selectedNodes = this.graph.findAllByState('node', 'nodeState:selected');
 
       selectedNodes.forEach(node => {
@@ -82,4 +94,3 @@ export default (G6: IG6) => {
     },
   });
 };
-

@@ -1,6 +1,7 @@
 export * from './api'
 export * from './data'
 export * from './edit-page'
+export * from './logic-editor'
 export * from './method'
 export * from './process'
 export * from './schema'

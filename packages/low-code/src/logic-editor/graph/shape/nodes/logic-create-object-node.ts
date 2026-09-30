@@ -1,6 +1,6 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
 import { DataType } from '../../../../types/schema';
-import { IGroup, ShapeOptions } from '@antv/g6';
+import { IGroup, IShape, ShapeOptions } from '@antv/g6';
 import _ from 'lodash';
 import {
   AnchorBaseConfigWithPosition,
@@ -17,10 +17,11 @@ export default (G6: IG6) => {
   const itemType = BlockNames_DTS.LOGIC_CREATE_OBJECT_NODE;
   const nodeDefinition: IShapeOptions = {
     itemType: itemType,
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 105;
-      const all = this.getAnchorPoints(cfg);
+      // 高宽已在上方完成初始化，此处满足锚点计算所需的完整模型约束。
+      const all = this.getAnchorPoints?.(cfg as IModelConfig) ?? [];
       const len = all.length;
       if (len > 1) {
         cfg.nodeHeight = 44 + len * 30;
@@ -29,9 +30,9 @@ export default (G6: IG6) => {
       }
     },
 
-    drawShape(cfg?: IModelConfig, group?: IIGroup) {
-      this.calcNodeHeight(cfg);
-      const attrs = this.getShapeStyle(cfg, group);
+    drawShape(cfg: IModelConfig, group: IIGroup) {
+      this.calcNodeHeight?.(cfg);
+      const attrs = this.getShapeStyle?.(cfg) ?? {};
       const keyShape = group.addShape('rect', {
         className: `${this.shapeType}-shape`,
         name: `${this.shapeType}-shape`,
@@ -40,17 +41,17 @@ export default (G6: IG6) => {
         attrs,
       });
 
-      this.assembleShape(cfg, group);
+      this.assembleShape?.(cfg, group);
 
       group.$getItem = (className) => {
-        return group.get('children').find((item) => item.get('className') === className);
+        return (group.get('children') as IShape[]).find((item) => item.get('className') === className);
       };
 
-      this.initAnchor(cfg, group);
+      this.initAnchor?.(cfg, group);
       return keyShape;
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
       group.addShape('rect', {
@@ -94,8 +95,7 @@ export default (G6: IG6) => {
         name: 'title',
       });
 
-      const allAnchors = this.getAnchorPoints(cfg) as AnchorBaseConfigWithPosition[];
-      const inputAnchorNodeConfig = allAnchors[0][2];
+      const allAnchors = this.getAnchorPoints?.(cfg) ?? [];
 
       const inputAnchorNodeConfigs = allAnchors
         .filter((anchor) => anchor[2].tag === AnchorTag_DTS.VAR_INPUT)
@@ -141,7 +141,7 @@ export default (G6: IG6) => {
             y: offsetY + 44 + 30 * config.index - 8,
             width: 14,
             height: 14,
-            img: getImgByType(schema.type, 'in'),
+            img: getImgByType(String(schema?.type ?? ''), 'in'),
             cursor: 'pointer',
             anchor_index: index,
             _object_config: {
@@ -185,10 +185,10 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig): AnchorBaseConfigWithPosition[] {
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
-      return _.map<AnchorBaseConfig_DTS, AnchorBaseConfigWithPosition>(anchors, (anchor: AnchorBaseConfig_DTS) => {
+      const all = anchors.map((anchor: AnchorBaseConfig_DTS): AnchorBaseConfigWithPosition | undefined => {
         if (anchor.tag === AnchorTag_DTS.VAR_INPUT) {
           return [0, (44 + 30 * anchor.index) / cfg.nodeHeight, anchor];
         }
@@ -197,6 +197,7 @@ export default (G6: IG6) => {
           return [1, 74 / cfg.nodeHeight, anchor];
         }
       });
+      return all.filter((anchor): anchor is AnchorBaseConfigWithPosition => anchor !== undefined);
     },
   };
   G6.registerNode(itemType, nodeDefinition as ShapeOptions, BlockNames_DTS.LOGIC_BASE_NODE);

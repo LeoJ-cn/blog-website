@@ -9,7 +9,7 @@ import * as processMixin from '../compat/process';
 interface CallApiAttrs {
   api?: CallApiProcessNodeFrontAttrApi & any;
   leftVar?: string[];
-  params?: Array<{ param?: string; paramType?: string; type?: string; value?: string[] | string | number; }>;
+  params?: Array<{ id?: number; param?: string; paramType?: string; type?: string; value?: string[] | string | number; }>;
   return?: string[];
   returnFail?: 'show_message' | 'funccall' | 'api_return' | 'throw' | 'none';
   returnType?: string;
@@ -17,6 +17,14 @@ interface CallApiAttrs {
   failText?: string;
   function?: string;
   paramsNum?: 'all' | 'none';
+}
+
+type CallApiParam = NonNullable<CallApiAttrs['params']>[number]
+interface ApiPropConfig {
+  key: string
+  label?: string
+  value?: unknown
+  schema?: { type?: string }
 }
 
 const TempVarName = 'call_api_temp_var';
@@ -30,14 +38,15 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
     const oldApi = this.attrs.api;
     this.attrs = this.component.data as any;
     const { attrs, component } = this;
+    if (!attrs.api) return;
     switch (key) {
       case 'api': {
         if (!oldApi || oldApi.name !== attrs.api.name) {
           if (attrs.paramsNum === 'none') {
             attrs.params = [];
           } else {
-            const propsList = JSON.parse(attrs.api.props) || [];
-            const params = [];
+            const propsList = (JSON.parse(attrs.api.props) || []) as ApiPropConfig[];
+            const params: CallApiParam[] = [];
             propsList.forEach((prop, index) => {
               if (index === propsList.length - 1) {
                 return;
@@ -53,15 +62,15 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
           }
           attrs.return = ['res'];
         } else {
-          const propsList = JSON.parse(attrs.api.props) || [];
+          const propsList = (JSON.parse(attrs.api.props) || []) as ApiPropConfig[];
           const keys = propsList.map((i) => i.key);
-          attrs.params = attrs.params.filter((i) => keys.includes(i.param));
+          attrs.params = (attrs.params ?? []).filter((i) => i.param !== undefined && keys.includes(i.param));
         }
         break;
       }
       case 'params': {
-        const propsList = JSON.parse(attrs.api.props) || [];
-        attrs.params.forEach((param) => {
+        const propsList = (JSON.parse(attrs.api.props) || []) as ApiPropConfig[];
+        (attrs.params ?? []).forEach((param) => {
           if (param.type !== 'variable' && Array.isArray(param.value)) {
             param.value = '';
           }
@@ -80,11 +89,11 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
         break;
       }
       case 'paramsNum': {
-        const propsList = JSON.parse(attrs.api.props) || [];
+        const propsList = (JSON.parse(attrs.api.props) || []) as ApiPropConfig[];
         if (value === 'none') {
           attrs.params = [];
         } else {
-          const params = [];
+          const params: CallApiParam[] = [];
           propsList.forEach((prop, index) => {
             if (index === propsList.length - 1) {
               return;
@@ -110,10 +119,11 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
 
   public beforeOperationRender(key: keyof CallApiAttrs, currentOperation: OperationComponentTree): void {
     const { attrs } = this;
+    if (!attrs.api || !currentOperation.data) return;
     switch (key) {
       case 'params': {
-        const propsList = JSON.parse(attrs.api.props) || [];
-        const params = [];
+        const propsList = (JSON.parse(attrs.api.props) || []) as ApiPropConfig[];
+        const params: Array<{ label: string; value: string; type?: string }> = [];
         propsList.forEach((prop, index) => {
           if (index === propsList.length - 1) {
             return;
@@ -165,8 +175,9 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
     }
     const { appid, label, doc_version, name, props } = attrs.api;
     const minimethod_uuid = `${appid}_${label}_${doc_version}`;
-    const propsList = JSON.parse(props);
+    const propsList = JSON.parse(props) as ApiPropConfig[];
     const requestStackValue = propsList[propsList.length - 1];
+    if (!requestStackValue) throw new Error(`API ${name} 缺少请求栈配置`);
     // api 的请求栈
     const requestStack = this.value2SimpleProcessData(requestStackValue.value);
     // 生成调用 api 主体
@@ -184,6 +195,8 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
         arguments: '',
       },
     })
+    const callApiValue = callApiNode.value;
+    if (!callApiValue) throw new Error(`API ${name} 调用节点缺少 value 容器`);
     const tempDataNode = this.createSimpleProcessData('set_tempvar', {
       name: TempVarName,
       value: callApiNode,
@@ -191,15 +204,16 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
 
     // 拼接 api 参数
     if (Array.isArray(propsList) && Array.isArray(attrs.params)) {
+      const configuredParams = attrs.params;
       propsList.forEach((prop, index) => {
-        const param = attrs.params.find((i) => i.param === prop.key);
+        const param = configuredParams.find((i) => i.param === prop.key);
         if (!param || !param.type) {
           return;
         }
         if (param.type === 'variable') {
-          callApiNode.value['arg' + index] = this.createSimpleProcessData('variable', param.value);
+          callApiValue['arg' + index] = this.createSimpleProcessData('variable', param.value);
         } else {
-          callApiNode.value['arg' + index] = this.createSimpleProcessData(_.get(prop, 'schema.type'), param.value);
+          callApiValue['arg' + index] = this.createSimpleProcessData(prop.schema?.type ?? 'null', param.value);
         }
       });
     }
@@ -207,7 +221,7 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
     nodes.push(tempDataNode);
 
     // 返回失败的错误处理
-    const failNode = {
+    const failNode: SimpleProcessData & { value: { IF0: SimpleProcessData; DO0: SimpleProcessData[] } } = {
       id: this.generateId(),
       type: 'controls_if',
       value: {
@@ -323,4 +337,3 @@ export class CallApiNode extends ProcessBaseNode<CallApiAttrs> {
   }
 
 }
-

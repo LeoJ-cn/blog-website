@@ -24,7 +24,8 @@ function getNodeXPath(node: Node, container: HTMLElement): string {
   }
 
   if (node.nodeType === Node.TEXT_NODE) {
-    const textNodes = Array.from(parent.childNodes).filter(
+    // childNodes 的元素在 DOM 类型中是 ChildNode，但当前递归参数需要保留为通用 Node。
+    const textNodes: Node[] = Array.from(parent.childNodes).filter(
       (sibling) => sibling.nodeType === Node.TEXT_NODE,
     )
     const index = textNodes.indexOf(node) + 1

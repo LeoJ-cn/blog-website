@@ -1,6 +1,13 @@
 import { resolveLogicEditorAsset } from '../icon-map';
-import { EdgeConfig, GraphData, IG6GraphEvent, IShape, ModelConfig, ShapeStyle, StateStyles } from '@antv/g6';
-import { NodeConfig } from '@antv/g6-core/lib/types';
+import type {
+  EdgeConfig,
+  GraphData,
+  IG6GraphEvent,
+  IShape,
+  NodeConfig,
+  ShapeStyle,
+  StateStyles,
+} from '@antv/g6';
 import { Locales, Log } from '../../compat/locales';
 import _ from 'lodash';
 import { MethodRecord } from '../../../types/records';
@@ -21,6 +28,8 @@ import {
   IPositon,
   IVarNodeConfig,
   LogicTransferData,
+  NodeConfigData,
+  assertNodeConfig,
 } from '../../interface/index';
 import { LogicEditorService } from '../../service/logic-service';
 import { LOGIC_VARIABLE_EDGE } from '../shape/edges/logic-variable-edge';
@@ -46,7 +55,7 @@ export function getImgByType(type: string, direction: 'in' | 'out' = 'in', activ
  * @param type 数据类型
  * @returns 颜色值
  */
-export function getColorByType(type: string) {
+export function getColorByType(type?: string) {
   const defaultColor = '#8c8c8c';
 
   const map = new Map<DataType, string>([
@@ -78,8 +87,8 @@ export function getBgColorByColor(color: string) {
   return map.get(color) || defaultColor;
 }
 
-export function method2Graph(methods: Method[]): ModelConfig[] {
-  let funcModels: ModelConfig[] = [];
+export function method2Graph(methods: Method[]): INodeConfig<IFuncNodeConfig>[] {
+  let funcModels: INodeConfig<IFuncNodeConfig>[] = [];
   if (_.isArray(methods) && methods.length) {
     funcModels = methods.map((method: Method) => {
       return method2NodeConfig(method);
@@ -89,12 +98,14 @@ export function method2Graph(methods: Method[]): ModelConfig[] {
 }
 // 校验图数据是否完整
 export function validateGraphData(graphData: GraphData): GraphData {
-  return _.isObject(graphData) && _.isArray(graphData.nodes) && _.isArray(graphData.edges)
-    ? graphData
-    : {
+  if (!_.isObject(graphData) || !_.isArray(graphData.nodes) || !_.isArray(graphData.edges)) {
+    return {
       nodes: [],
       edges: [],
     };
+  }
+  graphData.nodes.forEach((node, index) => assertNodeConfig(node, `图数据 nodes[${index}]`));
+  return graphData;
 }
 
 export function getEgdeStyle(isStatement: boolean, type?: string): ShapeStyle {
@@ -104,9 +115,7 @@ export function getEgdeStyle(isStatement: boolean, type?: string): ShapeStyle {
     lineWidth: isStatement ? 3 : 2,
     stroke: isStatement ? '#1890FF' : getColorByType(type) || '',
     lineAppendWidth: 10, // 防止线太细没法点中
-    endArrow: isStatement
-      ? null
-      : {
+    endArrow: !isStatement && {
         lineDash: [0],
         path: 'M 0,0 L 8,4 L 7,0 L 8,-4 Z',
         d: 0,
@@ -182,17 +191,26 @@ export async function getNodeModel(transferData: string, position: IPositon): Pr
   const data: LogicTransferData = JSON.parse(transferData);
   const nodeType = data.type;
   const s_cfg = data.model;
-  const cfg = s_cfg ? JSON.parse(s_cfg) as INodeConfig : undefined;
+  const parsedModel: unknown = s_cfg ? JSON.parse(s_cfg) : undefined;
+  let cfg: INodeConfig | undefined;
+  if (parsedModel !== undefined) {
+    assertNodeConfig(parsedModel, '拖拽节点 model');
+    cfg = parsedModel;
+  }
 
   const nodeConfigService = NodeConfigServicesFactory.getINodeConfigService(nodeType);
 
-  return isVariableNode(nodeType)
-    ? await nodeConfigService.getConfigAsync(position, cfg, nodeType)
-    : nodeConfigService.getConfig(position, cfg);
+  if (isVariableNode(nodeType)) {
+    if (!nodeConfigService.getConfigAsync) throw new Error(`节点 ${nodeType} 缺少异步生成方法`)
+    return nodeConfigService.getConfigAsync(position, cfg, nodeType)
+  }
+  if (!nodeConfigService.getConfig) throw new Error(`节点 ${nodeType} 缺少生成方法`)
+  return nodeConfigService.getConfig(position, cfg)
 }
 
 export function data2NodeConfig(data: Data, position?: IPositon): INodeConfig<IVarNodeConfig> {
   const { id, label, name, type, value, schema } = data;
+  if (!id || !label) throw new Error(`创建变量节点 ${name} 时缺少 id 或 label`)
 
   const _nodeId = getRandomNodeId();
   const nodeType = `logic-${type}-node` as BlockNames_DTS;
@@ -227,7 +245,7 @@ export function data2NodeConfig(data: Data, position?: IPositon): INodeConfig<IV
 export function data2Graph(datas: Data[]): GraphData {
   let graph: GraphData = { nodes: [], edges: [] };
   if (_.isArray(datas) && datas.length) {
-    graph.nodes = datas.map((data) => data2NodeConfig(data) as NodeConfig);
+    graph.nodes = datas.map((data) => data2NodeConfig(data));
   }
   return graph;
 }
@@ -252,6 +270,9 @@ export function method2NodeConfig(method: Method, position?: IPositon): INodeCon
     funcReturn,
     parameters,
   } = method;
+  if (!id) throw new Error('创建方法节点时缺少 method.id')
+  if (!funcLabel) throw new Error(`创建方法节点 ${id} 时缺少 funcLabel`)
+  if (!funcReturn) throw new Error(`创建方法节点 ${id} 时缺少 funcReturn`)
 
   const _nodeId = getRandomNodeId();
   const customFuncNode: INodeConfig<IFuncNodeConfig> = {
@@ -324,7 +345,7 @@ export function method2NodeConfig(method: Method, position?: IPositon): INodeCon
 
 export function service2NodeConfig(api: MethodRecord, position?: IPositon): INodeConfig<IApiConfig> {
   const _nodeId = getRandomNodeId();
-  const customApiNode: INodeConfig<any> = {
+  const customApiNode: INodeConfig<IApiConfig> = {
     id: _nodeId,
     x: position ? position.x : 175,
     y: position ? position.y : 284,
@@ -401,7 +422,9 @@ export function getCustomMethodDataConfig(nodeId: string, method: Method) {
     funcReturn,
     parameters,
   } = method;
-  const data = {
+  if (!id || !funcLabel) throw new Error(`更新方法节点 ${nodeId} 时缺少 method.id 或 funcLabel`)
+  if (!funcReturn) throw new Error(`更新方法节点 ${nodeId} 时缺少 funcReturn`)
+  const data: NodeConfigData<IFuncNodeConfig> = {
     funcId: id,
     funcName: funcName,
     funcLabel: funcLabel,
@@ -495,7 +518,7 @@ export function isClickApiHelper(e: IG6GraphEvent) {
  * 将所有自定义方法渲染到方法列表。
  */
 export function customMethod2Graph(methods: Method[]): GraphData {
-  const nodes = method2Graph(methods) as NodeConfig[];
+  const nodes = method2Graph(methods);
   nodes.forEach((item, index) => {
     item.x = 220;
     item.y = 400 + index * 250;
@@ -508,7 +531,8 @@ export function customMethod2Graph(methods: Method[]): GraphData {
 
 export function getVariableGraph(allDatas: Data[]): GraphData {
   const graph = data2Graph(allDatas.filter((data) => data.category === 'page'));
-  graph.nodes.forEach((node, index) => {
+  const nodes = graph.nodes || (graph.nodes = []);
+  nodes.forEach((node, index) => {
     node.x = 115 + 165 * index;
     node.y = 65;
   });
@@ -520,8 +544,33 @@ export function getVariableGraph(allDatas: Data[]): GraphData {
  * @param methodList 方法列表
  * @returns
  */
-export function getMethodListGraph(methodList: Method[]): GraphData {
-  return customMethod2Graph(methodList);
+export function getMethodListGraph(methodList: Method[], lifecycleBindings: Record<string, string[]> = {}): GraphData {
+  const graphData = customMethod2Graph(methodList);
+  const nodes = graphData.nodes || (graphData.nodes = []);
+  const edges = graphData.edges || (graphData.edges = []);
+  const lifecycleService = NodeConfigServicesFactory.getINodeConfigService(BlockNames_DTS.LOGIC_LIFECYCLE_NODE);
+  const lifecycleNode = lifecycleService.getConfig?.({ x: 220, y: 140 });
+  if (lifecycleNode) {
+    nodes.unshift(lifecycleNode as NodeConfig);
+    lifecycleNode.data?.anchors.forEach((anchor) => {
+      const methodIds = lifecycleBindings[`${String(anchor.data.value)}_method_ids`] || [];
+      const methodNodes = methodIds
+        .map((methodId) => nodes.find((node) => (node as INodeConfig<IFuncNodeConfig>).data?.funcId === methodId))
+        .filter((node): node is NodeConfig => Boolean(node));
+      methodNodes.forEach((node, index) => {
+        const previous = methodNodes[index - 1];
+        edges.push(createEdgeModel({
+          type: LOGIC_STATEMENT_EDGE,
+          id: getRandomNodeId(),
+          source: String(previous?.id || lifecycleNode.id),
+          target: node.id,
+          sourceAnchor: previous ? 1 : anchor.index,
+          targetAnchor: 0,
+        }));
+      });
+    });
+  }
+  return graphData;
 }
 
 /**
@@ -531,7 +580,7 @@ export function getMethodDetialGraphData(method: Method, cache?: GraphData) {
   // 该方法存在图数据
   if (!cache && method.graphData) {
     console.log('method.graphData', JSON.parse(method.graphData));
-    cache = JSON.parse(method.graphData);
+    cache = validateGraphData(JSON.parse(method.graphData));
   }
 
   if (!cache) {
@@ -564,8 +613,10 @@ export function getMethodDetialGraphData(method: Method, cache?: GraphData) {
         anchors: [],
       },
     };
-    cache.nodes.push(startNode as NodeConfig);
-    cache.nodes.push(endNode as NodeConfig);
+    const nodes = cache.nodes || (cache.nodes = []);
+    const edges = cache.edges || (cache.edges = []);
+    nodes.push(startNode);
+    nodes.push(endNode);
     const edge = createEdgeModel(
       {
         type: LOGIC_STATEMENT_EDGE,
@@ -578,11 +629,16 @@ export function getMethodDetialGraphData(method: Method, cache?: GraphData) {
       },
       true,
     );
-    cache.edges.push(edge);
+    edges.push(edge);
   }
-  const startNode = cache.nodes.find((i) => i.id === BlockNames_DTS.LOGIC_START_NODE) as INodeConfig;
-  const endNode = cache.nodes.find((i) => i.id === BlockNames_DTS.LOGIC_END_NODE) as INodeConfig;
+  const startNodeValue = cache.nodes?.find((i) => i.id === BlockNames_DTS.LOGIC_START_NODE);
+  const endNodeValue = cache.nodes?.find((i) => i.id === BlockNames_DTS.LOGIC_END_NODE);
+  assertNodeConfig(startNodeValue, '方法详情图开始节点');
+  assertNodeConfig(endNodeValue, '方法详情图结束节点');
+  const startNode = startNodeValue;
+  const endNode = endNodeValue;
   const { parameters, funcReturn } = method;
+  if (!funcReturn) throw new Error(`构建方法详情图 ${method.id || method.funcName} 时缺少 funcReturn`)
 
   const flowAnchorConfigs: AnchorBaseConfig_DTS[] = [
     getFlowAnchorConfig(BlockNames_DTS.LOGIC_START_NODE, 0, {
@@ -641,27 +697,30 @@ export function getMethodDetialGraphData(method: Method, cache?: GraphData) {
 }
 
 export function integeGraphData(oldData: GraphData, newData: GraphData): GraphData {
-  const startNode = _.find(
-    newData.nodes,
-    (newNode: INodeConfig) => newNode.type === BlockNames_DTS.LOGIC_START_NODE,
-  ) as INodeConfig;
-  const endNode = _.find(
-    newData.nodes,
-    (newNode: INodeConfig) => newNode.type === BlockNames_DTS.LOGIC_END_NODE,
-  ) as INodeConfig;
+  const validatedOldData = validateGraphData(oldData);
+  const validatedNewData = validateGraphData(newData);
+  const startNodeValue = validatedNewData.nodes?.find(
+    (node) => node.type === BlockNames_DTS.LOGIC_START_NODE,
+  );
+  const endNodeValue = validatedNewData.nodes?.find(
+    (node) => node.type === BlockNames_DTS.LOGIC_END_NODE,
+  );
+  assertNodeConfig(startNodeValue, '合并图数据的开始节点');
+  assertNodeConfig(endNodeValue, '合并图数据的结束节点');
 
-  const oldNodes = oldData.nodes as INodeConfig[];
-  _.forEach(oldNodes, (oldNode: INodeConfig) => {
+  const oldNodes = validatedOldData.nodes || [];
+  oldNodes.forEach((oldNode) => {
+    assertNodeConfig(oldNode, `待合并旧图节点 ${oldNode.id || '(empty)'}`)
     if (oldNode.type === BlockNames_DTS.LOGIC_START_NODE) {
-      Object.assign(oldNode, { ...startNode, id: oldNode.id });
+      Object.assign(oldNode, { ...startNodeValue, id: oldNode.id });
     }
 
     if (oldNode.type === BlockNames_DTS.LOGIC_END_NODE) {
-      Object.assign(oldNode, { ...endNode, id: oldNode.id });
+      Object.assign(oldNode, { ...endNodeValue, id: oldNode.id });
     }
   });
 
-  return oldData;
+  return validatedOldData;
 }
 
 /**

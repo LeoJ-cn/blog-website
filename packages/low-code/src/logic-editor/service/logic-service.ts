@@ -13,8 +13,9 @@ import {
 } from './interface';
 import { LogicBlockBaseTplMap, ParamAnchor, SCOPE_HUB_NODE } from './const';
 import { TranslateService } from './translate-new/index';
-import { INodeConfig } from '../interface/index';
+import { assertNodeConfig, INodeConfig } from '../interface/index';
 import { CacheService } from './cache-service';
+import type { SimpleProcessData } from '../../types/process';
 
 /**
  * 逻辑编辑器翻译服务
@@ -43,6 +44,9 @@ export class LogicEditorService {
    */
   blockly = '';
 
+  /** 与 `blockly` 由同一份方法图翻译得到的流程节点。 */
+  processData: SimpleProcessData[] = [];
+
   /**
    * 翻译错误列表
    */
@@ -52,6 +56,9 @@ export class LogicEditorService {
     try {
       console.time('翻译服务 time');
 
+      (graphData.nodes || []).forEach((node, index) => {
+        assertNodeConfig(node, `LogicEditorService graphData.nodes[${index}]`)
+      })
       this.graphData = graphData;
       this.cache = new CacheService(graphData);
       this.methodWorkFlow = this.generateWorkFlow();
@@ -66,14 +73,16 @@ export class LogicEditorService {
         cache: this.cache,
       });
       this.blockly = translateInstance.blockly;
+      this.processData = translateInstance.processData;
       this.translateErrorList = translateInstance.translateErrorList;
       translateInstance.destroy();
 
       // 测试代码
-      let errorLL = [];
+      const errorLL: Array<{ edgInfo: unknown; sourceNode: INodeConfig; targetNode: INodeConfig }> = [];
       this.translateErrorList.forEach((item) => {
         const { edge } = item;
         const edgInfo = this.cache.getEdge_FromCache(edge);
+        if (!edgInfo?.source || !edgInfo.target) return;
         const sourceNode = this.cache.getNode_FromCache(edgInfo.source);
         const targetNode = this.cache.getNode_FromCache(edgInfo.target);
         errorLL.push({
@@ -95,9 +104,9 @@ export class LogicEditorService {
 
   public resetHelp() {
     // console.log('this.blockly \n', this.blockly);
-    this.graphData = null;
-    this.cache = null;
-    this.methodWorkFlow = null;
+    this.graphData = { nodes: [], edges: [] };
+    this.cache = new CacheService({});
+    this.methodWorkFlow = [];
   }
 
   /**
@@ -185,7 +194,9 @@ export class LogicEditorService {
       const sideQuestsList = Object.keys(methodInfo.sideQuests || {});
       if (!sideQuestsList.length) return;
       sideQuestsList.forEach((sqname) => {
-        const _methodWorkFlowMap = methodInfo.sideQuests[sqname];
+        const sideQuestName = sqname as SideQuests_DTS;
+        const _methodWorkFlowMap = methodInfo.sideQuests[sideQuestName];
+        if (!_methodWorkFlowMap) return;
         _methodWorkFlowMap.forEach((_methodWorkFlow, index) => {
           /**
            * 每个支线任务 需要一个 中间节点  来链接 当前块和支线任务的作用域
@@ -264,6 +275,7 @@ export class LogicEditorService {
       if (!curEdge) {
         return;
       }
+      if (!curEdge.source) throw new Error(`异常: 节点 ${node.id} 的对象输入连线缺少 source！！！`);
       const beforeNode = this.cache.getNode_FromCache(curEdge.source);
       if (!beforeNode || beforeNode.type !== BlockNames_DTS.LOGIC_CREATE_OBJECT_NODE) {
         return;
@@ -314,6 +326,7 @@ export class LogicEditorService {
     if (!curEdge) return '';
 
     // 根据边线查找上一个节点
+    if (!curEdge.source) return '';
     const preNode = this.cache.getNode_FromCache(curEdge.source);
     return preNode ? preNode.id : '';
   }
@@ -335,6 +348,7 @@ export class LogicEditorService {
     if (!curEdge) return '';
 
     // 根据边线查找下一个节点
+    if (!curEdge.target) return '';
     const nextNode = this.cache.getNode_FromCache(curEdge.target);
     return nextNode ? nextNode.id : '';
   }
@@ -363,6 +377,7 @@ export class LogicEditorService {
       const targetIndex = anchor.index;
       const curEdge = this.cache.getRelatedEdgeWithNodeAnchor_FromCache(nodeId, targetIndex, false);
       if (!curEdge) return '';
+      if (!curEdge.source) return '';
       const sourceNode = this.cache.getNode_FromCache(curEdge.source);
       const sourceNodeId = sourceNode ? sourceNode.id : '';
       if (sourceNodeId) {
@@ -398,7 +413,7 @@ export class LogicEditorService {
      * 支线任务
      * try-catch， 循环体 等块
      */
-    const sideQuests = {};
+    const sideQuests: MethodWorkFlow_DTS['sideQuests'] = {};
     sideQuestsAnchorList.forEach((sideQuestsAnchor) => {
       // 支线任务的锚点是否连线
       const edge_SideQuests = this.cache.getRelatedEdgeWithNodeAnchor_FromCache(
@@ -409,11 +424,17 @@ export class LogicEditorService {
       if (!edge_SideQuests) return '';
 
       // 查找支线任务
+      if (!edge_SideQuests.target) {
+        throw new Error(`异常: 节点 ${_method.nodeId} 的支线连线缺少 target！！！`);
+      }
       const nextNode = this.cache.getNode_FromCache(edge_SideQuests.target);
       const startMethod = this.node2Method(nextNode);
       const middleMethods: MethodWorkFlow_DTS[] = [startMethod];
       this.deepPushMiddleMethods(startMethod, middleMethods);
-      const sideQuestsName = sideQuestsAnchor.data._sideQuests;
+      const sideQuestsName = sideQuestsAnchor.data._sideQuests as SideQuests_DTS | undefined;
+      if (!sideQuestsName) {
+        throw new Error(`异常: 节点 ${_method.nodeId} 的支线锚点缺少 _sideQuests 配置！！！`);
+      }
 
       /**
        * 二维数组:
@@ -431,4 +452,3 @@ export class LogicEditorService {
     return _method;
   }
 }
-

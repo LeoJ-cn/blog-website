@@ -17,6 +17,7 @@ export type LooseObject_DTS = {
  */
 export enum BlockNames_DTS {
   LOGIC_BASE_NODE = 'logic-base-node', // BASE
+  LOGIC_LIFECYCLE_NODE = 'logic-lifecycle-node', // 页面生命周期入口
   LOGIC_TRY_CATCH_NODE = 'logic-try-catch-node', // try catch块
   LOGIC_START_NODE = 'logic-start-node', // 开始块
   LOGIC_END_NODE = 'logic-end-node', // 结束块

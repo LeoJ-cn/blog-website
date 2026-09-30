@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - 不改变节点业务语义、图数据格式、拖拽协议或用户交互。
-- 不新增或修改测试代码；使用严格类型检查、ESLint、Vite 构建和差异检查验证。
+- 测试代码遵循仓库根规则：需要 TDD 时先取得用户许可。本阶段已于 2026-09-30 获得许可，仅新增节点守卫运行时测试和 shape 协议类型测试。
 - 不执行页面自动化测试、浏览器操作或 Webpack 命令。
 - 不新增依赖，不执行依赖升级。
 - 保持 `strict: true`，禁止新增 `any`、`@ts-ignore`、`@ts-expect-error`、批量非空断言或 ESLint 豁免。
@@ -46,29 +46,29 @@
 - Consumes: `@antv/g6` 和 `@antv/g-base` 的公开 `.d.ts` 导出。
 - Produces: 统一从公开入口获得的 `INode`、`Item`、`NodeConfig`、`IG6GraphEvent`、`UpdateType`、`IShape` 和 `ShapeAttrs`。
 
-- [ ] **Step 1: 确认公开导出与深层导入集合**
+- [x] **Step 1: 确认公开导出与深层导入集合**
 
 Run: `rg -n "@antv/.*/(src|lib)/" packages/low-code/src`
 
 Expected: 输出只包含本任务 Files 列出的深层导入调用方。
 
-- [ ] **Step 2: 替换深层源码和 lib 导入**
+- [x] **Step 2: 替换深层源码和 lib 导入**
 
 优先从 `@antv/g6` 导入 G6 re-export 的类型；`ShapeAttrs` 从 `@antv/g-base` 公开入口导入。全部使用 `import type`，除非文件实际需要运行时值。不得建立复制版全局 G6 接口。
 
-- [ ] **Step 3: 验证第三方实现源码退出检查图**
+- [x] **Step 3: 验证第三方实现源码退出检查图**
 
 Run: `pnpm typecheck:low-code`
 
 Expected: `node_modules/.pnpm/@antv+g-base@0.5.16` 的 55 条诊断降为 0；low-code 自身诊断不得因导入替换增加。
 
-- [ ] **Step 4: 验证不存在深层导入**
+- [x] **Step 4: 验证不存在深层导入**
 
 Run: `rg -n "@antv/.*/(src|lib)/" packages/low-code/src`
 
 Expected: 无输出。
 
-- [ ] **Step 5: 运行质量检查并提交**
+- [x] **Step 5: 运行质量检查（未提交）**
 
 Run: `pnpm exec eslint packages/low-code --format stylish`
 
@@ -97,7 +97,7 @@ git commit -m "refactor: use public g6 type exports"
 - Consumes: Task 1 的公开 G6 `NodeConfig` 类型。
 - Produces: `INodeConfig<T>`，保证生产节点具有 `id: string`、`type: BlockNames_DTS | string`、`data: NodeConfigData<T>`；`NodeConfigData<T>` 保证 `anchors: AnchorBaseConfig_DTS[]`。
 
-- [ ] **Step 1: 固定 `INodeConfig<T>` 签名**
+- [x] **Step 1: 固定 `INodeConfig<T>` 签名**
 
 将现有整体 `Partial` 改为：
 
@@ -117,7 +117,7 @@ export type INodeConfig<T extends NodeConfigDataUnion = {}> =
 
 保留 G6 的必需 `id`，并为 `data`、`anchors`、origin 字段补充触发条件与边界语义注释。
 
-- [ ] **Step 2: 在外部图数据边界增加验证/收窄函数**
+- [x] **Step 2: 在外部图数据边界增加验证/收窄函数**
 
 在 `interface/index.ts` 产出：
 
@@ -128,17 +128,17 @@ export function assertNodeConfig(value: unknown, context: string): asserts value
 
 验证至少覆盖对象、非空 `id`、非空 `type`、对象 `data` 和数组 `data.anchors`。错误信息包含 `context`，用于持久化图数据、G6 model 和拖拽模型边界。
 
-- [ ] **Step 3: 对齐节点构造器与缓存入口**
+- [x] **Step 3: 对齐节点构造器与缓存入口**
 
 方法、变量、API、模板和变量详情构造器必须返回完整 `INodeConfig`。`CacheService` 与 `LogicEditorService` 在接收 `GraphData.nodes` 时使用 Task 2 的守卫，而不是直接断言；内部缓存通过边界后使用 required 协议。
 
-- [ ] **Step 4: 复查核心协议诊断变化**
+- [x] **Step 4: 复查核心协议诊断变化**
 
 Run: `pnpm typecheck:low-code`
 
 Expected: `cfg.data`、`nodeInfo.data` 和生产节点 `data.anchors` 的 `TS18048` 显著下降；不得新增持久化格式字段或改变 JSON 输出。
 
-- [ ] **Step 5: 运行质量检查并提交**
+- [x] **Step 5: 运行质量检查（未提交）**
 
 Run: `pnpm exec eslint packages/low-code --format stylish`
 
@@ -167,31 +167,31 @@ git commit -m "refactor: require complete low-code node data"
 - Consumes: Task 2 的 required `INodeConfig<T>` 与 `IModelConfig`。
 - Produces: required 参数的 `IShapeOptions`：`calcNodeHeight(cfg)`、`assembleShape(cfg, group)`、`drawShape(cfg, group)`、`getShapeStyle(cfg)`、`initAnchor(cfg, group)`、`drawAnchor(cfg, group)` 和 `getNodeAnchorBg(options)`。
 
-- [ ] **Step 1: 固定本批文件清单**
+- [x] **Step 1: 固定本批文件清单**
 
 Run: `rg -l "cfg\\?: INodeConfig|group\\?: IIGroup|cfg\\?: ModelConfig" packages/low-code/src/logic-editor/graph/shape/nodes | sort`
 
 Expected: 37 个生产节点文件；保存输出用于差异核对，不修改 `graph/shape/nodes/test.ts`。
 
-- [ ] **Step 2: 收紧 `IShapeOptions` 公共回调签名**
+- [x] **Step 2: 收紧 `IShapeOptions` 公共回调签名**
 
 G6 在调用这些渲染回调时必须提供 config 和 group；将本包协议中的对应参数设为必需。对 G6 原始 `getAnchorPoints(cfg?)` 的兼容只保留在最终注册边界，不把可选性传播到内部渲染实现。
 
-- [ ] **Step 3: 机械对齐 37 个生产节点实现**
+- [x] **Step 3: 机械对齐生产节点实现**
 
 只移除公共回调中 `cfg`/`group` 参数的 `?` 并对齐 `IGroup`/`IIGroup` 类型；不得改变函数体、坐标、anchor 顺序、图片选择或 G6 注册名。任何真实可缺省分支必须保留显式守卫并记录原因。
 
-- [ ] **Step 4: 验证级联错误下降**
+- [x] **Step 4: 验证级联错误下降**
 
 Run: `pnpm typecheck:low-code`
 
 Expected: shape 节点中关于 `cfg`、`group`、`cfg.data` 的 `TS18048` 大幅下降；阶段二结束后的 low-code 错误总数必须低于 1000，否则停止进入阶段三并重新分析残余根因。
 
-- [ ] **Step 5: 验证改动仅限签名**
+- [x] **Step 5: 验证改动仅限签名**
 
 逐文件检查 diff，确认 37 个节点文件中只有 import type 和函数参数类型变化，没有运行时表达式变化。
 
-- [ ] **Step 6: 运行质量检查并提交**
+- [x] **Step 6: 运行质量检查（未提交）**
 
 Run: `pnpm lint`
 
@@ -220,15 +220,15 @@ git commit -m "refactor: require g6 shape callback inputs"
 - Consumes: Tasks 1-3 的类型边界和最新诊断。
 - Produces: 阶段三按目录清理计划所需的剩余错误总数、文件数、错误码和目录分布。
 
-- [ ] **Step 1: 重新统计完整诊断**
+- [x] **Step 1: 重新统计完整诊断**
 
 分别记录 low-code 自身和第三方源码错误总数、文件数、高频错误码及目录分布，并与第一阶段的 2171/55 基线比较。
 
-- [ ] **Step 2: 更新基线文档**
+- [x] **Step 2: 更新基线文档**
 
 保留第一阶段数据作为历史对照，新增阶段二结果、已消除根因、未解决问题和阶段三目录顺序。不得覆盖原始数字。
 
-- [ ] **Step 3: 执行阶段二最终验证**
+- [x] **Step 3: 执行阶段二最终验证**
 
 Run: `pnpm exec eslint packages/low-code --format stylish`
 
@@ -246,13 +246,23 @@ Run: `git diff --check`
 
 Expected: 退出码 0。
 
-- [ ] **Step 4: 更新计划记录并提交**
+- [x] **Step 4: 更新计划记录（未提交）**
 
 ```bash
 git add packages/low-code/TYPECHECK_BASELINE.md docs/superpowers/plans/2026-09-28-low-code-type-governance-phase-2.md
 git commit -m "docs: record low-code type governance phase two"
 ```
 
-- [ ] **Step 5: 编写阶段三计划并请用户审阅**
+- [x] **Step 5: 编写阶段三计划并请用户审阅**
 
 阶段三只针对最新基线中的单文件和单目录错误，不重复修改已经稳定的公共协议。
+
+## 执行记录（2026-09-30）
+
+- Task 1：第三方实现源码诊断从 55 降为 0；AntV 深层 `src/lib` 导入清零。
+- Task 2：计划示例中的 `Omit<NodeConfig, 'type' | 'data'>` 在 G6 4.7.10 下会受字符串索引签名影响而丢失必需 `id`，实际采用 `NodeConfig & { type; data }` 保留原字段并收紧核心协议。
+- Task 3：计划预估 37 个生产节点；稳定性修复新增 `logic-lifecycle-node.ts` 后实际为 38 个，全部只调整回调参数类型，没有修改运行时表达式。
+- 阶段二诊断结果：low-code 从第一阶段 2171 条降为 903 条，涉及文件从 112 降为 74；`TS18048` 从 1477 降为 354。
+- 当前工作区包含用户此前未提交的逻辑编辑器稳定性修改，因此本计划未执行 `git add` 或 `git commit`，避免改变既有暂存边界。
+- 最终门禁：节点守卫测试 3/3 通过，shape 协议类型测试通过，low-code ESLint、全仓 lint、Vite 构建和 `git diff --check` 均通过；Vite 仅保留既有 eval、legacy target 和大 chunk 警告。
+- 阶段三实施计划已写入 `docs/superpowers/plans/2026-09-30-low-code-type-governance-phase-3.md`，等待用户审阅后执行。

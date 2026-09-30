@@ -1,9 +1,8 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
-import { IGroup, ShapeOptions, INode } from '@antv/g6';
+import type { IGroup, INode, Item, ModelConfig, ShapeOptions, UpdateType } from '@antv/g6';
 import { AnchorTag, IG6, IModelConfig, INodeConfig } from '../../../interface';
 import { AnchorBaseConfig_DTS, BlockNames_DTS, ConstOrVariable_DTS } from '../../../service/interface';
 import { IShapeOptions } from './../../../interface/index';
-import { Item, UpdateType } from '@antv/g6-core/lib/types';
 import { getImgByType } from '../../util';
 import { nodeUpdate } from '../../util/node-update';
 import _ from 'lodash';
@@ -16,12 +15,12 @@ export default (G6: IG6) => {
   const nodeDefinition: IShapeOptions = {
     itemType: itemType,
 
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 200;
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
 
@@ -267,7 +266,9 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    update(cfg: IModelConfig, node: INode, updateType?: UpdateType) {
+    update(cfg: ModelConfig, item: Item, updateType?: UpdateType) {
+      if (item.getType() !== 'node') throw new Error('数组循环只能更新节点元素');
+      const node = item as INode;
       const model = node.get<INodeConfig>('model');
       const inputAnchor = model.data.anchors && (model.data.anchors[2] as AnchorBaseConfig_DTS);
       const itemAnchor = model.data.anchors && (model.data.anchors[5] as AnchorBaseConfig_DTS);
@@ -275,7 +276,7 @@ export default (G6: IG6) => {
         return;
       }
       if (inputAnchor.data.constOrVariable === ConstOrVariable_DTS.USE_CONST) {
-        let defaultValue = [];
+        let defaultValue: unknown[] = [];
         eval(`defaultValue = ${inputAnchor.data.value}`);
         const value = defaultValue && defaultValue[0];
         itemAnchor.data = {
@@ -294,7 +295,7 @@ export default (G6: IG6) => {
         const edgeModel = edge.getModel();
         const sourceModel = edge.getSource().get<INodeConfig>('model');
         const sourceAnchor = sourceModel.data.anchors.find((i) => i.index === edgeModel.sourceAnchor);
-        if (sourceAnchor.data.schema && sourceAnchor.data.schema.type === DataType.Array) {
+        if (sourceAnchor?.data.schema?.type === DataType.Array && sourceAnchor.data.schema.items) {
           let value = dataMixin.getDefaultValueJSONFromSchema(sourceAnchor.data.schema);
           itemAnchor.data = {
             ...itemAnchor.data,
@@ -309,7 +310,7 @@ export default (G6: IG6) => {
       nodeUpdate(cfg, node, updateType);
     },
 
-    getAnchorPoints(cfg: INodeConfig): any[] {
+    getAnchorPoints(cfg: IModelConfig): any[] {
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
       return [

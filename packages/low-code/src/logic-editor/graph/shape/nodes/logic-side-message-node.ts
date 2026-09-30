@@ -1,17 +1,17 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
 import { IGroup, ShapeOptions } from '@antv/g6';
-import { AnchorBaseConfigWithPosition, AnchorTag, IG6, INodeConfig, IShapeOptions } from '../../../interface';
+import { AnchorBaseConfigWithPosition, AnchorTag, IG6, IModelConfig, INodeConfig, IShapeOptions } from '../../../interface';
 import { BlockNames_DTS, ConstOrVariable_DTS } from '../../../service/interface';
 
 export default (G6: IG6) => {
   const itemType = BlockNames_DTS.LOGIC_SIDE_MESSAGE_NODE;
   const nodeDefinition: IShapeOptions = {
     itemType: itemType,
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 132;
 
-      const all = this.getAnchorPoints(cfg);
+      const all = this.getAnchorPoints?.(cfg as IModelConfig) ?? [];
       const len = all.length;
       if (len <= 3) {
         cfg.nodeHeight = 44 + 3 * 30;
@@ -20,7 +20,7 @@ export default (G6: IG6) => {
       }
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
       group.addShape('rect', {
@@ -180,7 +180,7 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig): AnchorBaseConfigWithPosition[] {
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
       return [

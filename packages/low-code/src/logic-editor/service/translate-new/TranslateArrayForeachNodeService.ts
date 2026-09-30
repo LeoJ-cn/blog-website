@@ -126,7 +126,12 @@ export class TranslateArrayForeachNodeService extends TranslateBaseService {
 
     // 手动更新“数组的循环体”SimpleProcessData
     if (processList && processList.length) {
-      processList[0].value.statement = statement
+      const loopProcess = processList[0]
+      if (!loopProcess) throw new Error('异常: 数组循环节点未生成循环过程数据！！！')
+      loopProcess.value = {
+        ...(loopProcess.value || {}),
+        statement,
+      }
     }
 
     result.push(
@@ -138,6 +143,4 @@ export class TranslateArrayForeachNodeService extends TranslateBaseService {
     this.result = result;
   }
 }
-
-
 

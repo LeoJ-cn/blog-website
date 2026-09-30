@@ -1,4 +1,4 @@
-import { IGroup, ShapeOptions } from '@antv/g6';
+import { IGroup, IShape, ShapeOptions } from '@antv/g6';
 import {
   AnchorBaseConfigWithPosition,
   AnchorTag,
@@ -17,21 +17,22 @@ import dataMixin from '../../../compat/data';
 
 export default (G6: IG6, type: string) => {
   const itemType = `logic-${type}-node`;
-  const nodeDefinition: IShapeOptions = {
+  const nodeDefinition: IShapeOptions<IVarNodeConfig> = {
     itemType: itemType,
-    calcNodeHeight(cfg?: INodeConfig<IVarNodeConfig>) {
+    calcNodeHeight(cfg: INodeConfig<IVarNodeConfig>) {
       cfg.nodeHeight = 40;
+      cfg.nodeWidth = 150;
       // 计算宽度
       const data = dataMixin.getDataById(cfg.data.varId);
       if (data) {
-        const varLength = getNodeTextSize(data.label);
+        const varLength = getNodeTextSize(data.label ?? '');
         cfg.nodeWidth = varLength < 7 ? 150 : 150 + (varLength - 6) * 16;
       }
     },
-    drawShape(cfg?: INodeConfig<IVarNodeConfig>, group?: IIGroup) {
-      this.calcNodeHeight(cfg);
+    drawShape(cfg: IModelConfig<IVarNodeConfig>, group: IIGroup) {
+      this.calcNodeHeight?.(cfg);
 
-      const attrs = this.getShapeStyle(cfg, group);
+      const attrs = this.getShapeStyle?.(cfg) ?? {};
       const keyShape = group.addShape('rect', {
         className: `${this.shapeType}-shape`,
         name: `${this.shapeType}-shape`,
@@ -45,11 +46,12 @@ export default (G6: IG6, type: string) => {
       const data = dataMixin.getDataById(cfg.data.varId);
       let textOffset = 0;
       if (data) {
-        const varLength = getNodeTextSize(data.label);
+        const varLength = getNodeTextSize(data.label ?? '');
         textOffset = varLength < 7 ? 0 : (varLength - 6) * 16;
       }
 
-      const allAnchors = this.getAnchorPoints(cfg) as AnchorBaseConfigWithPosition[];
+      const allAnchors = this.getAnchorPoints?.(cfg) ?? [];
+      if (!allAnchors[0]) throw new Error(`变量节点 ${cfg.id} 缺少输出锚点`);
       const config = allAnchors[0][2];
       const {
         nodeId,
@@ -93,7 +95,7 @@ export default (G6: IG6, type: string) => {
           y: offsetY + 12,
           width: 16,
           height: 16,
-          img: getImgByType(type, 'out', !!connected),
+          img: getImgByType(String(type ?? ''), 'out', !!connected),
           cursor: 'pointer',
           anchor_index: 0,
           _object_config,
@@ -106,18 +108,19 @@ export default (G6: IG6, type: string) => {
 
       group.sort();
       group.$getItem = (className) => {
-        return group.get('children').find((item) => item.get('className') === className);
+        return (group.get('children') as IShape[]).find((item) => item.get('className') === className);
       };
 
-      this.initAnchor(cfg, group);
+      this.initAnchor?.(cfg, group);
       return keyShape;
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {},
+    assembleShape(cfg: IModelConfig, group: IGroup) {},
 
-    getAnchorPoints(cfg: INodeConfig<IVarNodeConfig>): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig<IVarNodeConfig>): AnchorBaseConfigWithPosition[] {
       const nodeConfigData = cfg.data;
       const anchor = nodeConfigData.anchors[0];
+      if (!anchor) throw new Error(`变量节点 ${cfg.id} 缺少输出锚点`);
       return [[1, 0.5, anchor]];
     },
   };

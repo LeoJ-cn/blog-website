@@ -1,7 +1,7 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
 import { IGroup, ShapeOptions } from '@antv/g6';
 import _ from 'lodash';
-import { AnchorBaseConfigWithPosition, AnchorTag, IG6, INodeConfig, IShapeOptions } from '../../../interface';
+import { AnchorBaseConfigWithPosition, AnchorTag, IG6, IModelConfig, INodeConfig, IShapeOptions } from '../../../interface';
 import { AnchorBaseConfig_DTS, AnchorTag_DTS, BlockNames_DTS } from '../../../service/interface';
 import { getImgByType, getNodeTextSize } from '../../util';
 
@@ -9,7 +9,7 @@ export default (G6: IG6) => {
   const itemType = BlockNames_DTS.LOGIC_START_NODE;
   const nodeDefinition: IShapeOptions = {
     itemType: itemType,
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 132;
 
@@ -19,16 +19,16 @@ export default (G6: IG6) => {
         return getNodeTextSize(paramLabel);
       });
 
-      const max = _.max(lens);
+      const max = _.max(lens) ?? 0;
       cfg.nodeWidth = max < 9 ? 210 : 210 + (max - 8) * 16;
 
-      const all = this.getAnchorPoints(cfg);
+      const all = this.getAnchorPoints?.(cfg as IModelConfig) ?? [];
       const len = all.length;
       if (len) {
         cfg.nodeHeight = 44 + (len + 1) * 30;
       }
     },
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
 
@@ -38,7 +38,7 @@ export default (G6: IG6) => {
         return getNodeTextSize(paramLabel);
       });
 
-      const max = _.max(lens);
+      const max = _.max(lens) ?? 0;
       const textOffset = max < 9 ? 0 : (max - 8) * 16;
 
       group.addShape('rect', {
@@ -96,7 +96,7 @@ export default (G6: IG6) => {
         name: 'right-help',
       });
 
-      const all = this.getAnchorPoints(cfg) as AnchorBaseConfigWithPosition[];
+      const all = this.getAnchorPoints?.(cfg) ?? [];
       _.forEach(all, (anchor: AnchorBaseConfigWithPosition) => {
         const config: AnchorBaseConfig_DTS = anchor[2];
         if (config.tag === AnchorTag_DTS.STATEMENT_OUTPUT) {
@@ -138,7 +138,7 @@ export default (G6: IG6) => {
               y: offsetY + 75 + 30 * config.index - 8,
               width: 14,
               height: 14,
-              img: getImgByType(config.data.type, 'out', !!config.connected),
+              img: getImgByType(String(config.data.type ?? ''), 'out', !!config.connected),
               cursor: 'pointer',
             },
             anchorTag: AnchorTag.VAR_OUTPUT,
@@ -168,18 +168,12 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig): AnchorBaseConfigWithPosition[] {
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
-      return _.map<AnchorBaseConfig_DTS, AnchorBaseConfigWithPosition>(anchors, (anchor: AnchorBaseConfig_DTS) => {
-        if (anchor.tag === AnchorTag_DTS.STATEMENT_OUTPUT) {
-          return [1, (44 + 30 * (anchor.index + 1)) / cfg.nodeHeight, anchor];
-        }
-
-        if (anchor.tag === AnchorTag_DTS.VAR_OUTPUT) {
-          return [1, (44 + 30 * (anchor.index + 1)) / cfg.nodeHeight, anchor];
-        }
-      });
+      return anchors
+        .filter((anchor) => anchor.tag === AnchorTag_DTS.STATEMENT_OUTPUT || anchor.tag === AnchorTag_DTS.VAR_OUTPUT)
+        .map((anchor) => [1, (44 + 30 * (anchor.index + 1)) / cfg.nodeHeight, anchor]);
     },
   };
   G6.registerNode(itemType, nodeDefinition as ShapeOptions, BlockNames_DTS.LOGIC_BASE_NODE);

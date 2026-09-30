@@ -48,30 +48,23 @@ export class TranslateAndOrNodeService extends TranslateBaseService {
       }
     )
 
-    if (!preCarAnchor || !sufVarAnchor) {
-      throw new Error('异常: 与/或的块  没有配置 ”前值“ “后值” 的锚点数据，请检查！！！')
+    if (!preCarAnchor || !sufVarAnchor || !returnAnchor) {
+      throw new Error('异常: 与/或的块没有配置“前值”“后值”或“返回值”锚点数据，请检查！！！')
     }
 
     // 翻译
-    let A: SimpleProcessData; // 前
-    let B: SimpleProcessData; // 后
-
     const OP = nodeInfo.type === BlockNames_DTS.LOGIC_AND_NODE ?
       LogicAndOrNodeOP_DTS.AND : LogicAndOrNodeOP_DTS.OR
 
     // 更新前值变量
     const preRecordData = method.map_FromAnchorToSourceNode[preCarAnchor.index]
-    if (preRecordData) {
-      const _var = this.getParameterDependentVariable(preRecordData)
-      A = this.createSimpleProcessData('variable', _var)
-    }
+    if (!preRecordData) throw new Error('异常: 与/或的块没有连接“前值”，请检查图表连线！！！')
+    const A = this.createSimpleProcessData('variable', this.getParameterDependentVariable(preRecordData))
 
     // 更新后值变量
     const sufRecordData = method.map_FromAnchorToSourceNode[sufVarAnchor.index]
-    if (sufRecordData) {
-      const _var = this.getParameterDependentVariable(sufRecordData)
-      B = this.createSimpleProcessData('variable', _var)
-    }
+    if (!sufRecordData) throw new Error('异常: 与/或的块没有连接“后值”，请检查图表连线！！！')
+    const B = this.createSimpleProcessData('variable', this.getParameterDependentVariable(sufRecordData))
 
     const andorSimpleProcessData = {
       id: this.generateUUID(),
@@ -97,6 +90,5 @@ export class TranslateAndOrNodeService extends TranslateBaseService {
     this.result = [processData];
   }
 }
-
 
 

@@ -61,6 +61,11 @@ export const baseCategory: LogicCategory = {
       img: resolveLogicEditorAsset('../graph/img/end.svg'),
     },
     {
+      type: BlockNames_DTS.LOGIC_LIFECYCLE_NODE,
+      label: '生命周期',
+      img: resolveLogicEditorAsset('../graph/img/lifecycle.svg'),
+    },
+    {
       type: BlockNames_DTS.LOGIC_FUNC_NODE,
       label: '自定义方法',
       img: resolveLogicEditorAsset('../graph/img/func.svg'),

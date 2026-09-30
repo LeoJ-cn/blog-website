@@ -1,11 +1,10 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
-import { IGroup, ShapeOptions } from '@antv/g6';
+import { IGroup, IShape, ShapeOptions } from '@antv/g6';
 import _ from 'lodash';
 import {
   AnchorBaseConfigWithPosition,
   AnchorTag,
   IApiConfig,
-  IFuncNodeConfig,
   IG6,
   IIGroup,
   IModelConfig,
@@ -17,18 +16,19 @@ import { getImgByType, getNodeTextSize } from '../../util';
 
 export default (G6: IG6) => {
   const itemType = BlockNames_DTS.LOGIC_API_NODE;
-  const nodeDefinition: IShapeOptions = {
+  const nodeDefinition: IShapeOptions<IApiConfig> = {
     itemType: itemType,
-    calcNodeHeight(cfg?: INodeConfig<IApiConfig>) {
+    calcNodeHeight(cfg: INodeConfig<IApiConfig>) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 132;
       // 计算宽度
-      const funcLabel = cfg.data.api.label;
+      const funcLabel = cfg.data.api.label ?? '';
       const fontLength = getNodeTextSize(funcLabel);
       cfg.nodeWidth = fontLength < 9 ? 210 : 210 + (fontLength - 8) * 16;
 
       // 计算高度
-      const all = this.getAnchorPoints(cfg);
+      // 高宽已在上方完成初始化，此处满足锚点计算所需的完整模型约束。
+      const all = this.getAnchorPoints?.(cfg as IModelConfig<IApiConfig>) ?? [];
       const varInputAnchors = all.filter(
         (anchor: AnchorBaseConfigWithPosition) => anchor[2].tag === AnchorTag_DTS.VAR_INPUT,
       );
@@ -40,9 +40,9 @@ export default (G6: IG6) => {
       }
     },
 
-    drawShape(cfg?: IModelConfig, group?: IIGroup) {
-      this.calcNodeHeight(cfg);
-      const attrs = this.getShapeStyle(cfg, group);
+    drawShape(cfg: IModelConfig<IApiConfig>, group: IIGroup) {
+      this.calcNodeHeight?.(cfg);
+      const attrs = this.getShapeStyle?.(cfg) ?? {};
       const keyShape = group.addShape('rect', {
         className: `${this.shapeType}-shape`,
         name: `${this.shapeType}-shape`,
@@ -50,16 +50,16 @@ export default (G6: IG6) => {
         draggable: true,
         attrs,
       });
-      this.assembleShape(cfg, group);
+      this.assembleShape?.(cfg, group);
       group.$getItem = (className) => {
-        return group.get('children').find((item) => item.get('className') === className);
+        return (group.get('children') as IShape[]).find((item) => item.get('className') === className);
       };
 
-      this.initAnchor(cfg, group);
+      this.initAnchor?.(cfg, group);
       return keyShape;
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig<IApiConfig>, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
 
@@ -119,7 +119,7 @@ export default (G6: IG6) => {
       });
       /** 渲染视图锚点 **/
 
-      const all = this.getAnchorPoints(cfg) as AnchorBaseConfigWithPosition[];
+      const all = this.getAnchorPoints?.(cfg) ?? [];
 
       // 输入
       const statementInputAnchor = all.filter(
@@ -225,7 +225,7 @@ export default (G6: IG6) => {
             y: offsetY + 44 + 30 * 2 - 8,
             width: 16,
             height: 16,
-            img: getImgByType(type, 'out', !!connected),
+            img: getImgByType(String(type ?? ''), 'out', !!connected),
             cursor: 'pointer',
           },
           anchorTag: AnchorTag.VAR_OUTPUT,
@@ -269,7 +269,7 @@ export default (G6: IG6) => {
                 y: offsetY + 44 + 30 * (returnVal ? index - 1 : index) - 8,
                 width: 14,
                 height: 14,
-                img: getImgByType(type, 'in', !!connected),
+                img: getImgByType(String(type ?? ''), 'in', !!connected),
                 cursor: 'pointer',
                 anchor_index: index,
               },
@@ -279,7 +279,8 @@ export default (G6: IG6) => {
               key: name,
             });
 
-            const text = getNodeTextSize(label) > 9 ? label.substring(0, 6) + '...' : label;
+            const parameterLabel = label ?? '';
+            const text = getNodeTextSize(parameterLabel) > 9 ? parameterLabel.substring(0, 6) + '...' : parameterLabel;
             group.addShape('text', {
               attrs: {
                 x: offsetX + 40,
@@ -303,7 +304,7 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig<IApiConfig>): AnchorBaseConfigWithPosition[] {
       // index
       // 0 输入
       // 1: 输出
@@ -312,7 +313,7 @@ export default (G6: IG6) => {
       const anchors = nodeConfigData.anchors;
 
       const returnVal = _.find(anchors, (anchor) => anchor.tag === AnchorTag_DTS.VAR_OUTPUT);
-      const all = _.map<AnchorBaseConfig_DTS, AnchorBaseConfigWithPosition>(anchors, (anchor: AnchorBaseConfig_DTS) => {
+      const all = anchors.map((anchor: AnchorBaseConfig_DTS): AnchorBaseConfigWithPosition | undefined => {
         // 输入
         if (anchor.tag === AnchorTag_DTS.STATEMENT_INPUT && anchor.index === 0) {
           return [0, (44 + 30 * 1) / cfg.nodeHeight, anchor];
@@ -339,7 +340,7 @@ export default (G6: IG6) => {
         console.warn('存在空的锚点配置，请检查！');
       }
 
-      return all.filter((v) => !_.isEmpty(v));
+      return all.filter((anchor): anchor is AnchorBaseConfigWithPosition => anchor !== undefined);
     },
   };
   G6.registerNode(itemType, nodeDefinition as ShapeOptions, BlockNames_DTS.LOGIC_BASE_NODE);

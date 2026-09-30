@@ -2,7 +2,7 @@ import { ElEmpty, ElRadioButton, ElRadioGroup } from 'element-plus'
 import { defineComponent, type PropType } from 'vue'
 import type { Data } from '../types/data'
 import type { Method } from '../types/method'
-import type { INodeConfig } from './interface'
+import type { IFuncNodeConfig, INodeConfig, IVarNodeConfig } from './interface'
 import { StageMode } from './interface'
 import { NodeConfigServicesFactory } from './handler/config-builder/node-config-services-factory'
 import { BlockNames_DTS } from './service/interface'
@@ -31,14 +31,14 @@ export default defineComponent({
         return <LogicOperationEditor curNode={node} operationTree={trees} {...{ 'onSelect-node': (value: unknown) => this.$emit('select-node', value) }} />
       }
       if (node.type === BlockNames_DTS.LOGIC_FUNC_NODE) {
-        return <MethodNodeConfig stageMode={this.stageMode} curSelectedNodeConfig={node} allDatas={this.allDatas} methodList={this.methodList} {...{ 'onSelect-node': (value: unknown) => this.$emit('select-node', value) }} />
+        return <MethodNodeConfig stageMode={this.stageMode} curSelectedNodeConfig={node as INodeConfig<IFuncNodeConfig>} allDatas={this.allDatas} methodList={this.methodList} {...{ 'onSelect-node': (value: unknown) => this.$emit('select-node', value) }} />
       }
       if ([
         BlockNames_DTS.LOGIC_STRING_NODE, BlockNames_DTS.LOGIC_BOOLEAN_NODE,
         BlockNames_DTS.LOGIC_NUMBER_NODE, BlockNames_DTS.LOGIC_ARRAY_NODE,
         BlockNames_DTS.LOGIC_OBJECT_NODE,
       ].includes(node.type as BlockNames_DTS)) {
-        return <VariableNodeConfig stageMode={this.stageMode} curSelectedNodeConfig={node} allDatas={this.allDatas} methodList={this.methodList} {...{ 'onSelect-node': (value: unknown) => this.$emit('select-node', value) }} />
+        return <VariableNodeConfig stageMode={this.stageMode} curSelectedNodeConfig={node as INodeConfig<IVarNodeConfig>} allDatas={this.allDatas} methodList={this.methodList} {...{ 'onSelect-node': (value: unknown) => this.$emit('select-node', value) }} />
       }
       return <ElEmpty description="该节点无配置项" />
     },

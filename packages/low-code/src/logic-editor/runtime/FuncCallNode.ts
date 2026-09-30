@@ -48,7 +48,7 @@ export class FuncCallNode extends ProcessBaseNode<FuncCallAttrs> {
       }
       case 'params':
         (attrs.params || []).forEach((param) => {
-          const prop = attrs.parameters.find((i) => i.label === param.param);
+          const prop = (attrs.parameters ?? []).find((i) => i.label === param.param);
           if (prop) {
             param.paramType = prop.type;
           }
@@ -58,7 +58,7 @@ export class FuncCallNode extends ProcessBaseNode<FuncCallAttrs> {
         if (value === 'none') {
           attrs.params = [];
         } else {
-          attrs.params = attrs.parameters.map((i) => ({
+          attrs.params = (attrs.parameters ?? []).map((i) => ({
             param: i.label,
             paramType: i.type,
             type: 'variable',
@@ -76,6 +76,7 @@ export class FuncCallNode extends ProcessBaseNode<FuncCallAttrs> {
 
   public beforeOperationRender(key: keyof FuncCallAttrs, currentOperation: OperationComponentTree): void {
     const { attrs } = this;
+    if (!currentOperation.data) return;
     switch (key) {
       case 'funcname': {
         const list = processMixin
@@ -85,7 +86,7 @@ export class FuncCallNode extends ProcessBaseNode<FuncCallAttrs> {
         break;
       }
       case 'params': {
-        const list = attrs.parameters.map((i) => ({ label: i.label, value: i.label }));
+        const list = (attrs.parameters ?? []).map((i) => ({ label: i.label, value: i.label }));
         _.set(currentOperation.data, 'nodeConfigs[0].enumList', list);
         break;
       }
@@ -113,14 +114,16 @@ export class FuncCallNode extends ProcessBaseNode<FuncCallAttrs> {
           funcname: attrs.funcname,
         },
       });
+      const callValue = callNode.value;
+      if (!callValue) throw new Error('函数调用节点缺少 value 容器');
       (attrs.params || []).forEach((param) => {
         if (!param.param || !param.type) {
           return;
         }
         if (param.type === 'variable') {
-          callNode.value[param.param] = this.createSimpleProcessData('variable', param.variable);
+          callValue[param.param] = this.createSimpleProcessData('variable', param.variable);
         } else {
-          callNode.value[param.param] = this.createSimpleProcessData(param.type, param.value);
+          callValue[param.param] = this.createSimpleProcessData(param.type, param.value);
         }
       });
       if (attrs.funcReturn && attrs.funcReturn.state) {

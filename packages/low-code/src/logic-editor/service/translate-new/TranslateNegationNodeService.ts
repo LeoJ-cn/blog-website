@@ -40,17 +40,14 @@ export class TranslateNegationNodeService extends TranslateBaseService {
       }
     )
 
-    if (!varAnchor) {
-      throw new Error('异常: 逻辑取反块 没有配置 ”入值“ 锚点的数据，请检查！！！')
+    if (!varAnchor || !returnAnchor) {
+      throw new Error('异常: 逻辑取反块没有配置“入值”或“返回值”锚点数据，请检查！！！')
     }
 
     // 获取入值
-    let inputVar: SimpleProcessData;
     const recordData = method.map_FromAnchorToSourceNode[varAnchor.index]
-    if (recordData) {
-      const _var = this.getParameterDependentVariable(recordData)
-      inputVar = this.createSimpleProcessData('variable', _var)
-    }
+    if (!recordData) throw new Error('异常: 逻辑取反块没有连接“入值”，请检查图表连线！！！')
+    const inputVar = this.createSimpleProcessData('variable', this.getParameterDependentVariable(recordData))
 
     // 翻译取反
     const negationSimpleProcessData = {
@@ -75,7 +72,6 @@ export class TranslateNegationNodeService extends TranslateBaseService {
     this.result = [processData];
   }
 }
-
 
 
 

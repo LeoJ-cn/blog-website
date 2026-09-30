@@ -24,7 +24,7 @@ enum LogicOP_DTS {
 /**
  * 操作符转换
  */
-const OP_MAP = {
+const OP_MAP: Partial<Record<BlockNames_DTS, LogicOP_DTS>> = {
   [BlockNames_DTS.LOGIC_EQUAL_NODE]: LogicOP_DTS.EQUAL,
   [BlockNames_DTS.LOGIC_NOT_EQUAL_NODE]: LogicOP_DTS.NOT_EQUAL,
   [BlockNames_DTS.LOGIC_GREATER_NODE]: LogicOP_DTS.MORE,
@@ -70,29 +70,22 @@ export class TranslateMathCompareNodeService extends TranslateBaseService {
       }
     )
 
-    if (!preCarAnchor || !sufVarAnchor) {
-      throw new Error('异常: 逻辑判断块  没有配置 ”前值“ “后值” 的锚点数据，请检查！！！')
+    if (!preCarAnchor || !sufVarAnchor || !returnAnchor) {
+      throw new Error('异常: 逻辑判断块没有配置“前值”“后值”或“返回值”锚点数据，请检查！！！')
     }
 
     // 翻译
-    let A: SimpleProcessData; // 前
-    let B: SimpleProcessData; // 后
-
     const OP = OP_MAP[method.type] || LogicOP_DTS.EQUAL;
 
     // 更新前值变量
     const preRecordData = method.map_FromAnchorToSourceNode[preCarAnchor.index]
-    if (preRecordData) {
-      const _var = this.getParameterDependentVariable(preRecordData)
-      A = this.createSimpleProcessData('variable', _var)
-    }
+    if (!preRecordData) throw new Error('异常: 逻辑判断块没有连接“前值”，请检查图表连线！！！')
+    const A = this.createSimpleProcessData('variable', this.getParameterDependentVariable(preRecordData))
 
     // 更新前值变量
     const sufRecordData = method.map_FromAnchorToSourceNode[sufVarAnchor.index]
-    if (sufRecordData) {
-      const _var = this.getParameterDependentVariable(sufRecordData)
-      B = this.createSimpleProcessData('variable', _var)
-    }
+    if (!sufRecordData) throw new Error('异常: 逻辑判断块没有连接“后值”，请检查图表连线！！！')
+    const B = this.createSimpleProcessData('variable', this.getParameterDependentVariable(sufRecordData))
 
     const andorSimpleProcessData = {
       id: this.generateUUID(),
@@ -118,4 +111,3 @@ export class TranslateMathCompareNodeService extends TranslateBaseService {
     this.result = [processData];
   }
 }
-

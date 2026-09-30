@@ -1,23 +1,27 @@
 import { resolveLogicEditorAsset } from '../icon-map';
-import G6, { IGroup, ShapeOptions } from '@antv/g6';
-import { Item, UpdateType } from '@antv/g6-core/lib/types';
+import G6, { type IShape, type Item, type ModelConfig, type ShapeOptions, type UpdateType } from '@antv/g6';
 import _ from 'lodash';
 import { getImgByType, getNodeTextSize, isEn } from '.';
-import { AnchorBaseConfigWithPosition, AnchorTag, IModelConfig, INodeConfig, IShapeOptions } from '../../interface';
+import { AnchorBaseConfigWithPosition, AnchorTag, IIGroup, IModelConfig, INodeConfig, IShapeOptions, assertNodeConfig } from '../../interface';
 import { AnchorTag_DTS, BlockNames_DTS, ConstOrVariable_DTS } from '../../service/interface';
 
-export function nodeUpdate(cfg: IModelConfig, node: Item, updateType?: UpdateType) {
+export function nodeUpdate(cfg: ModelConfig, node: Item, updateType?: UpdateType): void {
+  assertNodeConfig(cfg, '更新节点视图');
   const model = node.get('model');
   const { attrs } = node.get('keyShape');
   const group = node.get('group');
   const item = group.get('children')[0];
   item.attr({ ...attrs, ...model.style });
   // 锚点被链接后需要变成实心
-  const children = group.get('children');
-  const anchorImgs = children.filter((item: Item) =>
-    [AnchorTag.STATEMENT_OUTPUT, AnchorTag.STATEMENT_INPUT, AnchorTag.VAR_INPUT, AnchorTag.VAR_OUTPUT].includes(
-      item.get('anchorTag'),
-    ),
+  const children = group.get('children') as IShape[];
+  const renderedAnchorTags: string[] = [
+    AnchorTag.STATEMENT_OUTPUT,
+    AnchorTag.STATEMENT_INPUT,
+    AnchorTag.VAR_INPUT,
+    AnchorTag.VAR_OUTPUT,
+  ];
+  const anchorImgs = children.filter((item) =>
+    renderedAnchorTags.includes(item.get('anchorTag') as string),
   );
 
   anchorImgs.forEach((imgShape) => {
@@ -29,13 +33,13 @@ export function nodeUpdate(cfg: IModelConfig, node: Item, updateType?: UpdateTyp
         data: { type },
       } = cfg.data.anchors[anchorIndex];
 
-      if ([AnchorTag.STATEMENT_OUTPUT, AnchorTag.STATEMENT_INPUT].includes(tag)) {
+      if ([AnchorTag_DTS.STATEMENT_OUTPUT, AnchorTag_DTS.STATEMENT_INPUT].includes(tag)) {
         imgShape.attr({
           img: resolveLogicEditorAsset(`../img/statement_anchor${connected ? '' : '_light'}.svg`),
         });
       } else {
         imgShape.attr({
-          img: getImgByType(type, AnchorTag.VAR_INPUT === tag ? 'in' : 'out', connected),
+          img: getImgByType(String(type ?? ''), AnchorTag_DTS.VAR_INPUT === tag ? 'in' : 'out', connected),
         });
       }
     } else {
@@ -43,7 +47,7 @@ export function nodeUpdate(cfg: IModelConfig, node: Item, updateType?: UpdateTyp
     }
   });
 
-  const badges = children.filter((item: Item) => item.get('name') === 'badge');
+  const badges = children.filter((item) => item.get('name') === 'badge');
   badges.forEach((badge) => {
     const anchorIndex = badge.get('anchorIndex');
     if (cfg.data.anchors[anchorIndex]) {
@@ -56,7 +60,7 @@ export function nodeUpdate(cfg: IModelConfig, node: Item, updateType?: UpdateTyp
 }
 
 
-export function registerNode(config: INodeConfig) {
+export function registerNode(config: INodeConfig): void {
 
   const {
     type,
@@ -75,17 +79,17 @@ export function registerNode(config: INodeConfig) {
   const nodeDefinition: IShapeOptions = {
     itemType: type,
 
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       // 节点默认的初始宽高
-      cfg.nodeWidth = nodeWidth;
-      cfg.nodeHeight = nodeHeight;
+      cfg.nodeWidth = nodeWidth ?? 210;
+      cfg.nodeHeight = nodeHeight ?? 134;
 
-      const anchors = this.getAnchorPoints(cfg);
+      const anchors = this.getAnchorPoints?.(cfg as IModelConfig) ?? [];
       const len = anchors.length;
 
       // 计算宽度
       // 根据节点的标题去动态计算宽度
-      const title = isEn() ? name : label;
+      const title = (isEn() ? name : label) ?? '';
       const titleSize = getNodeTextSize(title);
       cfg.nodeWidth = titleSize < 9 ? 210 : 210 + (titleSize - 8) * 16;
 
@@ -102,12 +106,16 @@ export function registerNode(config: INodeConfig) {
      * @param cfg
      * @param group
      */
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
-      const offsetX = -cfg.nodeWidth / 2;
-      const offsetY = -cfg.nodeHeight / 2;
+    assembleShape(cfg: IModelConfig, group: IIGroup) {
+      const currentNodeWidth = cfg.nodeWidth ?? nodeWidth ?? 210;
+      const currentNodeHeight = cfg.nodeHeight ?? nodeHeight ?? 134;
+      cfg.nodeWidth = currentNodeWidth;
+      cfg.nodeHeight = currentNodeHeight;
+      const offsetX = -currentNodeWidth / 2;
+      const offsetY = -currentNodeHeight / 2;
 
       // 整个块的宽度变大,右侧竖列的文本图片需要跟着右移
-      const title = isEn() ? name : label;
+      const title = (isEn() ? name : label) ?? '';
       const titleSize = getNodeTextSize(title);
       // 偏移
       const offset = titleSize < 9 ? 0 : (titleSize - 8) * 16;
@@ -118,7 +126,7 @@ export function registerNode(config: INodeConfig) {
         attrs: {
           x: offsetX + 1,
           y: offsetY + 1,
-          width: cfg.nodeWidth - 2,
+          width: currentNodeWidth - 2,
           height: 44,
           fill: '#F2F8FF',
           cursor: 'move',
@@ -160,7 +168,7 @@ export function registerNode(config: INodeConfig) {
       });
 
       // 节点的操作按钮
-      const operation = operations[0];
+      const operation = operations?.[0];
       if (operation === 'help') {
         group.addShape('image', {
           attrs: {
@@ -176,7 +184,7 @@ export function registerNode(config: INodeConfig) {
       }
 
       // 动态获取锚点
-      const anchorConfigs = this.getAnchorPoints(cfg) as AnchorBaseConfigWithPosition[];
+      const anchorConfigs = this.getAnchorPoints?.(cfg) ?? [];
 
       const statementInputAnchor = anchorConfigs.find((anchor) => anchor[2].tag === AnchorTag_DTS.STATEMENT_INPUT);
 
@@ -273,7 +281,7 @@ export function registerNode(config: INodeConfig) {
             name: 'variable-input-img',
           });
 
-          const text = isEn() ? name : label;
+          const text = (isEn() ? name : label) ?? '';
           const textEllipsis = getNodeTextSize(text) > 9 ? text.substring(0, 6) + '...' : text;
 
           const variableInputText = group.addShape('text', {
@@ -333,7 +341,7 @@ export function registerNode(config: INodeConfig) {
             name: 'variable-output-img',
           });
 
-          const text = isEn() ? name : label;
+          const text = (isEn() ? name : label) ?? '';
           const textEllipsis = getNodeTextSize(text) > 9 ? text.substring(0, 6) + '...' : text;
 
           group.addShape('text', {
@@ -363,15 +371,20 @@ export function registerNode(config: INodeConfig) {
      * @param cfg
      * @returns
      */
-    getAnchorPoints(cfg: INodeConfig): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig): AnchorBaseConfigWithPosition[] {
+      assertNodeConfig(cfg, '计算动态节点锚点');
       // 这部分的逻辑根据后台返回的数据配置(getConfig)
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
+      if (!anchors[0] || !anchors[1] || !anchors[2]) {
+        throw new Error(`动态节点 ${cfg.id} 至少需要三个锚点`);
+      }
 
+      const currentNodeHeight = cfg.nodeHeight ?? nodeHeight ?? 134;
       return [
-        [0, 72 / cfg.nodeHeight, anchors[0]],
-        [1, 72 / cfg.nodeHeight, anchors[1]],
-        [0, 107 / cfg.nodeHeight, anchors[2]],
+        [0, 72 / currentNodeHeight, anchors[0]],
+        [1, 72 / currentNodeHeight, anchors[1]],
+        [0, 107 / currentNodeHeight, anchors[2]],
       ];
     },
   };

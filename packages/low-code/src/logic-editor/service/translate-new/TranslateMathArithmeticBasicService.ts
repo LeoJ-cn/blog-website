@@ -22,7 +22,7 @@ enum MathArithmeticOP {
 /**
  * 操作符转换
  */
-const OP_MAP = {
+const OP_MAP: Partial<Record<BlockNames_DTS, MathArithmeticOP>> = {
   [BlockNames_DTS.LOGIC_ADDITION_NODE]: MathArithmeticOP.ADD,
   [BlockNames_DTS.LOGIC_SUBTRACTION_NODE]: MathArithmeticOP.MINUS,
   [BlockNames_DTS.LOGIC_MULTIPLICATION_NODE]: MathArithmeticOP.MULTIPLY,
@@ -68,8 +68,8 @@ export class TranslateMathArithmeticBasicService extends TranslateBaseService {
       }
     )
 
-    if (!preCarAnchor || !sufVarAnchor) {
-      throw new Error('异常: “加减乘除取余”数学运算块 没有配置”前值“ “后值”的锚点数据 ，请检查！！！')
+    if (!preCarAnchor || !sufVarAnchor || !returnAnchor) {
+      throw new Error('异常: “加减乘除取余”数学运算块没有配置“前值”“后值”或“返回值”锚点数据，请检查！！！')
     }
 
     // 翻译
@@ -86,7 +86,7 @@ export class TranslateMathArithmeticBasicService extends TranslateBaseService {
     if (config_constOrVariable === ConstOrVariable_DTS.USE_VARIABLE) {
       const recordData = method.map_FromAnchorToSourceNode[preCarAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 数学运算块 没有指定参数 “数组”, 请检查图表连线！！！`)
+        throw new Error('异常: 数学运算块没有连接“前值”，请检查图表连线！！！')
       } else {
         // 获取参数依赖的变量
         const _var = this.getParameterDependentVariable(recordData)
@@ -110,7 +110,7 @@ export class TranslateMathArithmeticBasicService extends TranslateBaseService {
     if (suf_config_constOrVariable === ConstOrVariable_DTS.USE_VARIABLE) {
       const recordData = method.map_FromAnchorToSourceNode[sufVarAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 数学运算块 没有指定参数 “数组”, 请检查图表连线！！！`)
+        throw new Error('异常: 数学运算块没有连接“后值”，请检查图表连线！！！')
       } else {
         // 获取参数依赖的变量
         const _var = this.getParameterDependentVariable(recordData)
@@ -152,7 +152,6 @@ export class TranslateMathArithmeticBasicService extends TranslateBaseService {
     this.result = result;
   }
 }
-
 
 
 

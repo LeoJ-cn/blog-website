@@ -18,7 +18,9 @@ export default {
   getMethodById: (id: string) => methodsProvider().find((method) => method.id === id),
   changeMethodById: (id: string, patch: Partial<Method>) => {
     const method = methodsProvider().find((item) => item.id === id)
-    if (method) Object.assign(method, patch)
+    if (!method) throw new Error(`未找到方法：${id || '<empty-id>'}`)
+    Object.assign(method, patch)
+    return method
   },
   changeCurMethodId: (id?: string) => { currentMethodId = id },
   changeCurMethod: (method?: Method) => { currentMethod = method },

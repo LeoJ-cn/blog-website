@@ -204,7 +204,7 @@ export function handleProperties(propValue: any, key?: string) {
 }
 
 // 遍历value若schema对应的值是function则返回function
-function traverseValueBySchema(prefix: string = '', schema: Schema, value: any) {
+function traverseValueBySchema(prefix: string = '', schema: Schema | undefined, value: any): any {
   try {
     if (!schema) {
       return value; // 若schema不存在则不遍历value
@@ -222,7 +222,7 @@ function traverseValueBySchema(prefix: string = '', schema: Schema, value: any) 
     }
     if (isObject(value)) {
       for (let key in value) {
-        const curSchema = _.find(schema.properties, (propItem) => {
+        const curSchema = _.find(schema.properties ?? [], (propItem) => {
           return propItem.key === key;
         });
         const prefixArray = prefix.split('.').filter((v) => v);
@@ -254,9 +254,10 @@ export function getDataTypeByPath(path: string, schema: Schema) {
   }
   const pathArray = path.split('.');
   let curSchema = schema;
-  let curProps = schema.type === DataType.Array ? schema.items : schema;
+  let curProps: Schema | undefined = schema.type === DataType.Array ? schema.items : schema;
   while (pathArray.length > 0) {
-    const findProp = _.find(curProps.properties, (prop) => {
+    if (!curProps) break;
+    const findProp = _.find(curProps.properties ?? [], (prop) => {
       return prop.key === pathArray[0];
     });
     if (!findProp) {

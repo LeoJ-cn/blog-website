@@ -1,12 +1,16 @@
 import { IG6 } from '../../interface';
-import { IG6GraphEvent } from '@antv/g6-core/lib/types';
+import type { IG6GraphEvent, IGraph } from '@antv/g6';
+
+interface CanvasEventBehavior {
+  graph: IGraph;
+}
 
 export default (G6: IG6) => {
   G6.registerBehavior('canvas-event', {
     getDefaultCfg() {
       return {};
     },
-    shouldBegin(e) {
+    shouldBegin(_e?: IG6GraphEvent) {
       return true;
     },
     getEvents() {
@@ -26,10 +30,9 @@ export default (G6: IG6) => {
     onCanvasMouseUp(e: IG6GraphEvent) {
       e.target.get('el').style.cursor = 'grab';
     },
-    onCanvasDragEnd(e: IG6GraphEvent) {
+    onCanvasDragEnd(this: CanvasEventBehavior, e: IG6GraphEvent) {
       e.target.get('el').style.cursor = 'grab';
       this.graph.emit('on-canvas-dragend', e);
     },
   });
 };
-

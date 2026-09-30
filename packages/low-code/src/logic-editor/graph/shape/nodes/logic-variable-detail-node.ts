@@ -1,6 +1,6 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
-import { IGroup, ShapeOptions } from '@antv/g6';
-import _, { max } from 'lodash';
+import { IGroup, IShape, ShapeOptions } from '@antv/g6';
+import _ from 'lodash';
 import { DataType } from '../../../../types/data';
 import {
   AnchorBaseConfigWithPosition,
@@ -17,28 +17,27 @@ export default (G6: IG6) => {
   const itemType = BlockNames_DTS.LOGIC_VARIABLE_DETIAL_NODE;
   const nodeDefinition: IShapeOptions = {
     itemType: itemType,
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 105;
-      const all = this.getAnchorPoints(cfg);
+      // 高宽已在上方完成初始化，此处满足锚点计算所需的完整模型约束。
+      const all = this.getAnchorPoints?.(cfg as IModelConfig) ?? [];
       const len = all.length;
 
       let maxWidth = 210;
       if (all[0] && all[1]) {
         const textLength =
-          getNodeTextSize(all[0][2].data.label) +
+          getNodeTextSize(all[0][2].data.label ?? '') +
           (all[1][2].data.label
             ? getNodeTextSize(`${all[1][2].data.label}(${all[1][2].data.name})`)
-            : getNodeTextSize(all[1][2].data.name));
+            : getNodeTextSize(all[1][2].data.name ?? ''));
         if (textLength > 9) {
           maxWidth = (textLength - 9) * 14 + 210;
         }
       }
       all.slice(2).forEach((a) => {
-        const textLength =
-          getNodeTextSize(a[2].data.label) + a[2].data.label
-            ? getNodeTextSize(`${a[2].data.label}(${a[2].data.name})`)
-            : getNodeTextSize(a[2].data.name);
+        const { label, name } = a[2].data;
+        const textLength = label ? getNodeTextSize(`${label}(${name ?? ''})`) : getNodeTextSize(name ?? '');
         if ((textLength - 9) * 14 + 210 > maxWidth) {
           maxWidth = (textLength - 9) * 14 + 210;
         }
@@ -52,9 +51,9 @@ export default (G6: IG6) => {
       }
     },
 
-    drawShape(cfg?: IModelConfig, group?: IIGroup) {
-      this.calcNodeHeight(cfg);
-      const attrs = this.getShapeStyle(cfg, group);
+    drawShape(cfg: IModelConfig, group: IIGroup) {
+      this.calcNodeHeight?.(cfg);
+      const attrs = this.getShapeStyle?.(cfg) ?? {};
       const keyShape = group.addShape('rect', {
         className: `${this.shapeType}-shape`,
         name: `${this.shapeType}-shape`,
@@ -63,17 +62,17 @@ export default (G6: IG6) => {
         attrs,
       });
 
-      this.assembleShape(cfg, group);
+      this.assembleShape?.(cfg, group);
 
       group.$getItem = (className) => {
-        return group.get('children').find((item) => item.get('className') === className);
+        return (group.get('children') as IShape[]).find((item) => item.get('className') === className);
       };
 
-      this.initAnchor(cfg, group);
+      this.initAnchor?.(cfg, group);
       return keyShape;
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const textOffset = cfg.nodeWidth - 210;
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
@@ -118,7 +117,8 @@ export default (G6: IG6) => {
         name: 'title',
       });
 
-      const allAnchors = this.getAnchorPoints(cfg) as AnchorBaseConfigWithPosition[];
+      const allAnchors = this.getAnchorPoints?.(cfg) ?? [];
+      if (!allAnchors[0]) throw new Error(`变量详情节点 ${cfg.id} 缺少输入锚点`);
       const inputAnchorNodeConfig = allAnchors[0][2];
 
       const outputAnchorNodeConfigs = allAnchors
@@ -203,10 +203,10 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig): AnchorBaseConfigWithPosition[] {
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
-      return _.map<AnchorBaseConfig_DTS, AnchorBaseConfigWithPosition>(anchors, (anchor: AnchorBaseConfig_DTS) => {
+      const all = anchors.map((anchor: AnchorBaseConfig_DTS): AnchorBaseConfigWithPosition | undefined => {
         if (anchor.tag === AnchorTag_DTS.VAR_INPUT) {
           return [0, 74 / cfg.nodeHeight, anchor];
         }
@@ -215,6 +215,7 @@ export default (G6: IG6) => {
           return [1, (44 + 30 * anchor.index) / cfg.nodeHeight, anchor];
         }
       });
+      return all.filter((anchor): anchor is AnchorBaseConfigWithPosition => anchor !== undefined);
     },
   };
   G6.registerNode(itemType, nodeDefinition as ShapeOptions, BlockNames_DTS.LOGIC_BASE_NODE);

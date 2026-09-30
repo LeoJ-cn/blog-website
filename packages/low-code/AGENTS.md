@@ -7,4 +7,5 @@
 - 仅在迁移功能、核对新旧实现差异或继续逻辑编辑器迁移工作时，读取 `docs/superpowers/specs/2026-09-28-low-code-logic-editor-migration-design.md`；只有明确执行该实施计划时，才读取 `docs/superpowers/plans/2026-09-28-low-code-logic-editor-migration.md`。
 - 仅在继续执行、评审或核对当前逻辑编辑器稳定性修复时，读取 `docs/superpowers/plans/2026-09-30-low-code-logic-editor-stability-remediation.md`；普通逻辑编辑器维护不得默认读取该计划。计划完成后删除本条临时路由，计划文件保留为历史记录。
 - 仅在处理 TypeScript 工程归属、公共节点协议、G6 类型或 low-code 严格类型诊断时，读取 `docs/superpowers/specs/2026-09-28-low-code-type-governance-design.md`；只有继续对应治理阶段时，才读取相关 phase plan。
+- 仅在继续执行、评审或核对类型治理第三阶段时，读取 `docs/superpowers/plans/2026-09-30-low-code-type-governance-phase-3.md`；普通 low-code 维护不得默认读取。计划完成后删除本条临时路由，计划文件保留为历史记录。
 - 若原仓库源码与参考文档冲突，以参考文档记录的原仓库路径和提交为线索重新核对源码。禁止静默选择其一，也禁止读取性能监控、Docker 或运行时服务等无关文档。

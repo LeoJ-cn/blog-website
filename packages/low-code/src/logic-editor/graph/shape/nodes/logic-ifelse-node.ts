@@ -1,7 +1,7 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
 import { IGroup, ShapeOptions } from '@antv/g6';
 import _ from 'lodash';
-import { AnchorBaseConfigWithPosition, AnchorTag, IG6, INodeConfig, IShapeOptions } from '../../../interface';
+import { AnchorBaseConfigWithPosition, AnchorTag, IG6, IModelConfig, INodeConfig, IShapeOptions } from '../../../interface';
 import { AnchorBaseConfig_DTS, AnchorTag_DTS, BlockNames_DTS } from '../../../service/interface';
 import { getImgByType } from '../../util';
 
@@ -10,11 +10,11 @@ export default (G6: IG6) => {
   const itemType = BlockNames_DTS.LOGIC_IFELSE_NODE;
   const nodeDefinition: IShapeOptions = {
     itemType: itemType,
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 170;
 
-      const all = this.getAnchorPoints(cfg);
+      const all = this.getAnchorPoints?.(cfg as IModelConfig) ?? [];
       const len = all.length;
       if (len <= 5) {
         cfg.nodeHeight = 44 + 4 * 30;
@@ -23,7 +23,7 @@ export default (G6: IG6) => {
       }
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
       group.addShape('rect', {
@@ -79,7 +79,7 @@ export default (G6: IG6) => {
         name: 'right-help',
       });
 
-      const all = this.getAnchorPoints(cfg) as AnchorBaseConfigWithPosition[];
+      const all = this.getAnchorPoints?.(cfg) ?? [];
 
       const statementInputAnchor = all.filter((anchor: AnchorBaseConfigWithPosition) => anchor[2].tag === AnchorTag_DTS.STATEMENT_INPUT);
       if (statementInputAnchor && statementInputAnchor.length > 0) {
@@ -154,7 +154,7 @@ export default (G6: IG6) => {
       if (varInputAnchors.length) {
         _.forEach(varInputAnchors, (anchor, idx) => {
           const { connected = false, tag, index, data: { type, label } } = anchor[2];
-          const img = getImgByType(type, 'in', connected);
+          const img = getImgByType(String(type ?? ''), 'in', connected);
           group.addShape('text', {
             attrs: {
               x: offsetX + 40,
@@ -223,33 +223,33 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): AnchorBaseConfigWithPosition[] {
+    getAnchorPoints(cfg: IModelConfig): AnchorBaseConfigWithPosition[] {
       const nodeConfigData = cfg.data;
       const anchors = nodeConfigData.anchors;
 
-      const all = _.map<AnchorBaseConfig_DTS, AnchorBaseConfigWithPosition>(anchors, (anchor: AnchorBaseConfig_DTS) => {
+      return anchors.flatMap((anchor): AnchorBaseConfigWithPosition[] => {
         // 输入
         if (anchor.tag === AnchorTag_DTS.STATEMENT_INPUT && anchor.index === 0) {
-          return [0, (44 + 30 * 1) / cfg.nodeHeight, anchor];
+          return [[0, (44 + 30 * 1) / cfg.nodeHeight, anchor]];
         }
 
         // 输出
         if (anchor.tag === AnchorTag_DTS.STATEMENT_OUTPUT && anchor.index === 1) {
-          return [1, (44 + 30 * 1) / cfg.nodeHeight, anchor];
+          return [[1, (44 + 30 * 1) / cfg.nodeHeight, anchor]];
         }
 
         if (anchor.tag === AnchorTag_DTS.VAR_INPUT && anchor.index !== 0) {
-          return [0, (44 + 30 * (anchor.index / 2 + 1)) / cfg.nodeHeight, anchor];
+          return [[0, (44 + 30 * (anchor.index / 2 + 1)) / cfg.nodeHeight, anchor]];
         }
 
         if (anchor.tag === AnchorTag_DTS.STATEMENT_OUTPUT && anchor.index !== 1) {
           if (anchor.index === anchors.length - 1) {
-            return [1, (44 + 30 * (anchor.index / 2 + 1)) / cfg.nodeHeight, anchor];
+            return [[1, (44 + 30 * (anchor.index / 2 + 1)) / cfg.nodeHeight, anchor]];
           }
-          return [1, (44 + 30 * (Math.ceil(anchor.index / 2))) / cfg.nodeHeight, anchor];
+          return [[1, (44 + 30 * (Math.ceil(anchor.index / 2))) / cfg.nodeHeight, anchor]];
         }
+        return [];
       });
-      return all.filter((v) => !_.isEmpty(v));
     },
   }
   G6.registerNode(itemType, nodeDefinition as ShapeOptions, BlockNames_DTS.LOGIC_BASE_NODE);

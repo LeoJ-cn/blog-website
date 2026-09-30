@@ -1,12 +1,17 @@
-import { IG6GraphEvent, INode } from '@antv/g6-core/lib/types';
+import type { IG6GraphEvent, IShape } from '@antv/g6';
 import _ from "lodash";
+import type { AnchorBaseConfigWithPosition, IIGroup } from '../../interface';
 import { GraphUtil } from '../graph-util';
 import { getColorByType } from "../util";
 
-let dragLog = [];
-let anchorNodeId = null;
+let dragLog: [number, number] = [0, 0];
+let anchorNodeId: string | null = null;
 
-export default (anchor, group, p) => {
+export default (anchor: IShape, group: IIGroup, p: AnchorBaseConfigWithPosition): void => {
+  const [anchorX, anchorY] = p;
+  if (anchorX === undefined || anchorY === undefined) {
+    throw new Error('锚点位置必须包含归一化的 x、y 坐标');
+  }
 
   anchor.on('mouseenter', (e: IG6GraphEvent) => {
     anchor.attr({
@@ -18,8 +23,8 @@ export default (anchor, group, p) => {
     dragLog = [e.x, e.y];
     const bBox = group.get('item').getBBox();
     const point = [
-      bBox.width * (p[0] - 0.5), // x
-      bBox.height * (p[1] - 0.5), // y
+      bBox.width * (anchorX - 0.5), // x
+      bBox.height * (anchorY - 0.5), // y
     ];
 
     const anchorData = _.get(e.target.cfg, 'anchorData');
@@ -49,7 +54,7 @@ export default (anchor, group, p) => {
 
   anchor.on('drag', (e: IG6GraphEvent) => {
     const line = group.$getItem('dashed-line');
-    const node = group.getFirst() as INode;
+    const node = group.getFirst();
     const canvasBox = node.get('canvasBBox');
 
 
@@ -61,6 +66,7 @@ export default (anchor, group, p) => {
     const pointStart = line.get('pointStart');
 
     const graph = GraphUtil.getInstance().graph;
+    if (!graph) throw new Error('拖拽锚点时逻辑编辑器画布尚未初始化');
     const zoom = graph.getZoom();
 
     const endPoint = [(e.x - canvasBox.x - canvasBox.width / 2) / zoom, (e.y - canvasBox.y - diff) / zoom];
@@ -101,7 +107,7 @@ export default (anchor, group, p) => {
 
   anchor.on('dragend', (e: IG6GraphEvent) => {
     const item = group.$getItem('dashed-line');
-    item.remove();
+    item?.remove();
     anchorNodeId = null;
   });
 
@@ -123,4 +129,3 @@ export default (anchor, group, p) => {
     }
   });
 };
-

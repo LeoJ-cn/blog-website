@@ -61,7 +61,7 @@ export class TranslateRouterLinkNodeService extends TranslateBaseService {
     if (param_config_constOrVariable === ConstOrVariable_DTS.USE_VARIABLE) {
       const recordData = method.map_FromAnchorToSourceNode[paramsAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 路由跳转块 没有指定参数 “param变量”, 请检查图表连线！！！`)
+        throw new Error('异常: 路由跳转块没有连接“param变量”，请检查图表连线！！！')
       } else {
         // 获取参数依赖的变量
         _param = this.getParameterDependentVariable(recordData)
@@ -80,7 +80,7 @@ export class TranslateRouterLinkNodeService extends TranslateBaseService {
     if (query_config_constOrVariable === ConstOrVariable_DTS.USE_VARIABLE) {
       const recordData = method.map_FromAnchorToSourceNode[queryAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 路由跳转块 没有指定参数 “query变量”, 请检查图表连线！！！`)
+        throw new Error('异常: 路由跳转块没有连接“query变量”，请检查图表连线！！！')
       } else {
         // 获取参数依赖的变量
         _query = this.getParameterDependentVariable(recordData)
@@ -115,7 +115,6 @@ export class TranslateRouterLinkNodeService extends TranslateBaseService {
     this.result = result;
   }
 }
-
 
 
 

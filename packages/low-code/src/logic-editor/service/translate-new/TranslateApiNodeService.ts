@@ -38,7 +38,7 @@ export class TranslateApiNodeService extends TranslateBaseService {
       }
     )
 
-    let params = [];
+    const params: Array<{ param: string; type: 'variable'; value: string[] }> = [];
     const paramNodes = filter(
       nodeInfo.data.anchors,
       {
@@ -108,4 +108,3 @@ export class TranslateApiNodeService extends TranslateBaseService {
   }
 
 }
-

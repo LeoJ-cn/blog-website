@@ -12,6 +12,7 @@ import LOGIC_MESSAGE_NODE from './nodes/logic-message-node';
 import LOGIC_NET_NODE from './nodes/logic-net-node';
 import LOGIC_ROUTER_NODE from './nodes/logic-router-node';
 import LOGIC_START_NODE from './nodes/logic-start-node';
+import LOGIC_LIFECYCLE_NODE from './nodes/logic-lifecycle-node';
 import LOGIC_TRY_CATCH_NODE from './nodes/logic-try-catch-node';
 import LOGIC_VARIABLE_DETAIL_NODE from './nodes/logic-variable-detail-node';
 import LOGIC_VARIABLE_NODE from './nodes/logic-variable-node';
@@ -45,6 +46,7 @@ const registerNode: (G6: IG6) => void = (G6) => {
   // 注册方法节点
   LOGIC_BASE_NODE(G6);
   LOGIC_START_NODE(G6);
+  LOGIC_LIFECYCLE_NODE(G6);
   LOGIC_END_NODE(G6);
   LOGIC_NET_NODE(G6);
   LOGIC_FUNC_NODE(G6);

@@ -6,6 +6,7 @@ import {
   createLowCodeContext,
   type LowCodeCompatibilityContext,
   type GraphData,
+  type LogicEditorSavePayload,
   type Method,
 } from '@blog/low-code'
 import { ElButton } from 'element-plus'
@@ -77,21 +78,10 @@ function openLogicEditor() {
   context.store.set('ui_logic_visible', true)
 }
 
-function handleSave(value: GraphData) {
-  graphData.value = value
-  const method = methods.find((item) => item.id === initialMethod.id) || methods[0]
-  try {
-    const savedProcessData = method?.blockData || '[]'
-
-    try {
-      processData.value = JSON.stringify(JSON.parse(savedProcessData), null, 2)
-    } catch {
-      // 兼容迁移期的非 JSON blockData，避免保存成功后首页没有任何结果反馈。
-      processData.value = savedProcessData
-    }
-  } finally {
-    context.store.set('ui_logic_visible', false)
-  }
+function handleSave(payload: LogicEditorSavePayload) {
+  graphData.value = payload.graphData
+  processData.value = JSON.stringify(payload.processData, null, 2)
+  context.store.set('ui_logic_visible', false)
 }
 </script>
 

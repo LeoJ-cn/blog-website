@@ -105,7 +105,7 @@ export class TranslateNetNodeNodeService extends TranslateBaseService {
     if (url_config_constOrVariable === ConstOrVariable_DTS.USE_VARIABLE) {
       const recordData = method.map_FromAnchorToSourceNode[urlAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 网络请求块 没有指定参数 “地址”, 请检查图表连线！！！`)
+        throw new Error('异常: 网络请求块没有连接“地址”，请检查图表连线！！！')
       } else {
         // 获取参数依赖的变量
         _urlVar = this.getParameterDependentVariable(recordData)
@@ -125,7 +125,7 @@ export class TranslateNetNodeNodeService extends TranslateBaseService {
     if (params_config_constOrVariable === ConstOrVariable_DTS.USE_VARIABLE) {
       const recordData = method.map_FromAnchorToSourceNode[paramsAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 网络请求块 没有指定参数 “请求参数”, 请检查图表连线！！！`)
+        throw new Error('异常: 网络请求块没有连接“请求参数”，请检查图表连线！！！')
       } else {
         // 获取参数依赖的变量
         _params = this.getParameterDependentVariable(recordData)
@@ -145,7 +145,7 @@ export class TranslateNetNodeNodeService extends TranslateBaseService {
     if (header_config_constOrVariable === ConstOrVariable_DTS.USE_VARIABLE) {
       const recordData = method.map_FromAnchorToSourceNode[headerAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 网络请求块 没有指定参数 “请求头”, 请检查图表连线！！！`)
+        throw new Error('异常: 网络请求块没有连接“请求头”，请检查图表连线！！！')
       } else {
         // 获取参数依赖的变量
         _headers = this.getParameterDependentVariable(recordData)
@@ -165,7 +165,7 @@ export class TranslateNetNodeNodeService extends TranslateBaseService {
     if (stack_config_constOrVariable === ConstOrVariable_DTS.USE_VARIABLE) {
       const recordData = method.map_FromAnchorToSourceNode[stackAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 网络请求块 没有指定参数 “请求栈”, 请检查图表连线！！！`)
+        throw new Error('异常: 网络请求块没有连接“请求栈”，请检查图表连线！！！')
       } else {
         // 获取参数依赖的变量
         _stack = this.getParameterDependentVariable(recordData)
@@ -212,5 +212,4 @@ export class TranslateNetNodeNodeService extends TranslateBaseService {
     this.result = result;
   }
 }
-
 

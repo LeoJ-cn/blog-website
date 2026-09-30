@@ -91,7 +91,8 @@ export class ShowMessageNode extends ProcessBaseNode<ShowMessageAttrs> {
     let enText = 'No data';
 
     if (attrs.messageType) {
-      text = '提醒类型: ' + messageTypeList.find((i) => i.value === attrs.messageType).label + '\n提醒文字: ';
+      const messageType = messageTypeList.find((i) => i.value === attrs.messageType);
+      text = '提醒类型: ' + (messageType?.label ?? attrs.messageType) + '\n提醒文字: ';
       enText = 'type: ' + attrs.messageType + '\nmessage: ';
     }
 
@@ -111,4 +112,3 @@ export class ShowMessageNode extends ProcessBaseNode<ShowMessageAttrs> {
   }
 
 }
-

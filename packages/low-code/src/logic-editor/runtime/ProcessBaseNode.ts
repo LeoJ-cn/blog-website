@@ -23,8 +23,8 @@ export abstract class ProcessBaseNode<T extends Object> {
   public constructor(options: ProcessBaseNodeOptions<T>) {
     this.attrs = options.attrs || (options.component && (options.component.data as any));
     this.dataList = options.dataList || [];
-    this.renderTree = options.renderTree;
-    this.component = options.component;
+    this.renderTree = options.renderTree ?? { data: {}, children: [] };
+    this.component = options.component ?? { data: {}, children: [] };
   }
 
   /**
@@ -84,7 +84,7 @@ export abstract class ProcessBaseNode<T extends Object> {
    * @param type
    * @param value
    */
-  public createSimpleProcessData(type: string, value?: any, options: any = {}): SimpleProcessData | undefined {
+  public createSimpleProcessData(type: string, value?: any, options: any = {}): SimpleProcessData {
     let node: any = {
       id: this.generateId(),
       value: {},
@@ -140,7 +140,7 @@ export abstract class ProcessBaseNode<T extends Object> {
         }
         const variableId = value[0];
         if (!variableId) {
-          return undefined;
+          throw new Error('创建变量过程数据失败：变量路径不能为空');
         }
         const variable = variableId.length === 32;
         if (variable && !options.schema) {
@@ -237,12 +237,12 @@ export abstract class ProcessBaseNode<T extends Object> {
         node.value.value = value;
         break;
       default:
-        return;
+        throw new Error(`创建过程数据失败：不支持的类型 ${type}`);
     }
     return node;
   }
 
-  protected value2SimpleProcessData(value: any) {
+  protected value2SimpleProcessData(value: any): SimpleProcessData | undefined {
     if (Array.isArray(value)) {
       return this.createSimpleProcessData(
         'array',
@@ -288,8 +288,9 @@ export abstract class ProcessBaseNode<T extends Object> {
       result[item.type].splice(0, 0, item.id);
 
       if (item.value) {
-        Object.keys(item.value).forEach((key) => {
-          const value = item.value[key];
+        const itemValue = item.value;
+        Object.keys(itemValue).forEach((key) => {
+          const value = itemValue[key];
           if (!value || typeof value !== 'object') {
             return;
           }
@@ -319,8 +320,9 @@ export abstract class ProcessBaseNode<T extends Object> {
       if (!item.value) {
         return;
       }
-      Object.keys(item.value).forEach((key) => {
-        const value = item.value[key];
+      const itemValue = item.value;
+      Object.keys(itemValue).forEach((key) => {
+        const value = itemValue[key];
         if (!value || typeof value !== 'object') {
           return;
         }
@@ -372,7 +374,7 @@ export abstract class ProcessBaseNode<T extends Object> {
   }
 
   public getRenderTreeMaxId(renderTree: ComponentTree): number {
-    let maxId = renderTree.id;
+    let maxId = renderTree.id ?? 0;
 
     renderTree.children.forEach((child) => {
       const id = this.getRenderTreeMaxId(child);
@@ -539,6 +541,7 @@ export abstract class ProcessBaseNode<T extends Object> {
     if (!data) {
       return undefined;
     }
+    if (!data.schema) return undefined;
     return this.getSchemaByPath(data.schema, variable.slice(1));
   }
 
@@ -546,8 +549,10 @@ export abstract class ProcessBaseNode<T extends Object> {
    * 获取多语言列表
    */
   public getLocaleList() {
-    const extra1 = PageCenter.cur_page && PageCenter.cur_page.extra1;
-    const pageUuid = JSON.parse(extra1).page_uuid;
+    const extra1 = PageCenter.cur_page?.extra1;
+    if (!extra1) return [];
+    const pageUuid = JSON.parse(extra1).page_uuid as string | undefined;
+    if (!pageUuid) return [];
     return PageCenter.localeManager.getPageLocaleArray(pageUuid);
   }
 

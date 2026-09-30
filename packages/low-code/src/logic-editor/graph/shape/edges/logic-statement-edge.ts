@@ -1,5 +1,6 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
-import { IG6, IIGroup, INodeConfig } from '../../../interface';
+import type { IGroup, ModelConfig } from '@antv/g6';
+import { IG6, IIGroup } from '../../../interface';
 import itemEvents from '../../behavior/item-event';
 
 export const LOGIC_STATEMENT_EDGE = 'logic-statement-edge';
@@ -34,11 +35,9 @@ export default (G6: IG6) => {
   G6.registerEdge(
     LOGIC_STATEMENT_EDGE,
     {
-      draw(cfg: INodeConfig, group: IIGroup) {
-        let start: any, end: any;
-        start = cfg.startPoint;
-        end = cfg.endPoint;
-        let path = getPath(start, end);
+      draw(cfg?: ModelConfig, group?: IGroup) {
+        if (!cfg?.startPoint || !cfg.endPoint || !group) throw new Error('语句连线缺少端点或图形容器');
+        const path = getPath(cfg.startPoint, cfg.endPoint);
 
         const keyShape = group.addShape('path', {
           attrs: {
@@ -52,17 +51,20 @@ export default (G6: IG6) => {
         });
         return keyShape;
       },
-      afterDraw(cfg: INodeConfig, group: IIGroup) {
-        const shape = group.get('children')[0];
+      afterDraw(_cfg?: ModelConfig, group?: IGroup) {
+        if (!group) throw new Error('语句连线缺少图形容器');
+        const edgeGroup = group;
+        const shape = edgeGroup.get('children')[0];
+        if (!shape) throw new Error('语句连线缺少主路径图形');
         shape.hide();
 
         const width = 10;
         const height = 10;
         const length = shape.getTotalLength();
         const step = 1;
-        let last;
+        let last: { x: number; y: number } | undefined;
 
-        function next(cur) {
+        function next(cur: number): void {
           const p = shape.getPoint(cur / length);
 
           if (last && p) {
@@ -71,7 +73,7 @@ export default (G6: IG6) => {
               let x = last.x - width / 2;
               let y = last.y - height / 2;
 
-              const shape = group.addShape('image', {
+              const shape = edgeGroup.addShape('image', {
                 attrs: {
                   x,
                   y,
@@ -108,19 +110,21 @@ export default (G6: IG6) => {
           'edgeState:selected',
           'edgeState:hover',
         ];
+        if (!item || !name || value === undefined) return;
         const group = item.getContainer();
 
         if (group.get('destroyed')) return;
         if (buildInEvents.includes(name)) {
           // 内部this绑定到了当前item实例
-          itemEvents[name].call(this, value, group);
+          const handler = itemEvents[name];
+          if (handler) handler.call(this, value, group as IIGroup);
         } else if (this.stateApplying) {
           this.stateApplying.call(this, name, value, item);
         } else {
           console.warn(`warning: edge ${name} 事件回调未注册!`);
         }
       },
-      update: null, // 发生变化时候,强制重新渲染
+      update: undefined, // 发生变化时候,强制重新渲染
     },
     'cubic',
   );

@@ -16,7 +16,7 @@ export default defineComponent({
     methodList: { type: Array as PropType<Method[]>, default: () => [] },
     allDatas: { type: Array as PropType<Data[]>, default: () => [] },
   },
-  emits: ['select-node'],
+  emits: ['select-node', 'confirm'],
   data() {
     return { context: useLowCodeContext() }
   },

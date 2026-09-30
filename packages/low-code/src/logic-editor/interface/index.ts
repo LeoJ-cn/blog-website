@@ -1,18 +1,19 @@
 /* 历史协议使用 `{}` 表示非 nullish 的兜底值，不能收窄为 object 或 unknown。 */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { IShape } from '@antv/g-base/src/interfaces';
-import { ShapeAttrs } from '@antv/g-canvas';
-import G6, { IGroup, Item, ModelConfig, UpdateType } from '@antv/g6';
-import { NodeConfig } from '@antv/g6-core/lib/types';
-import { CallApiProcessNodeFrontAttrApi } from '../../types/api';
+import type { IShape, ShapeAttrs } from '@antv/g-base';
+import G6, { type IGroup, type Item, type ModelConfig, type NodeConfig, type UpdateType } from '@antv/g6';
+import type { MethodRecord } from '../../types/records';
 import { AnchorBaseConfig_DTS, BlockNames_DTS } from '../service/interface';
+
+export { assertNodeConfig, isNodeConfig } from './node-config-guard';
 
 export type IG6 = typeof G6;
 
 export type AnchorItem = [number, number, AnchorItemCfg];
 
 export type IIGroup = IGroup & {
-  $getItem: (className: string) => IShape;
+  /** 按类名查找节点内部图形；拖拽辅助图形尚未创建或已被清理时返回 undefined。 */
+  $getItem: (className: string) => IShape | undefined;
   getAllAnchors: (className: string) => IShape[];
   getAnchor: (index: number) => IShape[];
   getAllAnchorBg: () => IShape[];
@@ -25,36 +26,37 @@ export type IIGroup = IGroup & {
   [key: string]: any;
 };
 
-export type IShapeOptions = Partial<{
+export type IShapeOptions<T extends NodeConfigDataUnion = {}> = Partial<{
   itemType: string;
   shapeType: string;
-  draw: (cfg?: ModelConfig, group?: IIGroup) => IShape;
-  drawShape: (cfg: ModelConfig, group: IIGroup) => IShape;
+  draw: (cfg: IModelConfig<T>, group: IIGroup) => IShape;
+  drawShape: (cfg: IModelConfig<T>, group: IIGroup) => IShape;
   afterDraw: (cfg?: ModelConfig, group?: IIGroup, rst?: IShape) => void;
   afterUpdate: (cfg?: ModelConfig, item?: Item) => void;
   setState: (name?: string, value?: string | boolean, item?: Item) => void;
-  getAnchorPoints: (cfg?: ModelConfig) => AnchorBaseConfigWithPosition[] | undefined;
+  getAnchorPoints: (cfg: IModelConfig<T>) => AnchorBaseConfigWithPosition[] | undefined;
   update: (cfg: ModelConfig, item: Item, updateType?: UpdateType) => void;
 
-  calcNodeHeight: (cfg?: INodeConfig) => void;
-  assembleShape: (cfg?: INodeConfig, group?: IIGroup) => void;
-  getShapeStyle: (cfg: IModelConfig) => void;
-  initAnchor: (cfg: IModelConfig, group: IIGroup) => void;
-  drawAnchor: (cfg: IModelConfig, group: IIGroup) => void;
+  calcNodeHeight: (cfg: INodeConfig<T>) => void;
+  assembleShape: (cfg: IModelConfig<T>, group: IIGroup) => void;
+  getShapeStyle: (cfg: IModelConfig<T>) => ShapeAttrs;
+  initAnchor: (cfg: IModelConfig<T>, group: IIGroup) => void;
+  drawAnchor: (cfg: IModelConfig<T>, group: IIGroup) => void;
   getNodeAnchorBg: (options: {
-    cfg: IModelConfig;
+    cfg: IModelConfig<T>;
     group: IIGroup;
     x: number;
     y: number;
     anchorIdx: number;
-    position: number[];
+    position: AnchorBaseConfigWithPosition;
   }) => IShape;
+  stateApplying: (name?: string, value?: string | boolean, item?: Item) => void;
 }>;
 
-export interface IModelConfig extends ModelConfig {
+/** G6 渲染阶段的完整节点模型；进入 shape 回调前必须已经完成节点协议校验。 */
+export interface IModelConfig<T extends NodeConfigDataUnion = {}> extends INodeConfig<T> {
   nodeWidth: number;
   nodeHeight: number;
-  data: INodeConfig;
 }
 
 export enum AnchorTag {
@@ -90,7 +92,7 @@ export interface LogicCategoryItem {
   type: BlockNames_DTS | string; // 节点名称
   label: string; // 节点中文名称
   name?: string; // 节点英文名称
-  img: string; // 节点icon
+  img?: string; // 动态方法/变量节点可沿用节点类型图标，因此不强制提供独立图标。
   meta?: INodeConfig; // 节点配置
 }
 
@@ -128,6 +130,7 @@ export type NodeConfigDataUnion =
   | IMethodRef
   | IPagePassValue
   | IGetLocalLan
+  | IApiConfig
   | {};
 
 export interface IGetLocalLan {
@@ -230,29 +233,33 @@ export interface IFuncNodeConfig {
 }
 
 export interface IApiConfig {
-  api: CallApiProcessNodeFrontAttrApi;
+  api: MethodRecord;
 }
 
-export type INodeConfig<T extends NodeConfigDataUnion = {}> = Partial<
-  {
-    type: BlockNames_DTS | string; // 节点类型
-    nodeWidth: number; // 节点宽度
-    nodeHeight: number; // 节点高度
-    label: string; // 标题中文名称
-    name: string; // 标题英文名称
-    img: string; // 节点icon图标
-    operations: string[]; // 操作按钮 'help' | 'detail'
-    data: NodeConfigData<T>;
-  } & NodeConfig
->;
+export type INodeConfig<T extends NodeConfigDataUnion = {}> = NodeConfig & {
+  /** 持久化节点类型或 G6 注册名，不能为空字符串。 */
+  type: BlockNames_DTS | string;
+  /** 节点业务数据；外部输入通过守卫后，内部调用方可依赖该字段存在。 */
+  data: NodeConfigData<T>;
+  nodeWidth?: number;
+  nodeHeight?: number;
+  label?: string;
+  name?: string;
+  img?: string;
+  /** 节点标题栏操作标识，例如 `help` 或 `detail`。 */
+  operations?: string[];
+};
 
-export type NodeConfigData<T extends NodeConfigDataUnion = {}> = T extends infer U
-  ? U & {
+export type NodeConfigData<T extends NodeConfigDataUnion = {}> = T & {
+    /**
+     * 节点完整锚点表；数组顺序与 `anchor.index` 协议一致，连接边通过该索引定位锚点。
+     */
     anchors: AnchorBaseConfig_DTS[];
+    /** 展开变量详情节点时记录来源节点 ID；普通节点不设置。 */
     _origin_node_id?: string;
+    /** 展开变量详情节点时记录来源锚点索引；从 0 开始，普通节点不设置。 */
     _origin_anchor_index?: number;
-  }
-  : never;
+};
 
 export interface IPositon {
   x: number;

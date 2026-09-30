@@ -1,16 +1,14 @@
 import { LOGIC_STATEMENT_EDGE } from './../graph/shape/edges/logic-statement-edge';
-import { EdgeConfig, IEdge, IShapeBase } from '@antv/g6';
-import { INode } from '@antv/g6-core/lib/interface/item';
-import { IG6GraphEvent, Item } from '@antv/g6-core/lib/types';
+import type { EdgeConfig, IEdge, IG6GraphEvent, INode, IShapeBase, Item } from '@antv/g6';
 import _ from 'lodash';
 import { DataType, Schema } from '../../types/data';
 import { Method } from '../../types/method';
 import methodMixin from '../compat/method';
 import { createEdgeModel, getNodeModel, isClickApiHelper, isClickMethodDetial, isVariableNode } from '../graph/util';
-import { AnchorTag, IApiConfig, IFuncNodeConfig, IIGroup, INodeConfig, IPositon, StageMode } from '../interface';
+import { IApiConfig, IFuncNodeConfig, IIGroup, INodeConfig, IPositon, StageMode, assertNodeConfig } from '../interface';
 // Vue 3 Options API 组件实例由事件层按原字段协议访问；运行时不依赖组件构造函数。
 type LogicEditorStage = any;
-import { BlockNames_DTS, ConstOrVariable_DTS } from './../service/interface';
+import { AnchorTag_DTS, BlockNames_DTS, ConstOrVariable_DTS } from './../service/interface';
 import { NodeConfigServicesFactory } from './config-builder/node-config-services-factory';
 import dataMixin from '../compat/data';
 import { LOGIC_VARIABLE_EDGE } from '../graph/shape/edges/logic-variable-edge';
@@ -37,15 +35,7 @@ export async function addNode(vm: LogicEditorStage, transferData: string, positi
  * 保存当前方法详情的图数据
  */
 export function saveCurMethodDetialGraphData(vm: LogicEditorStage) {
-  if (vm.stageMode === StageMode.METHOD_DETAIL) {
-    // 方法详情
-    const methodGraphDarta = vm.graph.save();
-    const curEditMethod = vm.curEditMethod; // 当前编辑的方法
-    methodMixin.changeMethodById(curEditMethod.id, {
-      ...curEditMethod,
-      graphData: JSON.stringify(methodGraphDarta),
-    });
-  }
+  if (vm.stageMode === StageMode.METHOD_DETAIL) vm.persistCurrentMethodGraph();
 }
 
 /**
@@ -66,6 +56,7 @@ export function onAfterNodeSelectedDrop(vm: LogicEditorStage, e: IG6GraphEvent) 
           vm.methodList,
           (m: Method) => m.id === (vm.curSelectedNodeConfig as INodeConfig<IFuncNodeConfig>).data.funcId,
         );
+        if (!method) throw new Error(`找不到方法节点对应的方法 ${(model as INodeConfig<IFuncNodeConfig>).data.funcId}`);
         vm.curEditMethod = _.cloneDeep(method);
         methodMixin.changeCurMethodId(method.id); // 全局记录一下当前编辑的方法ID
         methodMixin.changeCurMethod(vm.curEditMethod); // 这个方法内部会读取当前编辑的方法id,所以要先设置方法id
@@ -169,7 +160,7 @@ export function onCanvasClick(vm: LogicEditorStage) {
 }
 
 export function onCanvasMouseLeave(vm: LogicEditorStage, e: IG6GraphEvent) {
-  vm.graph.getNodes().forEach((node) => {
+  vm.graph.getNodes().forEach((node: INode) => {
     const group = node.getContainer() as IIGroup;
     group.clearAnchor();
     node.clearStates('anchorActived');
@@ -197,7 +188,10 @@ export function onBeforeEdgeAdd(
   const { source, target, sourceAnchor, targetAnchor } = data;
   // const sourceAnchorData = ((source as INode).getContainer() as IIGroup).getAllAnchorBg()[sourceAnchor as number]
   //   .cfg.anchorData;
-  const sourceAnchorData = (source._cfg.model.data as any).anchors[sourceAnchor];
+  const sourceModel = source.getModel();
+  assertNodeConfig(sourceModel, '新增连线的来源节点');
+  const sourceAnchorData = sourceModel.data.anchors[sourceAnchor];
+  if (!sourceAnchorData) throw new Error(`来源节点 ${sourceModel.id} 不存在锚点 ${sourceAnchor}`);
   const targetAnchorData = ((target as any).getContainer() as IIGroup).getAllAnchorBg()[targetAnchor as number].cfg
     .anchorData;
 
@@ -217,7 +211,7 @@ export function onBeforeEdgeAdd(
     return;
   }
   // ! 数据类型，type相同才可以连接
-  if (sourceAnchorData.tag === AnchorTag.VAR_OUTPUT && targetAnchorData.tag === AnchorTag.VAR_INPUT) {
+  if (sourceAnchorData.tag === AnchorTag_DTS.VAR_OUTPUT && targetAnchorData.tag === AnchorTag_DTS.VAR_INPUT) {
     if ([sourceAnchorData.data.type, targetAnchorData.data.type].includes('undefined')) {
     } else {
       if (sourceAnchorData.data.type !== targetAnchorData.data.type) {
@@ -226,7 +220,7 @@ export function onBeforeEdgeAdd(
     }
   }
 
-  const isStatement = sourceAnchorData.tag === AnchorTag.STATEMENT_OUTPUT;
+  const isStatement = sourceAnchorData.tag === AnchorTag_DTS.STATEMENT_OUTPUT;
   if (!isStatement && targetAnchorData.data.constOrVariable) {
     targetAnchorData.data.constOrVariable = ConstOrVariable_DTS.USE_VARIABLE;
   }
@@ -253,6 +247,7 @@ export function onBeforeEdgeAdd(
   targetCfg.data.anchors[targetAnchor].connected = true;
   source.update(sourceCfg);
   target.update(targetCfg);
+  saveCurMethodDetialGraphData(vm);
 }
 
 export function onAfterEdgeSelected(vm: LogicEditorStage, e: IG6GraphEvent) {
@@ -291,6 +286,10 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
 
   const graph = vm.graph;
   const model = e.item.get<INodeConfig>('model');
+  if (model.x === undefined || model.y === undefined) {
+    throw new Error(`节点 ${model.id} 缺少展开详情所需的坐标`);
+  }
+  const modelPosition = { x: model.x, y: model.y };
   const isVariableNodeClick = isVariableNode(model.type as BlockNames_DTS);
   const isVarDetialNodeClick = BlockNames_DTS.LOGIC_VARIABLE_DETIAL_NODE === model.type;
   const isArrayForeachItem = BlockNames_DTS.LOGIC_ARRAY_FOREACH_NODE === model.type && shape.get('name') === 'item';
@@ -304,12 +303,10 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
     if (graph.findById(model.id + '_' + objectConfig.name)) {
       return;
     }
+    if (!nodeConfigService.getVarDetialConfig) throw new Error('变量详情节点缺少配置生成方法');
     const detailConfig = nodeConfigService.getVarDetialConfig({
       parent_node_id: model.id,
-      parent_node_position: {
-        x: model.x,
-        y: model.y,
-      },
+      parent_node_position: modelPosition,
       parent_node_config: {
         _origin_node_id: objectConfig._origin_node_id || model.data._origin_node_id,
         _origin_anchor_index: objectConfig._origin_anchor_index || model.data._origin_anchor_index,
@@ -357,10 +354,11 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
     shape.get('name') === 'return'
   ) {
     const method = methodMixin.getMethodById((model.data as any).funcId);
-    if (method.funcReturn.state && method.funcReturn.type === DataType.Object) {
+    if (method?.funcReturn?.state && method.funcReturn.type === DataType.Object && method.funcReturn.schema) {
       let value = {};
       try {
-        value = JSON.parse(dataMixin.getDefaultValueJSONFromSchema(method.funcReturn.schema as any));
+        const defaultValue = dataMixin.getDefaultValueJSONFromSchema(method.funcReturn.schema as Schema);
+        if (defaultValue !== undefined) value = JSON.parse(defaultValue);
       } catch (error) {}
       // 根据该锚点挂载的数据生成数据详情块的nodeConfig配置
       addVariableDetail(
@@ -409,7 +407,8 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
     if (realization && realization.returnSchema.type === DataType.Object) {
       let value = {};
       try {
-        value = JSON.parse(dataMixin.getDefaultValueJSONFromSchema(realization.returnSchema));
+        const defaultValue = dataMixin.getDefaultValueJSONFromSchema(realization.returnSchema);
+        if (defaultValue !== undefined) value = JSON.parse(defaultValue);
       } catch (error) {}
       // 根据该锚点挂载的数据生成数据详情块的nodeConfig配置
       addVariableDetail(
@@ -446,14 +445,12 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
 
   const addCreateObject = (config: { name: string; label: string; value: any; schema: Schema }) => {
     const nodeConfigService = NodeConfigServicesFactory.getINodeConfigService(BlockNames_DTS.LOGIC_CREATE_OBJECT_NODE);
+    if (!nodeConfigService.getVarDetialConfig) throw new Error('创建对象节点缺少配置生成方法');
     const detailConfig = nodeConfigService.getVarDetialConfig({
       parent_node_id: model.id,
-      parent_node_position: {
-        x: model.x,
-        y: model.y,
-      },
+      parent_node_position: modelPosition,
       parent_node_config: {
-        _route_path: undefined,
+        _route_path: '',
         name: config.name,
         label: config.label,
         value: config.value,
@@ -487,12 +484,14 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
     const method = methodMixin.getMethodById((model.data as any).funcId);
     const param = method && method.parameters.find((i) => i.name === shape.get('key'));
     if (param && param.type === DataType.Object) {
-      let value = {};
+      let value: unknown = {};
       try {
-        value = dataMixin.getDefaultValueJSONFromSchema(param.schema);
+        value = dataMixin.getDefaultValueJSONFromSchema(param.schema) ?? {};
       } catch (error) {}
       // 根据该锚点挂载的数据生成数据详情块的nodeConfig配置
-      addCreateObject({ label: param.label, name: param.name, value, schema: param.schema });
+      if (param.label && param.name && param.schema) {
+        addCreateObject({ label: param.label, name: param.name, value, schema: param.schema });
+      }
     }
   }
   // 结束节点返回值展开
@@ -502,12 +501,18 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
     shape.get('name') === 'return'
   ) {
     const returnAnchor = model.data.anchors[1];
-    if (returnAnchor && returnAnchor.data.type === DataType.Object) {
+    if (
+      returnAnchor &&
+      returnAnchor.data.type === DataType.Object &&
+      returnAnchor.data.label &&
+      returnAnchor.data.name &&
+      returnAnchor.data.schema
+    ) {
       // 根据该锚点挂载的数据生成数据详情块的nodeConfig配置
       addCreateObject({
         label: returnAnchor.data.label,
         name: returnAnchor.data.name,
-        value: dataMixin.getDefaultValueJSONFromSchema(returnAnchor.data.schema),
+        value: dataMixin.getDefaultValueJSONFromSchema(returnAnchor.data.schema) ?? {},
         schema: returnAnchor.data.schema,
       });
     }
@@ -519,14 +524,15 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
     shape.get('name') === 'param'
   ) {
     const params = JSON.parse((model as INodeConfig<IApiConfig>).data.api.props) || [];
-    const param = params.find((i) => i.key === shape.get('key'));
+    const param = params.find((i: { key?: string }) => i.key === shape.get('key'));
     if (param && param.schema.type === DataType.Object) {
       let value = {};
       try {
         if (param.value) {
           value = JSON.parse(param.value);
         } else {
-          value = JSON.parse(dataMixin.getDefaultValueJSONFromSchema(param.schema));
+          const defaultValue = dataMixin.getDefaultValueJSONFromSchema(param.schema);
+          if (defaultValue !== undefined) value = JSON.parse(defaultValue);
         }
       } catch (error) {}
       // 根据该锚点挂载的数据生成数据详情块的nodeConfig配置
@@ -581,6 +587,7 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
         vm.methodList,
         (m: Method) => m.id === (vm.curSelectedNodeConfig as INodeConfig<IFuncNodeConfig>).data.funcId,
       );
+      if (!method) throw new Error(`找不到方法节点对应的方法 ${model.data.funcId}`);
       vm.curEditMethod = _.cloneDeep(method);
       methodMixin.changeCurMethodId(method.id); // 全局记录一下当前编辑的方法ID
       methodMixin.changeCurMethod(vm.curEditMethod); // 这个方法内部会读取当前编辑的方法id,所以要先设置方法id
@@ -588,6 +595,7 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
       vm.$emit('select-node', null);
     }
   }
+  saveCurMethodDetialGraphData(vm);
 }
 
 export function handleKeydown(vm: LogicEditorStage, e: IG6GraphEvent) {
@@ -633,8 +641,12 @@ export function onBeforeItemDelete(item: Item) {
   };
 
   const graph = GraphUtil.getInstance().graph;
+  if (!graph) throw new Error('删除图元素时逻辑编辑器画布尚未初始化');
   const updateAnchorStatusByEdge = (edge: IEdge) => {
     const { source, sourceAnchor, target, targetAnchor } = edge.getModel() as EdgeConfig;
+    if (typeof source !== 'string' || typeof target !== 'string') {
+      throw new Error(`删除边 ${edge.getID()} 时缺少有效的 source 或 target`);
+    }
     const sourceNode = graph.findById(source) as INode;
     const targetNode = graph.findById(target) as INode;
 
@@ -657,5 +669,6 @@ export function onBeforeItemDelete(item: Item) {
 }
 
 export function beforeAnchorShow(vm: LogicEditorStage, e: IG6GraphEvent) {
+  if (!e.item) throw new Error('显示锚点事件缺少目标节点');
   e.item.setState('anchorShow', vm.stageMode !== StageMode.VARIABLE_LIST);
 }

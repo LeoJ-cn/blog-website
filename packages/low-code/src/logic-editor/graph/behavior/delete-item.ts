@@ -1,6 +1,10 @@
 import { IG6 } from '../../interface';
-import { IG6GraphEvent, Item } from '@antv/g6-core/lib/types';
-import { Graph, IGraph } from '@antv/g6';
+import { Graph, type IG6GraphEvent, type Item } from '@antv/g6';
+
+interface DeleteItemBehavior {
+  graph: Graph;
+  shouldBegin: (e?: IG6GraphEvent) => boolean;
+}
 
 export default (G6: IG6) => {
   G6.registerBehavior('delete-item', {
@@ -9,11 +13,11 @@ export default (G6: IG6) => {
         'keydown': 'onKeydown',
       };
     },
-    shouldBegin(e: IG6GraphEvent) {
+    shouldBegin(_e?: IG6GraphEvent) {
       return true;
     },
-    onKeydown(e: IG6GraphEvent) {
-      const graph = this.graph as Graph;
+    onKeydown(this: DeleteItemBehavior, e: IG6GraphEvent) {
+      const graph = this.graph;
       // if (graph.cfg.canvas.cfg.el.getAttribute('isFocused') !== 'true') return;
       if (!this.shouldBegin(e)) return;
       /**
@@ -28,7 +32,7 @@ export default (G6: IG6) => {
 
           graph.emit('before-node-removed', {
             target: $node,
-            callback(confirm) {
+            callback(confirm: boolean) {
               if (confirm) {
                 graph.remove($node);
                 graph.set('after-node-selected', []);
@@ -47,7 +51,7 @@ export default (G6: IG6) => {
 
           graph.emit('before-edge-removed', {
             target: $edge,
-            callback(confirm) {
+            callback(confirm: boolean) {
               if (confirm) {
                 graph.remove($edge);
                 graph.set('after-edge-selected', []);
@@ -62,4 +66,3 @@ export default (G6: IG6) => {
     },
   });
 };
-

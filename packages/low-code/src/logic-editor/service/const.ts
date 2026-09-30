@@ -90,6 +90,32 @@ export const LogicBlockBaseTplMap: LogicBlockBaseTplMap_DTS = {
       },
     },
   },
+  [BlockNames_DTS.LOGIC_LIFECYCLE_NODE]: {
+    label: '生命周期',
+    anchors: {
+      '0': {
+        tag: AnchorTag_DTS.STATEMENT_OUTPUT,
+        index: 0,
+        nodeId: '',
+        connected: false,
+        data: { label: '页面创建时', value: 'created', type: DataType.Function },
+      },
+      '1': {
+        tag: AnchorTag_DTS.STATEMENT_OUTPUT,
+        index: 1,
+        nodeId: '',
+        connected: false,
+        data: { label: '页面加载时', value: 'mounted', type: DataType.Function },
+      },
+      '2': {
+        tag: AnchorTag_DTS.STATEMENT_OUTPUT,
+        index: 2,
+        nodeId: '',
+        connected: false,
+        data: { label: '页面销毁时', value: 'destroyed', type: DataType.Function },
+      },
+    },
+  },
   [BlockNames_DTS.LOGIC_FUNC_NODE]: {
     label: '自定义方法',
     anchors: {

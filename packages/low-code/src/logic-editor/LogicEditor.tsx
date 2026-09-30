@@ -2,7 +2,8 @@ import { ElButton, ElDrawer, ElRadioButton, ElRadioGroup } from 'element-plus'
 import { defineComponent, type PropType } from 'vue'
 import type { GraphData } from '@antv/g6'
 import type { LowCodeCompatibilityContext } from '../compatibility/types'
-import { createLowCodeContext, provideLowCodeContext } from '../compatibility/context'
+import type { LogicEditorSavePayload } from '../types/logic-editor'
+import { provideLowCodeContext } from '../compatibility/context'
 import { GraphUtil } from './graph/graph-util'
 import type { INodeConfig } from './interface'
 import { StageMode } from './interface'
@@ -28,6 +29,8 @@ export default defineComponent({
       mode: 'method' as 'method' | 'variable',
       curSelectedNodeConfig: null as INodeConfig | null,
       preStageMode: StageMode.METHOD_LIST,
+      stage: null as InstanceType<typeof LogicEditorStage> | null,
+      saving: false,
     }
   },
   computed: {
@@ -40,9 +43,6 @@ export default defineComponent({
     allDatas() {
       return this.context.data
     },
-  },
-  created() {
-    createLowCodeContext(this.context)
   },
   methods: {
     watchCurPageUuid(uuid: string) {
@@ -63,8 +63,15 @@ export default defineComponent({
       this.$emit('select-node', node)
     },
     radioChange(mode: 'method' | 'variable') {
-      if (mode === 'method') this.stageMode = this.preStageMode
-      else {
+      if (mode === this.mode) return
+
+      this.mode = mode
+      if (mode === 'method') {
+        this.stageMode = [StageMode.METHOD_LIST, StageMode.METHOD_DETAIL].includes(this.preStageMode)
+          ? this.preStageMode
+          : StageMode.METHOD_LIST
+      } else {
+        // 只记录方法相关阶段，避免重复选择变量后把返回目标覆盖为变量阶段。
         this.preStageMode = this.stageMode
         this.stageMode = StageMode.VARIABLE_LIST
       }
@@ -75,9 +82,18 @@ export default defineComponent({
       this.$emit('change-graph', stageMode)
       if (graphData) this.$emit('update:modelValue', graphData)
     },
-    saveLogicData() {
-      this.context.dispatcher.trigger('@idg/gui/logic/save')
-      this.$emit('save', this.modelValue)
+    async saveLogicData() {
+      if (this.saving || !this.stage) return
+      this.saving = true
+      try {
+        const payload: LogicEditorSavePayload = await this.stage.save()
+        this.$emit('save', payload)
+        this.context.feedback.success('方法更新成功')
+      } catch (error) {
+        this.context.feedback.error(error instanceof Error ? error.message : String(error))
+      } finally {
+        this.saving = false
+      }
     },
     easyLayout() {
       this.context.dispatcher.trigger('@idg/gui/logic/layout')
@@ -93,18 +109,25 @@ export default defineComponent({
           header: () => (
             <div class={style.drawerHeader}>
               <h2>{this.context.translate('logicEditor.title')}</h2>
-              <ElRadioGroup modelValue={this.mode} onChange={this.radioChange}>
+              <ElRadioGroup
+                modelValue={this.mode}
+                onUpdate:modelValue={(value) => this.radioChange(value as 'method' | 'variable')}
+              >
                 <ElRadioButton value="method">{this.context.translate('logicEditor.methodList')}</ElRadioButton>
                 <ElRadioButton value="variable">{this.context.translate('logicEditor.variableView')}</ElRadioButton>
               </ElRadioGroup>
-              <ElButton type="primary" onClick={this.saveLogicData}>{this.context.translate('save')}</ElButton>
+              <ElButton type="primary" loading={this.saving} disabled={this.saving} onClick={this.saveLogicData}>
+                {this.context.translate('save')}
+              </ElButton>
             </div>
           ),
           default: () => (
             <div class={style.drawerContent}>
               <LogicEditorLeftBar stageMode={this.stageMode} methodList={this.methodList} allDatas={this.allDatas} />
               <LogicEditorStage
+                ref={(instance) => { this.stage = instance as InstanceType<typeof LogicEditorStage> | null }}
                 modelValue={this.modelValue}
+                visible={this.visible}
                 stageMode={this.stageMode}
                 methodList={this.methodList}
                 allDatas={this.allDatas}

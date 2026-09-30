@@ -36,7 +36,7 @@ export class TranslateStartNodeService extends TranslateBaseService {
           console.error(`异常: 开始块的第 ${varoutput.index} 个锚点配置有问题， 没有配置 出参 的name，请检查！！！`)
           return;
         }
-        const varRecordVal = [varoutput.data.name]
+        const varRecordVal = [_var]
         this.setVar(method.nodeId, varRecordKey, varRecordVal) // 记录临时变量
       })
     }
@@ -45,4 +45,3 @@ export class TranslateStartNodeService extends TranslateBaseService {
   }
 
 }
-

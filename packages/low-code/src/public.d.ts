@@ -1,6 +1,7 @@
 import type { GraphData } from '@antv/g6'
 import type { DefineComponent } from 'vue'
 import type { LowCodeCompatibilityContext } from './compatibility/types'
+import type { SimpleProcessData } from './types/process'
 
 export const LogicEditor: DefineComponent<{
   modelValue: GraphData
@@ -10,6 +11,7 @@ export const LogicEditor: DefineComponent<{
 export class LogicEditorService {
   constructor(graphData: GraphData, rootMethodId: string)
   blockly: string
+  processData: SimpleProcessData[]
   translateErrorList: unknown[]
 }
 
@@ -20,12 +22,14 @@ export type {
   LowCodeControllerAdapter,
   LowCodeDispatcherAdapter,
   LowCodeFeedbackAdapter,
+  LowCodeLogicNodeRecord,
   LowCodeStoreAdapter,
 } from './compatibility/types'
 export type { Data } from './types/data'
 export { DataCategory, DataType } from './types/data'
 export type { Method } from './types/method'
 export { MethodType, MethodWatchType } from './types/method'
+export type { LogicEditorGraphSnapshot, LogicEditorSavePayload } from './types/logic-editor'
 export type { SimpleProcessData } from './types/process'
 export type { Schema } from './types/schema'
 export type { GraphData } from '@antv/g6'

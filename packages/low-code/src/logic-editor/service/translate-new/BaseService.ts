@@ -4,7 +4,7 @@ import { ROOTCOMPONENT } from '../../compat/component';
 import { SimpleProcessData } from '../../../types/process';
 import { DataType } from '../../../types/schema';
 
-import { EdgeError_DTS, TranslateError_DTS, GenerateTempParams_DTS, ConnectedNodeInfo_DTS, AllVarOutputMap_DTS, BlockNames_DTS, InitTranslateQuery_DTS } from '../interface'
+import { EdgeError_DTS, TranslateError_DTS, GenerateTempParams_DTS, ConnectedNodeInfo_DTS, AllVarOutputMap_DTS, BlockNames_DTS, InitTranslateQuery_DTS, TranslateNodeParams_DTS } from '../interface'
 import { get } from 'lodash'
 import { CacheService } from '../cache-service';
 import { SCOPE_HUB_NODE } from '../const'
@@ -40,6 +40,9 @@ export class TranslateBaseService {
    */
   static translateErrorList: TranslateError_DTS[] = []
 
+  /** 最近一次翻译生成的旧运行时流程；与 `blockly` 使用同一输入图。 */
+  public processData: SimpleProcessData[] = []
+
   /**
    * 变量存储 (实例共享)
    */
@@ -59,7 +62,7 @@ export class TranslateBaseService {
    * 块翻译方法
    * TODO: 动态加载
    */
-  static utils = {}
+  static utils: Partial<Record<BlockNames_DTS, new (query: TranslateNodeParams_DTS) => { result: SimpleProcessData[] }>> = {}
 
   /**
    * 缓存服务
@@ -102,9 +105,8 @@ export class TranslateBaseService {
   /**
    * 获取变量
    */
-  public getVar(nodeId: string, anchor_index: string): string[] {
-    const currentVar = get(TranslateBaseService.allVarOutputMap, `[${nodeId}][${anchor_index}]`, null) as any as string[]
-    return currentVar ? currentVar : null
+  public getVar(nodeId: string, anchor_index: string): string[] | undefined {
+    return TranslateBaseService.allVarOutputMap[nodeId]?.[anchor_index]
   }
 
 
@@ -175,7 +177,9 @@ export class TranslateBaseService {
    * 生成变量块
    */
   public createSimpleProcessData(type: string, value?: any): SimpleProcessData {
-    return new FuncCallNode({}).createSimpleProcessData(type, value)
+    const processData = new FuncCallNode({}).createSimpleProcessData(type, value)
+    if (!processData) throw new Error(`异常: 无法创建 ${type} 过程数据！！！`)
+    return processData
   }
 
   /**
@@ -195,7 +199,11 @@ export class TranslateBaseService {
     let variable: string[] = []
 
     if (TranslateBaseService.varBlockList.includes(sourceNode.type as BlockNames_DTS)) {
-      const connectedAnchorInfo = sourceNode.data.anchors[connnectedAnchorIndex].data
+      const connectedAnchor = sourceNode.data.anchors[Number(connnectedAnchorIndex)]
+      if (!connectedAnchor) {
+        throw new Error(`异常: 变量块 ${sourceNode.id} 缺少第 ${connnectedAnchorIndex} 个锚点！！！`)
+      }
+      const connectedAnchorInfo = connectedAnchor.data
       const varBaseInfo = connectedAnchorInfo._route_path || ''
       if (!varBaseInfo) {
         console.error(`异常: “变量块  ${sourceNode.type} ${sourceNode.id}”没有配置第 ${connnectedAnchorIndex} 个锚点的_route_path，请检查！！！`)
@@ -220,16 +228,17 @@ export class TranslateBaseService {
 
     } else {
       const varRecordKey = this.getVarRecordKey(connnectedAnchorIndex)
-      variable = this.getVar(sourceNode.id, varRecordKey)
-      if (!variable) {
-        console.warn(`异常: 当前 ${sourceNode.type} ${sourceNode.id} 块，第 ${connnectedAnchorIndex} 个锚点没有记录使用变量，请检查！！！`)
+      const recordedVariable = this.getVar(sourceNode.id, varRecordKey)
+      if (!recordedVariable) {
+        throw new Error(`异常: 当前 ${sourceNode.type} ${sourceNode.id} 块，第 ${connnectedAnchorIndex} 个锚点没有记录使用变量，请检查！！！`)
       }
+      variable = recordedVariable
     }
 
     const isChild = this.isChildOf(recordData)
     if (!isChild) {
       TranslateBaseService.translateErrorList.push({
-        edge: edge.id,
+        edge: edge.id ?? '',
         errorType: EdgeError_DTS.SCOPE,
         variable
       })
@@ -265,7 +274,11 @@ export class TranslateBaseService {
 
     // 依赖数据来自变量节点
     if (isDependentNodeVar) {
-      parentNodeId = sourceNode.data.anchors[connnectedAnchorIndex].data._origin_node_id || BlockNames_DTS.LOGIC_START_NODE
+      const connectedAnchor = sourceNode.data.anchors[Number(connnectedAnchorIndex)]
+      if (!connectedAnchor) {
+        throw new Error(`异常: 变量块 ${sourceNode.id} 缺少第 ${connnectedAnchorIndex} 个锚点！！！`)
+      }
+      parentNodeId = connectedAnchor.data._origin_node_id || BlockNames_DTS.LOGIC_START_NODE
     } else {
       parentNodeId = sourceNode.id || BlockNames_DTS.LOGIC_START_NODE
     }
@@ -293,6 +306,7 @@ export class TranslateBaseService {
    */
   public translate(initTranslateQuery: InitTranslateQuery_DTS): string {
     const result: SimpleProcessData[] = this.workFlow2ProcessData(initTranslateQuery)
+    this.processData = result
 
     const {
       rootMethodId = ''
@@ -360,6 +374,3 @@ export class TranslateBaseService {
     return result
   }
 }
-
-
-

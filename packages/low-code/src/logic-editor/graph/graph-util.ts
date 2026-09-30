@@ -1,4 +1,4 @@
-import G6, { GraphData, GraphOptions, IG6GraphEvent, IGraph } from '@antv/g6';
+import G6, { type GraphData, type GraphOptions, type IG6GraphEvent, type IGraph } from '@antv/g6';
 import _ from 'lodash';
 import { LogicNodeRecord } from '../../types/records';
 import { INodeConfigService } from '../handler/config-builder/interface';
@@ -17,21 +17,19 @@ export interface GraphEventMap {
 }
 
 export interface IStoreGraphDataList {
-  [StageMode.METHOD_LIST]: GraphData;
+  [StageMode.METHOD_LIST]: GraphData | null;
   [StageMode.METHOD_DETAIL]: {
     [method_id: string]: GraphData;
-  };
-  [StageMode.VARIABLE_LIST]: GraphData;
+  } | null;
+  [StageMode.VARIABLE_LIST]: GraphData | null;
 }
-
-export type G6EventCallback<T = IG6GraphEvent> = T;
 
 export class GraphUtil {
   private static instance: GraphUtil;
-  private _graph: IGraph;
+  private _graph: IGraph | null = null;
 
   // 当前舞台的类型
-  private _curMode: StageMode = null;
+  private _curMode: StageMode | null = null;
   // 当前舞台缓存的图数据
   private _storeGraphDataList: IStoreGraphDataList = {
     [StageMode.METHOD_LIST]: null,
@@ -45,7 +43,7 @@ export class GraphUtil {
   private constructor() {
   }
 
-  public static getInstance() {
+  public static getInstance(): GraphUtil {
     if (!this.instance) {
       this.instance = new GraphUtil();
     }
@@ -53,7 +51,14 @@ export class GraphUtil {
     return this.instance;
   }
 
-  public get graph() {
+  public get graph(): IGraph | null {
+    return this._graph;
+  }
+
+  private get activeGraph(): IGraph {
+    if (!this._graph) {
+      throw new Error('逻辑编辑器画布尚未初始化');
+    }
     return this._graph;
   }
 
@@ -62,7 +67,10 @@ export class GraphUtil {
    * 生成grap实例对象
    * @param options 初始化graph实例的初始化参数
    */
-  public initGraph(options: GraphOptions) {
+  public initGraph(options: GraphOptions): IGraph {
+    if (this._graph && !this._graph.get('destroyed')) {
+      throw new Error('同一页面只能激活一个逻辑编辑器实例，请先关闭当前编辑器。');
+    }
     const { container } = options;
     if (!container) {
       throw Error('缺少 container 字段！');
@@ -149,7 +157,7 @@ export class GraphUtil {
   /**
    * 添加节点渲染配置
    */
-  public addNode(record: LogicNodeRecord[]) {
+  public addNode(record: LogicNodeRecord[]): void {
     this.nodeRecords.push(...record);
   }
 
@@ -157,41 +165,43 @@ export class GraphUtil {
    * 设置最小缩放比例
    * @param scaling 缩放比例
    */
-  public setMinZoom(scaling: number) {
-    this._graph.setMinZoom(scaling);
+  public setMinZoom(scaling: number): void {
+    this.activeGraph.setMinZoom(scaling);
   }
 
   /**
    * 设置最大缩放比列
    * @param scaling 缩放比例
    */
-  public setMaxZoom(scaling: number) {
-    this._graph.setMaxZoom(scaling);
+  public setMaxZoom(scaling: number): void {
+    this.activeGraph.setMaxZoom(scaling);
   }
 
   /**
    * 注册回调事件
    */
-  public registerEvents(event: GraphEventMap[]);
-  public registerEvents(event: string, callback: (e: IG6GraphEvent) => void);
-  public registerEvents(event: string | GraphEventMap[], callback?: (e: IG6GraphEvent) => void) {
+  public registerEvents(event: GraphEventMap[]): void;
+  public registerEvents(event: string, callback: (e: IG6GraphEvent) => void): void;
+  public registerEvents(event: string | GraphEventMap[], callback?: (e: IG6GraphEvent) => void): void {
     if (_.isString(event)) {
-      this._graph.on(event as string, callback);
+      if (!callback) throw new Error(`注册图事件 ${event} 时缺少回调函数`);
+      this.activeGraph.on(event, callback);
     } else {
       _.forEach(event, (ev: GraphEventMap) => {
-        this._graph.on(ev.eventName, ev.callback);
+        this.activeGraph.on(ev.eventName, ev.callback);
       });
     }
   }
 
-  public unRegisterEvents(event: GraphEventMap[]);
-  public unRegisterEvents(event: string, callback: (e: IG6GraphEvent) => void);
-  public unRegisterEvents(event: string | GraphEventMap[], callback?: (e: G6EventCallback) => void) {
+  public unRegisterEvents(event: GraphEventMap[]): void;
+  public unRegisterEvents(event: string, callback: (e: IG6GraphEvent) => void): void;
+  public unRegisterEvents(event: string | GraphEventMap[], callback?: (e: IG6GraphEvent) => void): void {
     if (_.isString(event)) {
-      this._graph.off(event as string, callback);
+      if (!callback) throw new Error(`注销图事件 ${event} 时缺少回调函数`);
+      this.activeGraph.off(event, callback);
     } else {
       _.forEach(event, (ev: GraphEventMap) => {
-        this._graph.off(ev.eventName, ev.callback);
+        this.activeGraph.off(ev.eventName, ev.callback);
       });
     }
   }
@@ -199,13 +209,14 @@ export class GraphUtil {
   /**
    * 销毁G6Graph实例
    */
-  public destoryGraph() {
+  public destoryGraph(): void {
+    if (!this._graph) return;
     this._graph.clear();
     this._graph.destroy();
     this._graph = null;
   }
 
-  public storeGraphData(data: IStoreGraphDataList) {
+  public storeGraphData(data: IStoreGraphDataList): void {
     this._storeGraphDataList = data;
   }
 
@@ -213,11 +224,11 @@ export class GraphUtil {
     return mode ? this._storeGraphDataList[mode] : this._storeGraphDataList;
   }
 
-  public storeCurMode(mode: StageMode) {
+  public storeCurMode(mode: StageMode): void {
     this._curMode = mode;
   }
 
-  public getStoredStageMode(): StageMode {
+  public getStoredStageMode(): StageMode | null {
     return this._curMode;
   }
 
@@ -243,13 +254,13 @@ export class GraphUtil {
             BlockNames_DTS.LOGIC_FUNC_NODE,
           ].includes(i[0] as BlockNames_DTS));
 
-      const configs = _.map(maps, (item) => {
+      const configs = _.map(maps, (item): INodeConfig | undefined => {
         const service = item[1];
         if (service.getConfig) {
           const config = service.getConfig({ x: 0, y: 0 });
           return config;
         }
-      }).filter((v) => v);
+      }).filter((config): config is INodeConfig => config !== undefined);
 
       _.forEach(configs, (config: INodeConfig) => {
         registerNode(config);

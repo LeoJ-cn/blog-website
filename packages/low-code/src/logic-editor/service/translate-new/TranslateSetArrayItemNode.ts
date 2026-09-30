@@ -54,8 +54,8 @@ export class TranslateSetArrayItemNodeService extends TranslateBaseService {
     }
 
     let var_array: string[] = []; // 数组所属变量
-    let var_item = []; // 数组项
-    let var_index = []; // 索引index
+    let var_item: string[] = []; // 数组项
+    let var_index: string[] = []; // 索引index
 
     // 数据源
     const recordData = method.map_FromAnchorToSourceNode[arrayAnchor.index];
@@ -101,4 +101,3 @@ export class TranslateSetArrayItemNodeService extends TranslateBaseService {
     ];
   }
 }
-

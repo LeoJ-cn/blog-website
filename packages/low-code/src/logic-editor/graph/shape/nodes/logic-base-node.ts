@@ -1,6 +1,5 @@
-import { IGroup, ShapeOptions, ShapeStyle } from '@antv/g6';
-import { Item, UpdateType } from '@antv/g6-core/lib/types';
-import { IG6, IIGroup, IModelConfig, INodeConfig, IShapeOptions } from '../../../interface';
+import type { IShape, Item, ModelConfig, ShapeOptions, ShapeStyle, UpdateType } from '@antv/g6';
+import { AnchorBaseConfigWithPosition, IG6, IIGroup, IModelConfig, INodeConfig, IShapeOptions } from '../../../interface';
 import { BlockNames_DTS } from '../../../service/interface';
 import anchorEvent from '../../behavior/anchor-event';
 import itemEvents from '../../behavior/item-event';
@@ -8,6 +7,21 @@ import { nodeUpdate } from '../../util/node-update';
 import defaultStyles from '../defaultStyles';
 
 const { nodeStyles, anchorPointStyles } = defaultStyles;
+
+type BaseShapeContext = IShapeOptions &
+  Required<
+    Pick<
+      IShapeOptions,
+      | 'calcNodeHeight'
+      | 'assembleShape'
+      | 'drawAnchor'
+      | 'drawShape'
+      | 'getAnchorPoints'
+      | 'getNodeAnchorBg'
+      | 'getShapeStyle'
+      | 'initAnchor'
+    >
+  > & { shapeType: string };
 
 function getStyle(options: any, cfg: any): ShapeStyle {
   const style = {
@@ -26,12 +40,12 @@ export default (G6: IG6) => {
   const nodeDefinition: IShapeOptions = {
     itemType,
     // 自定义方法
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 132;
     },
 
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IIGroup) {
     },
 
     getShapeStyle(cfg: IModelConfig) {
@@ -47,7 +61,7 @@ export default (G6: IG6) => {
       );
     },
 
-    initAnchor(cfg: IModelConfig, group: IIGroup) {
+    initAnchor(this: BaseShapeContext, cfg: IModelConfig, group: IIGroup) {
       group.anchorShapes = [];
       group.showAnchor = () => {
         this.drawAnchor(cfg, group);
@@ -65,17 +79,17 @@ export default (G6: IG6) => {
       };
     },
 
-    drawAnchor(cfg: IModelConfig, group: IIGroup) {
+    drawAnchor(this: BaseShapeContext, cfg: IModelConfig, group: IIGroup) {
       const attrs = group.getFirst().attr();
       const { anchorPointStyles } = attrs;
 
       const item = group.get('children')[0];
       const bBox = item.getBBox();
-      const anchors: number[][] = this.getAnchorPoints(cfg);
+      const anchors = this.getAnchorPoints(cfg) ?? [];
 
       // 绘制锚点坐标
       anchors &&
-      anchors.forEach((p: number[], i: number) => {
+      anchors.forEach((p, i) => {
         const x = bBox.width * (p[0] - 0.5);
         const y = bBox.height * (p[1] - 0.5);
 
@@ -150,14 +164,14 @@ export default (G6: IG6) => {
 
     // 内部方法
     shapeType: 'logic-base',
-    draw(cfg?: IModelConfig, group?: IGroup) {
+    draw(this: BaseShapeContext, cfg: IModelConfig, group: IIGroup) {
       return this.drawShape(cfg, group);
     },
 
-    drawShape(cfg: IModelConfig, group: IIGroup) {
+    drawShape(this: BaseShapeContext, cfg: IModelConfig, group: IIGroup) {
       this.calcNodeHeight(cfg);
 
-      const attrs = this.getShapeStyle(cfg, group);
+      const attrs = this.getShapeStyle(cfg);
       const keyShape = group.addShape('rect', {
         className: `${this.shapeType}-shape`,
         name: `${this.shapeType}-shape`,
@@ -169,23 +183,24 @@ export default (G6: IG6) => {
       this.assembleShape(cfg, group);
 
       group.$getItem = (className) => {
-        return group.get('children').find((item) => item.get('className') === className);
+        return (group.get('children') as IShape[]).find((item) => item.get('className') === className);
       };
 
       this.initAnchor(cfg, group);
       return keyShape;
     },
 
-    update(cfg: IModelConfig, node: Item, updateType?: UpdateType) {
+    update(this: BaseShapeContext, cfg: ModelConfig, node: Item, updateType?: UpdateType) {
+      const model = cfg as IModelConfig;
       if (updateType === 'style') {
-        const group = node.getContainer();
+        const group = node.getContainer() as IIGroup;
         group.clear();
-        this.drawShape(cfg, group);
+        this.drawShape(model, group);
       }
       nodeUpdate(cfg, node, updateType);
     },
 
-    setState(name?: string, value?: string | boolean, item?: Item) {
+    setState(this: BaseShapeContext, name?: string, value?: string | boolean, item?: Item) {
       const buildInEvents: string[] = [
         'anchorShow',
         'anchorActived',
@@ -198,6 +213,7 @@ export default (G6: IG6) => {
         'nodeOnDragEnd',
       ];
 
+      if (!item || !name) return;
       const group = item.getContainer() as IIGroup;
 
       if (group.get('destroyed')) {
@@ -206,7 +222,7 @@ export default (G6: IG6) => {
 
       if (buildInEvents.includes(name)) {
         // 内部this绑定到了当前item实例
-        itemEvents[name].call(this, value, group);
+        itemEvents[name]?.call(this, value ?? false, group);
       } else if (this.stateApplying) {
         this.stateApplying.call(this, name, value, item);
       } else {
@@ -216,7 +232,8 @@ export default (G6: IG6) => {
       }
     },
 
-    getAnchorPoints(cfg?: IModelConfig): any[] {
+    getAnchorPoints(_cfg: IModelConfig) {
+      // 基础节点仅提供 G6 坐标占位，业务节点继承后会返回带锚点配置的三元组。
       return [
         [0, 0],
         [0, 0.5],
@@ -225,10 +242,9 @@ export default (G6: IG6) => {
         [1, 1],
         [0.5, 1],
         [0, 1],
-      ];
+      ] as unknown as AnchorBaseConfigWithPosition[];
     },
   };
 
   G6.registerNode(itemType, nodeDefinition as ShapeOptions, 'single-node');
 };
-

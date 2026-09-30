@@ -1,17 +1,17 @@
 import { resolveLogicEditorAsset } from '../../icon-map';
 import { IGroup, ShapeOptions } from '@antv/g6';
-import { AnchorTag, IG6, INodeConfig, IShapeOptions } from '../../../interface';
+import { AnchorTag, IG6, IModelConfig, INodeConfig, IShapeOptions } from '../../../interface';
 import { BlockNames_DTS } from '../../../service/interface';
 
 export default (G6: IG6) => {
   const itemType = BlockNames_DTS.LOGIC_CALC_NODE;
   const nodeDefinition: IShapeOptions = {
     itemType: itemType,
-    calcNodeHeight(cfg?: INodeConfig) {
+    calcNodeHeight(cfg: INodeConfig) {
       cfg.nodeWidth = 210;
       cfg.nodeHeight = 170;
     },
-    assembleShape(cfg?: INodeConfig, group?: IGroup) {
+    assembleShape(cfg: IModelConfig, group: IGroup) {
       const offsetX = -cfg.nodeWidth / 2;
       const offsetY = -cfg.nodeHeight / 2;
       group.addShape('rect', {
@@ -201,7 +201,7 @@ export default (G6: IG6) => {
       group.sort();
     },
 
-    getAnchorPoints(cfg: INodeConfig): any[] {
+    getAnchorPoints(cfg: IModelConfig): any[] | undefined {
       try {
         return [
           [0, 72 / cfg.nodeHeight, {

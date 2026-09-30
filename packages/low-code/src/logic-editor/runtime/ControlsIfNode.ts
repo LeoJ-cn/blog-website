@@ -84,7 +84,7 @@ export class ControlsIfNode extends ProcessBaseNode<ControlsIfAttrs> {
   ): void | Promise<void> {
     this.attrs = this.component.data as any;
     const { component, attrs } = this;
-    const isBranchChange = component.children.length - 1 !== attrs.branches.length;
+    const isBranchChange = component.children.length - 1 !== (attrs.branches?.length ?? 0);
     this.modifyText();
     this.assignNodeData();
     if (isBranchChange) {
@@ -118,11 +118,13 @@ export class ControlsIfNode extends ProcessBaseNode<ControlsIfAttrs> {
         elseif: attrs.branches.length - 1 + '',
       },
     });
+    const nodeValue = node.value;
+    if (!nodeValue) throw new Error('条件节点缺少 value 容器');
 
     attrs.branches.forEach((branch, index) => {
-      const conditions = [];
+      const conditions: SimpleProcessData[] = [];
       branch.forEach((condition) => {
-        const subConditions = [];
+        const subConditions: SimpleProcessData[] = [];
         condition.forEach((subCondition) => {
           if (!subCondition.a || !subCondition.op) {
             return;
@@ -171,11 +173,8 @@ export class ControlsIfNode extends ProcessBaseNode<ControlsIfAttrs> {
             return;
           }
 
+          if (!subCondition.bType) return;
           const b = this.createSimpleProcessData(subCondition.bType, subCondition.b);
-
-          if (!b) {
-            return;
-          }
           subConditions.push(this.generateSimpleProcessData({
             type: 'math_compare',
             value: {
@@ -186,10 +185,11 @@ export class ControlsIfNode extends ProcessBaseNode<ControlsIfAttrs> {
           }));
         });
 
-        conditions.push(this.joinLogicCompare(subConditions, 'ANDAND'));
+        const joinedCondition = this.joinLogicCompare(subConditions, 'ANDAND');
+        if (joinedCondition) conditions.push(joinedCondition);
       });
 
-      node.value['IF' + index] = this.joinLogicCompare(conditions, 'OROR');
+      nodeValue['IF' + index] = this.joinLogicCompare(conditions, 'OROR');
     });
 
     return [node];
@@ -230,12 +230,12 @@ export class ControlsIfNode extends ProcessBaseNode<ControlsIfAttrs> {
     attrs.branches.forEach((branch, index) => {
       let text = '暂无数据';
       let enText = 'No data';
-      const conditions = [];
-      const enConditions = [];
+      const conditions: string[] = [];
+      const enConditions: string[] = [];
 
       branch.forEach((condition) => {
-        const subConditions = [];
-        const enSubConditions = [];
+        const subConditions: string[] = [];
+        const enSubConditions: string[] = [];
         condition.forEach((subCondition) => {
           if (!subCondition.a || !subCondition.op) {
             return;
@@ -243,8 +243,10 @@ export class ControlsIfNode extends ProcessBaseNode<ControlsIfAttrs> {
           let t = '"' + this.getLabelByVariable(subCondition.a) + '" ';
           let et = t;
 
-          t += opList.find((i) => i.value === subCondition.op).label;
-          et += opList.find((i) => i.value === subCondition.op).enLabel;
+          const operator = opList.find((i) => i.value === subCondition.op);
+          if (!operator) return;
+          t += operator.label;
+          et += operator.enLabel;
 
           if (subCondition.op !== 'isNull' && subCondition.op !== 'notNull') {
             t += ' ';
@@ -297,16 +299,17 @@ export class ControlsIfNode extends ProcessBaseNode<ControlsIfAttrs> {
         enText = `If the following conditions are met\n${enConditions.join('\nor ')}\nExecute the following process`;
       }
 
-      const layout = component.children[index].children.find((i) => i.tag === 'GuiLayout');
+      const branchComponent = component.children[index];
+      if (!branchComponent) return;
+      const layout = branchComponent.children.find((i) => i.tag === 'GuiLayout');
       if (layout) {
         this.modifyNodeTextByInsId(text, layout);
         this.modifyNodeEnTextByInsId(enText, layout);
       } else {
-        this.modifyNodeText(text, component.children[index]);
-        this.modifyNodeEnText(enText, component.children[index]);
+        this.modifyNodeText(text, branchComponent);
+        this.modifyNodeEnText(enText, branchComponent);
       }
     });
   }
 
 }
-

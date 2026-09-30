@@ -50,7 +50,7 @@
     "prepare": "初始化 Husky Git hooks"
   },
   "scripts": {
-    "dev": "pnpm dev:vite",
+    "dev": "(lsof -ti :4173 | xargs -r kill -9) && pnpm dev:vite",
     "dev:vite": "pnpm --filter @blog/web dev:vite",
     "dev:webpack": "pnpm --filter @blog/web dev:webpack",
     "build": "pnpm build:vite",
@@ -62,7 +62,7 @@
     "build:docker": "node scripts/docker-build.mjs",
     "verify:ci:docker": "node scripts/ci-docker-check.mjs",
     "prepare": "husky",
-    "typecheck": "pnpm --filter @blog/web typecheck",
+    "typecheck": "pnpm --filter @blog/web typecheck && pnpm --filter @blog/low-code typecheck",
     "typecheck:low-code": "pnpm --filter @blog/low-code typecheck",
     "test:monitoring": "pnpm --filter @blog/monitoring test",
     "check:config": "pnpm --filter @blog/web exec tsc --noEmit -p tsconfig.config.json",
