@@ -35,5 +35,21 @@ export type {
   LogicEditorSavePayload,
 } from './types/logic-editor'
 export type { SimpleProcessData } from './types/process'
+export {
+  BlocklyCodeGenerator,
+  MethodCodeGenerator,
+  PageCodeGenerator,
+  generateBlocklyCode,
+  generateMethodCode,
+  generatePageCode,
+} from './blockly-code-generator'
+export type {
+  CodeGenerationDiagnostic,
+  CodeGenerationResult,
+  CodeGenerationStage,
+  GenerateBlocklyCodeInput,
+  GenerateMethodCodeInput,
+  GeneratePageCodeInput,
+} from './blockly-code-generator'
 export type { Schema } from './types/schema'
 export type { GraphData } from '@antv/g6'

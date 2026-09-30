@@ -88,6 +88,22 @@
 | `service/logic-service.ts` | GraphData → MethodWorkFlow，主流程和支线解析 | 只接受方法详情图；输入缺失时原实现防御不足 |
 | `service/translate-new/*` | MethodWorkFlow → process/blockData | 节点类型到翻译服务的映射必须完整 |
 | `service/cache-service.ts` | 节点、边、锚点关系和作用域查询缓存 | 空节点返回策略会影响错误位置和可诊断性 |
+| `controllers/generators/MethodGenetator.ts` 与 `blocks/*` | blockData → Blockly Workspace → JavaScript | 当前迁移到独立的 `src/blockly-code-generator/`；不得放回 `logic-editor/`，也不得引用其内部实现 |
+
+当前迁移明确保持以下依赖方向：
+
+```text
+logic-editor → 输出 processData / blockData
+blockly-code-generator → 只消费 blockData 和公开的数据/方法上下文
+PageCodeGenerator → 组装页面变量、全部方法与生命周期
+应用层 → 展示完整 Vue 3 Options API 页面代码或诊断
+```
+
+代码生成模块不接收 `GraphData`，避免重新承担图解析和流程翻译职责。旧实现中的 `eval` 只用于把生成源码转为函数；当前迁移默认只返回源码，不执行动态代码。
+
+`MethodCodeGenerator` 只生成单个方法函数，不能作为完整页面源码展示。完整页面必须通过
+`PageCodeGenerator` 生成：页面变量进入 `data()`，Blockly 方法进入 `methods`，生命周期绑定按连线顺序调用方法；
+旧协议的 `destroyed` 在 Vue 3 输出中映射为 `unmounted`。
 
 ## 4. 核心领域协议
 
@@ -281,6 +297,16 @@ Method.graphData
 - **目标行为**：`LogicEditorSavePayload` 额外返回规范化的 `lifecycleBindings`，每项包含生命周期协议值、展示名称和按执行顺序排列的方法 ID，供宿主页直接展示或持久化。
 - **兼容影响**：原 Store 键、方法详情 `GraphData`、`processData` 和 `blockData` 均保持不变；`lifecycleBindings` 是新增字段，不能把生命周期方法误合并进单个方法的 `processData`。
 
+### 8.2 Playground 本地恢复记录
+
+低代码 Playground 在收到成功的 `LogicEditorSavePayload` 后，将带版本号的完整记录写入 `localStorage`。
+记录同时包含当前方法详情图、全部方法、页面变量、生命周期绑定、分方法 `processData` 和当前 `blockData`；
+不能只保存 `GraphData`，否则恢复后的变量 ID 和生命周期方法 ID 将失去领域上下文。
+
+恢复由用户显式触发。宿主页恢复响应式数据后必须重建 `LogicEditor` 实例，使方法列表图、变量图和方法详情图的
+内部缓存全部基于恢复记录重新生成；不允许让恢复前的组件缓存覆盖持久化数据。记录结构或版本校验失败时只报告错误，
+不得部分写入当前编辑状态。
+
 ## 9. 原实现与当前迁移的主要差异
 
 ### P0：会破坏核心行为
@@ -329,6 +355,7 @@ Method.graphData
 - [ ] 等待翻译完成后再通知外层保存成功。
 - [ ] 外层展示读取已提交的 `method.blockData/processData`，不重复翻译当前画布。
 - [ ] 生命周期绑定按方法列表连线顺序写入 Store，并通过 `lifecycleBindings` 与方法产物分开展示。
+- [ ] 本地记录同时保存图、方法、变量和生命周期上下文；恢复后重建编辑器内部图缓存。
 - [ ] 保存失败时不关闭弹框，或给出明确失败状态。
 
 ### 图操作
@@ -346,6 +373,14 @@ Method.graphData
 - [ ] 主流程与 sideQuests 分别验证。
 - [ ] 所有 `BlockNames_DTS` 有对应翻译器或明确声明仅供展示。
 - [ ] `translateErrorList` 与非阻断 warning 的语义分开。
+
+### Blockly 代码生成
+
+- [ ] `blockly-code-generator` 不引用 `logic-editor` 内部模块。
+- [ ] 输入使用方法已经提交的 `blockData`，不得重新翻译当前画布。
+- [ ] 每种 `processData.type` 对应的 Blockly 块定义和 JavaScript Generator 成对迁移。
+- [ ] 未注册块、XML 解析失败和代码生成失败返回分阶段诊断，不执行不完整代码。
+- [ ] 生成阶段不使用 `eval` 或 `new Function` 执行结果。
 
 ## 11. 手动回归场景
 

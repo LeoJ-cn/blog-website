@@ -4,13 +4,30 @@ import {
   LogicEditor,
   MethodType,
   createLowCodeContext,
+  generatePageCode,
+  type CodeGenerationResult,
+  type Data,
   type LowCodeCompatibilityContext,
   type GraphData,
+  type LogicEditorLifecycleBinding,
   type LogicEditorSavePayload,
   type Method,
 } from '@blog/low-code'
 import { ElButton } from 'element-plus'
-import { computed, reactive, ref, shallowRef } from 'vue'
+import { computed, onMounted, reactive, ref, shallowRef } from 'vue'
+
+const STORAGE_KEY = 'blog-playground:low-code-editor:v1'
+
+interface StoredEditorRecord {
+  version: 1
+  savedAt: string
+  graphData: GraphData
+  methods: Method[]
+  data: Data[]
+  lifecycleBindings: LogicEditorLifecycleBinding[]
+  processDataByMethod: LogicEditorSavePayload['processDataByMethod']
+  translatedBlockData: string
+}
 
 const initialMethod: Method = {
   id: 'playground_main_method',
@@ -36,7 +53,11 @@ const storeValues = reactive(new Map<string, unknown>([['ui_logic_visible', fals
 const listeners = new Map<string, Set<(...args: any[]) => void>>()
 const processDataByMethod = ref<LogicEditorSavePayload['processDataByMethod']>([])
 const lifecycleBindings = ref<LogicEditorSavePayload['lifecycleBindings']>([])
+const translatedBlockData = ref('')
+const generatedPageCode = ref<CodeGenerationResult | null>(null)
 const hasSaveResult = ref(false)
+const hasStoredRecord = ref(false)
+const editorRevision = ref(0)
 
 const context = createLowCodeContext({
   methods,
@@ -85,17 +106,99 @@ function openLogicEditor() {
   context.store.set('ui_logic_visible', true)
 }
 
+function createLifecycleStore(bindings: LogicEditorLifecycleBinding[]): Record<string, string[]> {
+  return Object.fromEntries(bindings.map((binding) => [
+    `${binding.lifecycle}_method_ids`,
+    [...binding.methodIds],
+  ]))
+}
+
+function isStoredEditorRecord(value: unknown): value is StoredEditorRecord {
+  if (!value || typeof value !== 'object') return false
+  const record = value as Partial<StoredEditorRecord>
+  return record.version === 1
+    && typeof record.savedAt === 'string'
+    && !!record.graphData
+    && typeof record.graphData === 'object'
+    && Array.isArray(record.methods)
+    && record.methods.every((method) => method && typeof method.funcName === 'string' && Array.isArray(method.parameters))
+    && Array.isArray(record.data)
+    && Array.isArray(record.lifecycleBindings)
+    && Array.isArray(record.processDataByMethod)
+    && typeof record.translatedBlockData === 'string'
+}
+
+function persistEditorRecord(payload: LogicEditorSavePayload) {
+  const record: StoredEditorRecord = {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    graphData: payload.graphData,
+    methods,
+    data,
+    lifecycleBindings: payload.lifecycleBindings,
+    processDataByMethod: payload.processDataByMethod,
+    translatedBlockData: payload.blockData,
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(record))
+    hasStoredRecord.value = true
+  } catch (error) {
+    context.feedback.error(`图表记录保存失败：${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+function restoreEditorRecord() {
+  const rawRecord = localStorage.getItem(STORAGE_KEY)
+  if (!rawRecord) {
+    hasStoredRecord.value = false
+    context.feedback.warning('没有可恢复的本地图表记录')
+    return
+  }
+
+  try {
+    const record: unknown = JSON.parse(rawRecord)
+    if (!isStoredEditorRecord(record)) throw new Error('记录版本或数据结构不受支持')
+
+    methods.splice(0, methods.length, ...record.methods)
+    data.splice(0, data.length, ...record.data)
+    graphData.value = record.graphData
+    lifecycleBindings.value = record.lifecycleBindings
+    processDataByMethod.value = record.processDataByMethod
+    translatedBlockData.value = record.translatedBlockData
+    storeValues.set('ui_bind_lifecircle', createLifecycleStore(record.lifecycleBindings))
+    generatedPageCode.value = generatePageCode({
+      data,
+      methods,
+      lifecycleBindings: record.lifecycleBindings,
+    })
+    hasSaveResult.value = true
+    // LogicEditorStage 持有三类图缓存，恢复记录后必须重建实例，确保缓存来自恢复后的领域数据。
+    editorRevision.value += 1
+    context.feedback.success(`已恢复 ${record.savedAt} 保存的图表记录`)
+  } catch (error) {
+    context.feedback.error(`图表记录恢复失败：${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 function handleSave(payload: LogicEditorSavePayload) {
   graphData.value = payload.graphData
   processDataByMethod.value = payload.processDataByMethod
   lifecycleBindings.value = payload.lifecycleBindings
+  translatedBlockData.value = payload.blockData
+  // 页面代码必须统一组装变量、全部已提交方法和生命周期，不能只展示脱离宿主的函数片段。
+  generatedPageCode.value = generatePageCode({ data, methods, lifecycleBindings: payload.lifecycleBindings })
   hasSaveResult.value = true
+  persistEditorRecord(payload)
   context.store.set('ui_logic_visible', false)
 }
 
 function formatProcessData(processData: LogicEditorSavePayload['processData']) {
   return JSON.stringify(processData, null, 2)
 }
+
+onMounted(() => {
+  hasStoredRecord.value = localStorage.getItem(STORAGE_KEY) !== null
+})
 </script>
 
 <template>
@@ -107,9 +210,12 @@ function formatProcessData(processData: LogicEditorSavePayload['processData']) {
     </p>
 
     <section class="low-code-host">
-      <ElButton type="primary" @click="openLogicEditor">编辑方法</ElButton>
-      <LogicEditor v-model="graphData" :context="context" @save="handleSave" />
-      <p>点击“编辑方法”打开逻辑编辑器。保存后，方法流程与生命周期绑定会显示在下方。</p>
+      <div class="low-code-actions">
+        <ElButton type="primary" @click="openLogicEditor">编辑方法</ElButton>
+        <ElButton :disabled="!hasStoredRecord" @click="restoreEditorRecord">恢复记录</ElButton>
+      </div>
+      <LogicEditor :key="editorRevision" v-model="graphData" :context="context" @save="handleSave" />
+      <p>保存后会把完整图表记录写入 localStorage；刷新页面后可点击“恢复记录”继续编辑。</p>
     </section>
 
     <section v-if="hasSaveResult" class="low-code-results">
@@ -149,6 +255,36 @@ function formatProcessData(processData: LogicEditorSavePayload['processData']) {
           </section>
         </div>
       </article>
+
+      <article class="low-code-result-card translation-result-card">
+        <h3>Blockly 翻译结果</h3>
+        <div v-if="generatedPageCode" class="translation-layers">
+          <section class="translation-layer">
+            <div class="translation-layer-heading">
+              <strong>第一层：Blockly XML</strong>
+              <code>blockData</code>
+            </div>
+            <pre>{{ translatedBlockData }}</pre>
+          </section>
+
+          <section class="translation-layer">
+            <div class="translation-layer-heading">
+              <strong>第二层：最终代码</strong>
+              <code>JavaScript</code>
+            </div>
+            <pre v-if="!generatedPageCode.diagnostics.length">{{ generatedPageCode.code }}</pre>
+            <div v-else class="code-generation-diagnostics">
+              <p>当前流程包含尚未完成代码生成的 Blockly 块：</p>
+              <ul>
+                <li v-for="diagnostic in generatedPageCode.diagnostics" :key="`${diagnostic.stage}:${diagnostic.message}`">
+                  <code>{{ diagnostic.stage }}</code>
+                  <span>{{ diagnostic.message }}</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+        </div>
+      </article>
     </section>
   </article>
 </template>
@@ -164,6 +300,12 @@ function formatProcessData(processData: LogicEditorSavePayload['processData']) {
 
 .low-code-host p {
   margin: 16px 0 0;
+}
+
+.low-code-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .low-code-results {
@@ -194,6 +336,52 @@ function formatProcessData(processData: LogicEditorSavePayload['processData']) {
   background: #0f172a;
   color: #e2e8f0;
   white-space: pre-wrap;
+}
+
+.translation-result-card {
+  grid-column: 1 / -1;
+}
+
+.translation-layers {
+  display: grid;
+  gap: 20px;
+}
+
+.translation-layer {
+  min-width: 0;
+}
+
+.translation-layer-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.translation-layer-heading code {
+  color: #94a3b8;
+}
+
+.code-generation-diagnostics {
+  color: #fca5a5;
+}
+
+.code-generation-diagnostics p {
+  margin: 0 0 12px;
+}
+
+.code-generation-diagnostics ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.code-generation-diagnostics li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
 }
 
 .method-process-list {
