@@ -1,7 +1,43 @@
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
-import type { UserConfig } from 'vite'
+import {
+  normalizePath,
+  transformWithEsbuild,
+  type Plugin,
+  type UserConfig,
+} from 'vite'
+
+const reactMigrationDemoTsxPattern =
+  /\/packages\/react-vue-migration-demo\/src\/.*\.tsx$/
+
+const createReactMigrationDemoTsxPlugin = (): Plugin => ({
+  name: 'blog:react-migration-demo-tsx',
+  enforce: 'pre',
+  async transform(code, id) {
+    const [filePath] = id.split('?')
+
+    if (!reactMigrationDemoTsxPattern.test(normalizePath(filePath))) {
+      return null
+    }
+
+    // Vue JSX 插件会接管所有 TSX；这里必须先把迁移子包编译成 React JSX Runtime，
+    // 否则 React Root 会收到 Vue VNode，并在运行时报 “Objects are not valid as a React child”。
+    const result = await transformWithEsbuild(code, id, {
+      loader: 'tsx',
+      jsx: 'automatic',
+      jsxImportSource: 'react',
+    })
+
+    return {
+      code: result.code,
+      map: {
+        ...result.map,
+        sourcesContent: result.map.sourcesContent?.map((content) => content ?? ''),
+      },
+    }
+  },
+})
 
 export const createViteCommonConfig = (): UserConfig => ({
   // 项目根、环境变量目录、缓存目录和 SPA 类型。
@@ -10,8 +46,12 @@ export const createViteCommonConfig = (): UserConfig => ({
   envPrefix: ['VITE_'],
   cacheDir: 'node_modules/.vite',
   appType: 'spa',
-  // 通用插件；环境专属插件在 development/production 中追加。
-  plugins: [vue(), vueJsx()],
+  // 通用插件；React 迁移源码先定向编译，其余 TSX 继续沿用 Vue JSX。
+  plugins: [
+    createReactMigrationDemoTsxPlugin(),
+    vue(),
+    vueJsx({ exclude: reactMigrationDemoTsxPattern }),
+  ],
   // public 目录会原样复制到构建产物。
   publicDir: 'public',
   // 构建时常量注入，不是运行时环境变量。
