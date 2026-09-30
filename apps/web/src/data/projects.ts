@@ -25,9 +25,27 @@ export const categoryMetadata: Record<
     hint: '平台与渲染',
     description: '记录浏览器 API、渲染机制和运行时能力。',
   },
+  engineering: {
+    title: 'Engineering',
+    hint: '架构与迁移',
+    description: '记录框架迁移、工程边界和渐进式演进实践。',
+  },
 }
 
 export const projects: ProjectDefinition[] = [
+  {
+    slug: 'react-vue-migration',
+    title: 'React → Vue 渐进迁移',
+    summary: 'React Shell 通过生命周期桥接加载 Vue 业务模块',
+    description:
+      '在真实 React Router 环境中演示 Vue 模块的 mount、update、unmount、路由代理、事件契约与灰度回滚。',
+    category: 'engineering',
+    status: 'active',
+    tags: ['React', 'Vue 3', 'Migration Platform'],
+    featured: true,
+    updatedAt: '2026-09-30',
+    sources: [],
+  },
   {
     slug: 'low-code',
     title: '低代码逻辑编辑器',

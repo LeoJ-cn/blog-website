@@ -1,4 +1,4 @@
-export type ProjectCategory = 'performance' | 'browser'
+export type ProjectCategory = 'performance' | 'browser' | 'engineering'
 export type ProjectStatus = 'active' | 'planned' | 'archived'
 
 export interface ProjectSource {

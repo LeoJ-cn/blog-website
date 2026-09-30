@@ -30,6 +30,15 @@ const router = createRouter({
           redirect: '/playground/browser/advanced-image-loader',
         },
         {
+          path: 'engineering',
+          redirect: '/playground/engineering/react-vue-migration',
+        },
+        {
+          path: 'engineering/react-vue-migration',
+          name: 'playground-react-vue-migration',
+          component: () => import('../../pages/PlaygroundReactVueMigrationPage.vue'),
+        },
+        {
           path: 'browser/advanced-image-loader',
           name: 'playground-advanced-image',
           component: () => import('../../pages/PlaygroundAdvancedImagePage.vue'),
