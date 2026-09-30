@@ -9,6 +9,7 @@ import {
   type Data,
   type LowCodeCompatibilityContext,
   type GraphData,
+  type LogicEditorGraphSnapshot,
   type LogicEditorLifecycleBinding,
   type LogicEditorSavePayload,
   type Method,
@@ -19,7 +20,7 @@ import { computed, onMounted, reactive, ref, shallowRef } from 'vue'
 const STORAGE_KEY = 'blog-playground:low-code-editor:v1'
 
 interface StoredEditorRecord {
-  version: 1
+  version: 1 | 2
   savedAt: string
   graphData: GraphData
   methods: Method[]
@@ -27,6 +28,8 @@ interface StoredEditorRecord {
   lifecycleBindings: LogicEditorLifecycleBinding[]
   processDataByMethod: LogicEditorSavePayload['processDataByMethod']
   translatedBlockData: string
+  /** v1 记录没有完整快照，恢复时会从方法数据降级构造。 */
+  graphSnapshot?: LogicEditorGraphSnapshot
 }
 
 const initialMethod: Method = {
@@ -58,6 +61,7 @@ const generatedPageCode = ref<CodeGenerationResult | null>(null)
 const hasSaveResult = ref(false)
 const hasStoredRecord = ref(false)
 const editorRevision = ref(0)
+const restoredGraphSnapshot = shallowRef<LogicEditorGraphSnapshot | null>(null)
 
 const context = createLowCodeContext({
   methods,
@@ -97,6 +101,26 @@ const context = createLowCodeContext({
 })
 
 const methodLabels = computed(() => new Map(methods.map((method) => [method.id, method.funcLabel || method.funcName])))
+const formattedBlockData = computed(() => formatBlocklyXml(translatedBlockData.value))
+
+function formatBlocklyXml(xml: string): string {
+  if (!xml.trim()) return ''
+  let depth = 0
+  return xml
+    .replace(/>\s*</g, '>\n<')
+    .split('\n')
+    .map((line) => {
+      const content = line.trim()
+      if (/^<\//.test(content)) depth = Math.max(0, depth - 1)
+      const formatted = `${'  '.repeat(depth)}${content}`
+      const opensElement = /^<[^!?/][^>]*>/.test(content)
+        && !/\/>$/.test(content)
+        && !/<\/[^>]+>$/.test(content)
+      if (opensElement) depth += 1
+      return formatted
+    })
+    .join('\n')
+}
 
 function getMethodLabel(methodId: string) {
   return methodLabels.value.get(methodId) || methodId
@@ -116,7 +140,17 @@ function createLifecycleStore(bindings: LogicEditorLifecycleBinding[]): Record<s
 function isStoredEditorRecord(value: unknown): value is StoredEditorRecord {
   if (!value || typeof value !== 'object') return false
   const record = value as Partial<StoredEditorRecord>
-  return record.version === 1
+  const supportedVersion = record.version === 1 || record.version === 2
+  const validSnapshot = record.version !== 2 || (
+    !!record.graphSnapshot
+    && Array.isArray(record.graphSnapshot.methodListGraph?.nodes || [])
+    && !!record.graphSnapshot.methodDetailGraphs
+    && typeof record.graphSnapshot.methodDetailGraphs === 'object'
+    && Array.isArray(record.graphSnapshot.variableGraph?.nodes || [])
+    && ['methodList', 'methodDetail', 'variableList'].includes(record.graphSnapshot.currentStage)
+  )
+  return supportedVersion
+    && validSnapshot
     && typeof record.savedAt === 'string'
     && !!record.graphData
     && typeof record.graphData === 'object'
@@ -128,9 +162,25 @@ function isStoredEditorRecord(value: unknown): value is StoredEditorRecord {
     && typeof record.translatedBlockData === 'string'
 }
 
+function createLegacyGraphSnapshot(record: StoredEditorRecord): LogicEditorGraphSnapshot {
+  const methodDetailGraphs = Object.fromEntries(record.methods.flatMap((method) => {
+    if (!method.id || !method.graphData) return []
+    return [[method.id, JSON.parse(method.graphData) as GraphData]]
+  }))
+  const currentMethodId = record.methods[0]?.id
+  if (currentMethodId) methodDetailGraphs[currentMethodId] = record.graphData
+  return {
+    methodListGraph: null,
+    methodDetailGraphs,
+    variableGraph: null,
+    currentStage: currentMethodId ? 'methodDetail' : 'methodList',
+    currentMethodId,
+  }
+}
+
 function persistEditorRecord(payload: LogicEditorSavePayload) {
   const record: StoredEditorRecord = {
-    version: 1,
+    version: 2,
     savedAt: new Date().toISOString(),
     graphData: payload.graphData,
     methods,
@@ -138,6 +188,7 @@ function persistEditorRecord(payload: LogicEditorSavePayload) {
     lifecycleBindings: payload.lifecycleBindings,
     processDataByMethod: payload.processDataByMethod,
     translatedBlockData: payload.blockData,
+    graphSnapshot: payload.graphSnapshot,
   }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(record))
@@ -158,6 +209,13 @@ function restoreEditorRecord() {
   try {
     const record: unknown = JSON.parse(rawRecord)
     if (!isStoredEditorRecord(record)) throw new Error('记录版本或数据结构不受支持')
+    const restoredSnapshot = record.graphSnapshot || createLegacyGraphSnapshot(record)
+    const restoredPageCode = generatePageCode({
+      data: record.data,
+      methods: record.methods,
+      lifecycleBindings: record.lifecycleBindings,
+    })
+    const restoredLifecycleStore = createLifecycleStore(record.lifecycleBindings)
 
     methods.splice(0, methods.length, ...record.methods)
     data.splice(0, data.length, ...record.data)
@@ -165,12 +223,9 @@ function restoreEditorRecord() {
     lifecycleBindings.value = record.lifecycleBindings
     processDataByMethod.value = record.processDataByMethod
     translatedBlockData.value = record.translatedBlockData
-    storeValues.set('ui_bind_lifecircle', createLifecycleStore(record.lifecycleBindings))
-    generatedPageCode.value = generatePageCode({
-      data,
-      methods,
-      lifecycleBindings: record.lifecycleBindings,
-    })
+    storeValues.set('ui_bind_lifecircle', restoredLifecycleStore)
+    restoredGraphSnapshot.value = restoredSnapshot
+    generatedPageCode.value = restoredPageCode
     hasSaveResult.value = true
     // LogicEditorStage 持有三类图缓存，恢复记录后必须重建实例，确保缓存来自恢复后的领域数据。
     editorRevision.value += 1
@@ -187,6 +242,7 @@ function handleSave(payload: LogicEditorSavePayload) {
   translatedBlockData.value = payload.blockData
   // 页面代码必须统一组装变量、全部已提交方法和生命周期，不能只展示脱离宿主的函数片段。
   generatedPageCode.value = generatePageCode({ data, methods, lifecycleBindings: payload.lifecycleBindings })
+  restoredGraphSnapshot.value = payload.graphSnapshot
   hasSaveResult.value = true
   persistEditorRecord(payload)
   context.store.set('ui_logic_visible', false)
@@ -214,7 +270,13 @@ onMounted(() => {
         <ElButton type="primary" @click="openLogicEditor">编辑方法</ElButton>
         <ElButton :disabled="!hasStoredRecord" @click="restoreEditorRecord">恢复记录</ElButton>
       </div>
-      <LogicEditor :key="editorRevision" v-model="graphData" :context="context" @save="handleSave" />
+      <LogicEditor
+        :key="editorRevision"
+        v-model="graphData"
+        :context="context"
+        :graph-snapshot="restoredGraphSnapshot"
+        @save="handleSave"
+      />
       <p>保存后会把完整图表记录写入 localStorage；刷新页面后可点击“恢复记录”继续编辑。</p>
     </section>
 
@@ -264,7 +326,7 @@ onMounted(() => {
               <strong>第一层：Blockly XML</strong>
               <code>blockData</code>
             </div>
-            <pre>{{ translatedBlockData }}</pre>
+            <pre>{{ formattedBlockData }}</pre>
           </section>
 
           <section class="translation-layer">

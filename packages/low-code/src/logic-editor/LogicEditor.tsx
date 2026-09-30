@@ -2,7 +2,7 @@ import { ElButton, ElDrawer, ElRadioButton, ElRadioGroup } from 'element-plus'
 import { defineComponent, type PropType } from 'vue'
 import type { GraphData } from '@antv/g6'
 import type { LowCodeCompatibilityContext } from '../compatibility/types'
-import type { LogicEditorSavePayload } from '../types/logic-editor'
+import type { LogicEditorGraphSnapshot, LogicEditorSavePayload } from '../types/logic-editor'
 import { provideLowCodeContext } from '../compatibility/context'
 import { GraphUtil } from './graph/graph-util'
 import type { INodeConfig } from './interface'
@@ -17,6 +17,7 @@ export default defineComponent({
   props: {
     modelValue: { type: Object as PropType<GraphData>, required: true },
     context: { type: Object as PropType<LowCodeCompatibilityContext>, required: true },
+    graphSnapshot: { type: Object as PropType<LogicEditorGraphSnapshot | null>, default: null },
   },
   emits: ['update:modelValue', 'save', 'select-node', 'change-graph'],
   setup(props) {
@@ -25,10 +26,12 @@ export default defineComponent({
   },
   data() {
     return {
-      stageMode: StageMode.METHOD_LIST,
-      mode: 'method' as 'method' | 'variable',
+      stageMode: (this.graphSnapshot?.currentStage || StageMode.METHOD_LIST) as StageMode,
+      mode: (this.graphSnapshot?.currentStage === StageMode.VARIABLE_LIST ? 'variable' : 'method') as 'method' | 'variable',
       curSelectedNodeConfig: null as INodeConfig | null,
-      preStageMode: StageMode.METHOD_LIST,
+      preStageMode: (this.graphSnapshot?.currentStage === StageMode.METHOD_DETAIL
+        ? StageMode.METHOD_DETAIL
+        : StageMode.METHOD_LIST) as StageMode,
       stage: null as InstanceType<typeof LogicEditorStage> | null,
       saving: false,
     }
@@ -132,6 +135,7 @@ export default defineComponent({
                 stageMode={this.stageMode}
                 methodList={this.methodList}
                 allDatas={this.allDatas}
+                initialGraphSnapshot={this.graphSnapshot}
                 {...{
                   'onChange-graph': this.onGraphChange,
                   'onSelect-node': this.onNodeSelected,

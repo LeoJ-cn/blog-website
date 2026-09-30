@@ -3,7 +3,7 @@ import { ElBreadcrumb, ElBreadcrumbItem } from 'element-plus'
 import { defineComponent, type PropType } from 'vue'
 import type { Data } from '../types/data'
 import type { Method } from '../types/method'
-import type { LogicEditorLifecycleBinding, LogicEditorSavePayload } from '../types/logic-editor'
+import type { LogicEditorGraphSnapshot, LogicEditorLifecycleBinding, LogicEditorSavePayload } from '../types/logic-editor'
 import { useLowCodeContext } from '../compatibility/context'
 import methodMixin from './compat/method'
 import { GraphUtil, type GraphEventMap } from './graph/graph-util'
@@ -30,6 +30,18 @@ import { NodeConfigServicesFactory } from './handler/config-builder/node-config-
 import styles from './styles/graph.module.scss'
 import style from './styles/logic-editor.module.scss'
 
+function cloneGraphData(graphData: GraphData | null): GraphData | null {
+  // G6 类型允许边引用运行时 Node；持久化快照只能保留可序列化的图模型字段。
+  return graphData ? JSON.parse(JSON.stringify(graphData)) as GraphData : null
+}
+
+function cloneMethodDetailGraphs(graphs: Record<string, GraphData>): Record<string, GraphData> {
+  return Object.fromEntries(Object.entries(graphs).map(([methodId, graphData]) => [
+    methodId,
+    cloneGraphData(graphData) as GraphData,
+  ]))
+}
+
 export default defineComponent({
   name: 'LogicEditorStage',
   props: {
@@ -37,6 +49,7 @@ export default defineComponent({
     methodList: { type: Array as PropType<Method[]>, default: () => [] },
     stageMode: { type: String as PropType<StageMode>, required: true },
     allDatas: { type: Array as PropType<Data[]>, default: () => [] },
+    initialGraphSnapshot: { type: Object as PropType<LogicEditorGraphSnapshot | null>, default: null },
     visible: { type: Boolean, required: true },
   },
   emits: ['update:modelValue', 'select-node', 'change-graph'],
@@ -83,13 +96,31 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.watchCurPageUuid('initial')
+    if (this.initialGraphSnapshot) {
+      this.restoreGraphSnapshot(this.initialGraphSnapshot)
+    } else {
+      this.watchCurPageUuid('initial')
+    }
     if (this.visible) void this.onVisible(true)
   },
   beforeUnmount() {
     void this.onVisible(false)
   },
   methods: {
+    restoreGraphSnapshot(snapshot: LogicEditorGraphSnapshot) {
+      this.methodListGraph = cloneGraphData(snapshot.methodListGraph)
+      this.methodDetailGraphList = cloneMethodDetailGraphs(snapshot.methodDetailGraphs)
+      this.variableGraph = cloneGraphData(snapshot.variableGraph)
+      this.curEditMethod = snapshot.currentMethodId
+        ? this.methodList.find((method) => method.id === snapshot.currentMethodId) || null
+        : null
+      GraphUtil.getInstance().storeGraphData({
+        [StageMode.METHOD_LIST]: cloneGraphData(snapshot.methodListGraph),
+        [StageMode.METHOD_DETAIL]: cloneMethodDetailGraphs(snapshot.methodDetailGraphs),
+        [StageMode.VARIABLE_LIST]: cloneGraphData(snapshot.variableGraph),
+      })
+      GraphUtil.getInstance().storeCurMode(snapshot.currentStage as StageMode)
+    },
     watchCurPageUuid(uuid: string) {
       if (!uuid) return
       this.graphData = { nodes: [], edges: [] }
@@ -224,12 +255,20 @@ export default defineComponent({
       if (this.curEditMethod?.id === sourceMethod.id) Object.assign(this.curEditMethod, sourceMethod)
       this.methodDetailGraphList[sourceMethod.id] = graphData
       this.$emit('update:modelValue', graphData)
+      const graphSnapshot: LogicEditorGraphSnapshot = {
+        methodListGraph: cloneGraphData(this.methodListGraph as GraphData | null),
+        methodDetailGraphs: cloneMethodDetailGraphs(this.methodDetailGraphList as Record<string, GraphData>),
+        variableGraph: cloneGraphData(this.variableGraph as GraphData | null),
+        currentStage: this.stageMode,
+        currentMethodId: this.curEditMethod?.id,
+      }
       return {
         graphData,
         processData: result.processData,
         blockData: result.blockly,
         processDataByMethod,
         lifecycleBindings: this.getLifecycleBindings(),
+        graphSnapshot,
       }
     },
     layout() {

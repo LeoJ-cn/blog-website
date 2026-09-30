@@ -1,6 +1,9 @@
 import type { GraphData } from '@antv/g6'
 import type { SimpleProcessData } from './process'
 
+/** 逻辑编辑器的三个隔离舞台；字符串值与内部 StageMode 持久化协议一致。 */
+export type LogicEditorStageMode = 'methodList' | 'methodDetail' | 'variableList'
+
 /** 编辑器内部三类画布的隔离快照；方法详情必须使用稳定方法 ID 作为键。 */
 export interface LogicEditorGraphSnapshot {
   /** 方法入口列表画布。 */
@@ -9,6 +12,10 @@ export interface LogicEditorGraphSnapshot {
   methodDetailGraphs: Record<string, GraphData>
   /** 页面变量画布。 */
   variableGraph: GraphData | null
+  /** 保存时正在展示的舞台，用于恢复标签页与画布类型。 */
+  currentStage: LogicEditorStageMode
+  /** 当前方法详情舞台对应的稳定方法 ID；非详情舞台可以省略。 */
+  currentMethodId?: string
 }
 
 /** 方法列表画布中一条已建立的“生命周期 → 方法”绑定。 */
@@ -43,4 +50,6 @@ export interface LogicEditorSavePayload {
   }>
   /** 方法列表画布中已连接的生命周期绑定；未连接时为空数组。 */
   lifecycleBindings: LogicEditorLifecycleBinding[]
+  /** 三类画布的完整布局快照，用于无损恢复节点坐标、边和当前舞台。 */
+  graphSnapshot: LogicEditorGraphSnapshot
 }

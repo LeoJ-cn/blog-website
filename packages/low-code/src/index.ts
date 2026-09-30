@@ -22,7 +22,12 @@ export type { Data } from './types/data'
 export { DataCategory, DataType } from './types/data'
 export type { Method } from './types/method'
 export { MethodType, MethodWatchType } from './types/method'
-export type { LogicEditorLifecycleBinding, LogicEditorSavePayload } from './types/logic-editor'
+export type {
+  LogicEditorGraphSnapshot,
+  LogicEditorLifecycleBinding,
+  LogicEditorSavePayload,
+  LogicEditorStageMode,
+} from './types/logic-editor'
 export type { SimpleProcessData } from './types/process'
 export type { Schema } from './types/schema'
 export type {

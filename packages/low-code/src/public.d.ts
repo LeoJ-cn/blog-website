@@ -2,10 +2,12 @@ import type { GraphData } from '@antv/g6'
 import type { DefineComponent } from 'vue'
 import type { LowCodeCompatibilityContext } from './compatibility/types'
 import type { SimpleProcessData } from './types/process'
+import type { LogicEditorGraphSnapshot } from './types/logic-editor'
 
 export const LogicEditor: DefineComponent<{
   modelValue: GraphData
   context: LowCodeCompatibilityContext
+  graphSnapshot?: LogicEditorGraphSnapshot | null
 }>
 
 export class LogicEditorService {
@@ -33,6 +35,7 @@ export type {
   LogicEditorGraphSnapshot,
   LogicEditorLifecycleBinding,
   LogicEditorSavePayload,
+  LogicEditorStageMode,
 } from './types/logic-editor'
 export type { SimpleProcessData } from './types/process'
 export {
