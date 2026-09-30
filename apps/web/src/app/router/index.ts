@@ -18,7 +18,7 @@ const router = createRouter({
         {
           path: 'performance',
           name: 'playground-performance',
-          component: () => import('../../pages/PlaygroundPerformancePage.vue'),
+          redirect: '/playground/performance/device-performance-probe',
         },
         {
           path: 'low-code',

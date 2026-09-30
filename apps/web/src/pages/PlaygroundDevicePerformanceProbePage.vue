@@ -44,7 +44,7 @@ onMounted(runProbe)
 
 <template>
   <article class="playground-content device-probe" data-page="device-performance-probe">
-    <p class="eyebrow">BROWSER</p>
+    <p class="eyebrow">PERFORMANCE</p>
     <h2>{{ project.title }}</h2>
     <p class="playground-description">{{ project.description }}</p>
     <div class="project-meta">

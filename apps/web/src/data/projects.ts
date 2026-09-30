@@ -9,6 +9,11 @@ import textLabelingStyleSource from '../components/text-labeling/TextLabeling.cs
 import textLabelingSource from '../components/text-labeling/TextLabeling.ts?raw'
 import textLabelingArticleSource from '../components/text-labeling/text.txt?raw'
 import xpathSelectionSource from '../components/text-labeling/xpath-selection.ts?raw'
+import migrationShellSource from '../../../../packages/react-vue-migration-demo/src/demo/ReactMigrationDemo.tsx?raw'
+import migrationHostingAdapterSource from '../../../../packages/react-vue-migration-demo/src/VueMigrationDemo.vue?raw'
+import migrationVueOrderSource from '../../../../packages/react-vue-migration-demo/src/migrated-vue/order/VueOrder.vue?raw'
+import migrationBootstrapSource from '../../../../packages/react-vue-migration-demo/src/migrated-vue/order/bootstrap.ts?raw'
+import migrationBridgeSource from '../../../../packages/react-vue-migration-demo/src/migration/ReactLoadVueOrder.tsx?raw'
 import type { ProjectCategory, ProjectDefinition } from '../types/project'
 
 export const categoryMetadata: Record<
@@ -44,13 +49,45 @@ export const projects: ProjectDefinition[] = [
     tags: ['React', 'Vue 3', 'Migration Platform'],
     featured: true,
     updatedAt: '2026-09-30',
-    sources: [],
+    sources: [
+      {
+        label: 'VueMigrationDemo.vue',
+        path: 'packages/react-vue-migration-demo/src/VueMigrationDemo.vue',
+        language: 'markup',
+        content: migrationHostingAdapterSource,
+      },
+      {
+        label: 'ReactMigrationDemo.tsx',
+        path: 'packages/react-vue-migration-demo/src/demo/ReactMigrationDemo.tsx',
+        language: 'tsx',
+        content: migrationShellSource,
+      },
+      {
+        label: 'ReactLoadVueOrder.tsx',
+        path: 'packages/react-vue-migration-demo/src/migration/ReactLoadVueOrder.tsx',
+        language: 'tsx',
+        content: migrationBridgeSource,
+      },
+      {
+        label: 'bootstrap.ts',
+        path: 'packages/react-vue-migration-demo/src/migrated-vue/order/bootstrap.ts',
+        language: 'typescript',
+        content: migrationBootstrapSource,
+      },
+      {
+        label: 'VueOrder.vue',
+        path: 'packages/react-vue-migration-demo/src/migrated-vue/order/VueOrder.vue',
+        language: 'markup',
+        content: migrationVueOrderSource,
+      },
+    ],
   },
   {
     slug: 'low-code',
     title: '低代码逻辑编辑器',
     summary: '图形化逻辑编排与流程数据生成',
-    description: '通过完整节点、连线与配置交互，生成兼容旧协议的 SimpleProcessData[] 和 blockData。',
+    description:
+      '通过完整节点、连线与配置交互，生成兼容旧协议的 SimpleProcessData[] 和 blockData。',
     category: 'browser',
     status: 'active',
     tags: ['Vue 3', 'G6', 'Low Code'],
@@ -86,6 +123,26 @@ export const projects: ProjectDefinition[] = [
         path: 'apps/web/src/components/advanced-image-loader/mock.js',
         language: 'javascript',
         content: advancedImageMockSource,
+      },
+    ],
+  },
+  {
+    slug: 'device-performance-probe',
+    title: '设备性能探针',
+    summary: '设备能力采集、动态基准测试与性能分级',
+    description:
+      '结合浏览器设备信息、静态硬件指标和带熔断的动态基准测试，生成当前设备的性能等级与渲染建议。',
+    category: 'performance',
+    status: 'active',
+    tags: ['User Agent', 'Performance API', 'Circuit Breaker'],
+    featured: false,
+    updatedAt: '2026-09-26',
+    sources: [
+      {
+        label: 'test-ua.js',
+        path: 'apps/web/src/components/test-ua/test-ua.js',
+        language: 'javascript',
+        content: schedulerUaSource,
       },
     ],
   },
@@ -156,26 +213,6 @@ export const projects: ProjectDefinition[] = [
         path: 'apps/web/src/components/text-labeling/text.txt',
         language: 'markup',
         content: textLabelingArticleSource,
-      },
-    ],
-  },
-  {
-    slug: 'device-performance-probe',
-    title: '设备性能探针',
-    summary: '设备能力采集、动态基准测试与性能分级',
-    description:
-      '结合浏览器设备信息、静态硬件指标和带熔断的动态基准测试，生成当前设备的性能等级与渲染建议。',
-    category: 'performance',
-    status: 'active',
-    tags: ['User Agent', 'Performance API', 'Circuit Breaker'],
-    featured: false,
-    updatedAt: '2026-09-26',
-    sources: [
-      {
-        label: 'test-ua.js',
-        path: 'apps/web/src/components/test-ua/test-ua.js',
-        language: 'javascript',
-        content: schedulerUaSource,
       },
     ],
   },

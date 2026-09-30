@@ -26,7 +26,7 @@ function startPerformanceRecording() {
 <template>
   <article class="playground-content scheduler-page" data-page="render-scheduler">
     <PerformancePanel ref="performancePanel" />
-    <p class="eyebrow">BROWSER</p>
+    <p class="eyebrow">PERFORMANCE</p>
     <h2>{{ project.title }}</h2>
     <p class="playground-description">{{ project.description }}</p>
     <div class="project-meta">

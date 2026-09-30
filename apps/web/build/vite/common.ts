@@ -1,23 +1,21 @@
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
-import {
-  normalizePath,
-  transformWithEsbuild,
-  type Plugin,
-  type UserConfig,
-} from 'vite'
+import { normalizePath, transformWithEsbuild, type Plugin, type UserConfig } from 'vite'
 
-const reactMigrationDemoTsxPattern =
-  /\/packages\/react-vue-migration-demo\/src\/.*\.tsx$/
+const reactMigrationDemoTsxPattern = /\/packages\/react-vue-migration-demo\/src\/.*\.tsx$/
 
 const createReactMigrationDemoTsxPlugin = (): Plugin => ({
   name: 'blog:react-migration-demo-tsx',
   enforce: 'pre',
   async transform(code, id) {
-    const [filePath] = id.split('?')
+    const [filePath, query = ''] = id.split('?')
 
-    if (!reactMigrationDemoTsxPattern.test(normalizePath(filePath))) {
+    // 源码面板通过 ?raw 展示原文件，不能把 Vite 生成的字符串模块再次按 React TSX 编译。
+    if (
+      query.split('&').includes('raw') ||
+      !reactMigrationDemoTsxPattern.test(normalizePath(filePath))
+    ) {
       return null
     }
 
