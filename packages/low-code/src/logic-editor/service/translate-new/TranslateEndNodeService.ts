@@ -35,7 +35,7 @@ export class TranslateEndNodeService extends TranslateBaseService {
     if (returnAnchor) {
       const recordData = method.map_FromAnchorToSourceNode[returnAnchor.index]
       if (!recordData) {
-        console.warn(`异常: 结束块没有指定  “返回值”, 请检查图表连线！！！`)
+        console.warn('当前方法已声明返回值，但结束节点尚未连接返回数据；保存结果将不包含 funcreturn。')
       } else {
         // 获取参数依赖的变量
         const return_variable = this.getParameterDependentVariable(recordData)
@@ -57,4 +57,3 @@ export class TranslateEndNodeService extends TranslateBaseService {
   }
 
 }
-

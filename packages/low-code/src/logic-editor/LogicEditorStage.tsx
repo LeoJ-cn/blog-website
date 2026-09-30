@@ -3,7 +3,7 @@ import { ElBreadcrumb, ElBreadcrumbItem } from 'element-plus'
 import { defineComponent, type PropType } from 'vue'
 import type { Data } from '../types/data'
 import type { Method } from '../types/method'
-import type { LogicEditorSavePayload } from '../types/logic-editor'
+import type { LogicEditorLifecycleBinding, LogicEditorSavePayload } from '../types/logic-editor'
 import { useLowCodeContext } from '../compatibility/context'
 import methodMixin from './compat/method'
 import { GraphUtil, type GraphEventMap } from './graph/graph-util'
@@ -201,12 +201,38 @@ export default defineComponent({
         throw new Error(`流程图存在 ${result.translateErrorList.length} 条非法连线，请修正后再保存`)
       }
 
+      // 每个方法必须独立翻译；methodId 是生命周期绑定与 processData 之间的稳定关联键。
+      const processDataByMethod = this.methodList.map((method) => {
+        if (!method.id) throw new Error(`方法“${method.funcLabel || method.funcName}”缺少稳定 ID`)
+        const methodGraphData = this.methodDetailGraphList[method.id]
+          || (method.graphData ? JSON.parse(method.graphData) as GraphData : getMethodDetialGraphData(method))
+        const methodResult = method.id === sourceMethod.id
+          ? result
+          : new LogicEditorService(methodGraphData, method.id)
+        if (methodResult.translateErrorList.length) {
+          throw new Error(
+            `方法“${method.funcLabel || method.funcName}”存在 ${methodResult.translateErrorList.length} 条非法连线，请修正后再保存`,
+          )
+        }
+        return {
+          methodId: method.id,
+          methodName: method.funcLabel || method.funcName,
+          processData: methodResult.processData,
+        }
+      })
+
       sourceMethod.graphData = JSON.stringify(graphData)
       sourceMethod.blockData = result.blockly
       if (this.curEditMethod?.id === sourceMethod.id) Object.assign(this.curEditMethod, sourceMethod)
       this.methodDetailGraphList[sourceMethod.id] = graphData
       this.$emit('update:modelValue', graphData)
-      return { graphData, processData: result.processData, blockData: result.blockly }
+      return {
+        graphData,
+        processData: result.processData,
+        blockData: result.blockly,
+        processDataByMethod,
+        lifecycleBindings: this.getLifecycleBindings(),
+      }
     },
     layout() {
       this.graph?.updateLayout({
@@ -267,6 +293,20 @@ export default defineComponent({
         else delete bindings[key]
       })
       this.context.store.set('ui_bind_lifecircle', bindings)
+    },
+    getLifecycleBindings(): LogicEditorLifecycleBinding[] {
+      const lifecycleNode = this.methodListGraph?.nodes?.find(
+        (node) => node.type === BlockNames_DTS.LOGIC_LIFECYCLE_NODE,
+      ) as INodeConfig | undefined
+      if (!lifecycleNode) return []
+
+      const bindings = this.context.store.get<Record<string, string[]>>('ui_bind_lifecircle') || {}
+      return (lifecycleNode.data?.anchors || []).flatMap((anchor) => {
+        const lifecycle = String(anchor.data.value || '')
+        const methodIds = bindings[`${lifecycle}_method_ids`] || []
+        if (!lifecycle || !methodIds.length) return []
+        return [{ lifecycle, label: String(anchor.data.label || lifecycle), methodIds: [...methodIds] }]
+      })
     },
     storeAllGraphData(curMode: StageMode) {
       if (!this.graph) return

@@ -54,8 +54,6 @@ export class LogicEditorService {
 
   constructor(graphData: GraphData, rootMethodId: string) {
     try {
-      console.time('翻译服务 time');
-
       (graphData.nodes || []).forEach((node, index) => {
         assertNodeConfig(node, `LogicEditorService graphData.nodes[${index}]`)
       })
@@ -77,24 +75,25 @@ export class LogicEditorService {
       this.translateErrorList = translateInstance.translateErrorList;
       translateInstance.destroy();
 
-      // 测试代码
-      const errorLL: Array<{ edgInfo: unknown; sourceNode: INodeConfig; targetNode: INodeConfig }> = [];
-      this.translateErrorList.forEach((item) => {
-        const { edge } = item;
-        const edgInfo = this.cache.getEdge_FromCache(edge);
-        if (!edgInfo?.source || !edgInfo.target) return;
-        const sourceNode = this.cache.getNode_FromCache(edgInfo.source);
-        const targetNode = this.cache.getNode_FromCache(edgInfo.target);
-        errorLL.push({
-          edgInfo,
-          sourceNode,
-          targetNode,
+      if (this.translateErrorList.length) {
+        // 空错误列表是正常翻译结果；只在确有非法边时输出诊断，避免把合法生命周期连线误报给用户。
+        const invalidEdges: Array<{ edgInfo: unknown; sourceNode: INodeConfig; targetNode: INodeConfig }> = [];
+        this.translateErrorList.forEach((item) => {
+          const { edge } = item;
+          const edgInfo = this.cache.getEdge_FromCache(edge);
+          if (!edgInfo?.source || !edgInfo.target) return;
+          const sourceNode = this.cache.getNode_FromCache(edgInfo.source);
+          const targetNode = this.cache.getNode_FromCache(edgInfo.target);
+          invalidEdges.push({
+            edgInfo,
+            sourceNode,
+            targetNode,
+          });
         });
-      });
-      console.log('！！！不合法的连线！！！', errorLL);
+        console.warn('检测到不合法的连线', invalidEdges);
+      }
 
       this.resetHelp();
-      console.timeLog('翻译服务 time');
     } catch (e) {
       this.resetHelp();
       console.log(e);

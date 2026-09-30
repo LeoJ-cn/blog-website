@@ -16,6 +16,7 @@ import {
 import { data2NodeConfig, getImgByType, method2NodeConfig } from './graph/util'
 import type { LogicCategory, LogicCategoryItem } from './interface'
 import { StageMode } from './interface'
+import { BlockNames_DTS } from './service/interface'
 import style from './styles/logic-editor.module.scss'
 import LogicServiceListManage from './LogicServiceListManage'
 
@@ -35,12 +36,46 @@ export default defineComponent({
       remoteCategories: [] as LogicCategory[],
     }
   },
+  watch: {
+    stageMode() {
+      // 切换舞台时回到节点库，并刷新展开项，避免 API 页签或旧分类残留到其他舞台。
+      this.topCurTab = 'methodLib'
+      this.curSearchKey = ''
+      this.$nextTick(() => {
+        this.openPanels = this.categories.map((category) => category.uuid || category.name)
+      })
+    },
+  },
   computed: {
     categories(): LogicCategory[] {
       if (this.stageMode === StageMode.VARIABLE_LIST) return [variableCategory]
-      const builtIn = [baseCategory, exceptionCategory, operationCategory, logicCategory, routerCategory, loopCategory, numberCategory]
+
+      if (this.stageMode === StageMode.METHOD_LIST) {
+        const createMethodNode = baseCategory.children.find(
+          (node) => node.type === BlockNames_DTS.LOGIC_FUNC_NODE,
+        )
+        return createMethodNode
+          ? [{ name: 'custom-methods', label: '自定义方法节点', children: [createMethodNode] }]
+          : []
+      }
+
+      // 开始、结束由方法详情图自动创建；生命周期只属于方法列表，详情节点库不重复暴露。
+      const unavailableDetailTypes = new Set<BlockNames_DTS | string>([
+        BlockNames_DTS.LOGIC_START_NODE,
+        BlockNames_DTS.LOGIC_END_NODE,
+        BlockNames_DTS.LOGIC_LIFECYCLE_NODE,
+      ])
+      const remoteCategories = this.remoteCategories
+        .map((category) => ({
+          ...category,
+          children: (category.children || []).filter(
+            (node) => !unavailableDetailTypes.has(node.type),
+          ),
+        }))
+        .filter((category) => category.children.length)
+      const builtIn = [exceptionCategory, operationCategory, logicCategory, routerCategory, loopCategory, numberCategory]
       const methodChildren = this.methodList.map((method) => ({
-        type: 'logic-func-node',
+        type: BlockNames_DTS.LOGIC_FUNC_NODE,
         label: method.funcLabel || method.funcName,
         name: method.funcName,
         meta: method2NodeConfig(method),
@@ -52,10 +87,10 @@ export default defineComponent({
         meta: data2NodeConfig(data),
       }))
       return [
-        ...this.remoteCategories,
+        ...remoteCategories,
         ...builtIn,
-        { name: 'created-method', label: '自定义方法', children: methodChildren },
-        { name: 'created-data', label: '自定义变量', children: dataChildren },
+        { name: 'created-method', label: `我的方法（${methodChildren.length}）`, children: methodChildren },
+        { name: 'created-data', label: `我的变量（${dataChildren.length}）`, children: dataChildren },
       ]
     },
     filteredCategories(): LogicCategory[] {
@@ -104,7 +139,7 @@ export default defineComponent({
       <aside class={style.leftBar}>
         <ElRadioGroup modelValue={this.topCurTab} onChange={(value) => { this.topCurTab = value as 'methodLib' | 'apiLib' }}>
           <ElRadioButton value="methodLib">节点库</ElRadioButton>
-          <ElRadioButton value="apiLib">API 库</ElRadioButton>
+          {this.stageMode === StageMode.METHOD_DETAIL && <ElRadioButton value="apiLib">API 库</ElRadioButton>}
         </ElRadioGroup>
         <ElInput modelValue={this.curSearchKey} onInput={(value) => { this.curSearchKey = String(value) }} placeholder="搜索节点" clearable />
         {this.topCurTab === 'methodLib' ? (

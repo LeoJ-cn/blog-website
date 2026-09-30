@@ -5,7 +5,7 @@ import { DataType, Schema } from '../../types/data';
 import { Method } from '../../types/method';
 import methodMixin from '../compat/method';
 import { createEdgeModel, getNodeModel, isClickApiHelper, isClickMethodDetial, isVariableNode } from '../graph/util';
-import { IApiConfig, IFuncNodeConfig, IIGroup, INodeConfig, IPositon, StageMode, assertNodeConfig } from '../interface';
+import { IApiConfig, IFuncNodeConfig, IIGroup, INodeConfig, IPositon, LogicTransferData, StageMode, assertNodeConfig } from '../interface';
 // Vue 3 Options API 组件实例由事件层按原字段协议访问；运行时不依赖组件构造函数。
 type LogicEditorStage = any;
 import { AnchorTag_DTS, BlockNames_DTS, ConstOrVariable_DTS } from './../service/interface';
@@ -21,6 +21,31 @@ export async function onDrop(vm: LogicEditorStage, e: IG6GraphEvent) {
   if (originalEvent.dataTransfer) {
     const transferData = originalEvent.dataTransfer.getData('dragComponent');
     if (transferData) {
+      const transfer = JSON.parse(transferData) as LogicTransferData;
+      const hasExistingModel = Boolean(transfer.model);
+      const systemDetailNodes = new Set<BlockNames_DTS>([
+        BlockNames_DTS.LOGIC_START_NODE,
+        BlockNames_DTS.LOGIC_END_NODE,
+        BlockNames_DTS.LOGIC_LIFECYCLE_NODE,
+      ]);
+      const isAllowed = vm.stageMode === StageMode.METHOD_LIST
+        ? transfer.type === BlockNames_DTS.LOGIC_FUNC_NODE && !hasExistingModel
+        : vm.stageMode === StageMode.VARIABLE_LIST
+          ? isVariableNode(transfer.type) && !hasExistingModel
+          : !systemDetailNodes.has(transfer.type) && (
+              transfer.type !== BlockNames_DTS.LOGIC_FUNC_NODE || hasExistingModel
+            );
+      if (!isAllowed) {
+        const message = vm.stageMode === StageMode.METHOD_LIST
+          ? '方法列表只用于创建方法和编排生命周期；请进入方法详情后添加执行节点。'
+          : vm.stageMode === StageMode.VARIABLE_LIST
+            ? '变量画布只允许创建变量节点。'
+            : transfer.type === BlockNames_DTS.LOGIC_FUNC_NODE
+              ? '方法详情只能调用已有方法；请先在方法列表创建方法。'
+              : '开始、结束和生命周期节点由编辑器按舞台自动维护，不能重复添加。';
+        vm.context.feedback.warning(message);
+        return;
+      }
       await addNode(vm, transferData, { x: e.x, y: e.y });
     }
   }

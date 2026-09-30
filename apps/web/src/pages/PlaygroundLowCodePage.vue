@@ -21,7 +21,8 @@ const initialMethod: Method = {
   blockData: '',
   graphData: '',
   methodType: MethodType.pageMethod,
-  funcReturn: { state: true, type: DataType.String, schema: { type: DataType.String } },
+  // 生命周期演示方法不返回业务数据，避免结束节点被错误地要求连接返回值。
+  funcReturn: { state: false, type: DataType.Undefined, schema: { type: DataType.Undefined } },
   temp_data: [],
   access_modifier: { accessible: true, editable: true },
 }
@@ -33,7 +34,9 @@ const data = reactive<LowCodeCompatibilityContext['data']>([])
 // 使用响应式 Map 承载兼容层状态，确保外部按钮更新后编辑器抽屉能立即响应。
 const storeValues = reactive(new Map<string, unknown>([['ui_logic_visible', false]]))
 const listeners = new Map<string, Set<(...args: any[]) => void>>()
-const processData = ref('')
+const processDataByMethod = ref<LogicEditorSavePayload['processDataByMethod']>([])
+const lifecycleBindings = ref<LogicEditorSavePayload['lifecycleBindings']>([])
+const hasSaveResult = ref(false)
 
 const context = createLowCodeContext({
   methods,
@@ -72,7 +75,11 @@ const context = createLowCodeContext({
   },
 })
 
-const hasProcessData = computed(() => Boolean(processData.value))
+const methodLabels = computed(() => new Map(methods.map((method) => [method.id, method.funcLabel || method.funcName])))
+
+function getMethodLabel(methodId: string) {
+  return methodLabels.value.get(methodId) || methodId
+}
 
 function openLogicEditor() {
   context.store.set('ui_logic_visible', true)
@@ -80,8 +87,14 @@ function openLogicEditor() {
 
 function handleSave(payload: LogicEditorSavePayload) {
   graphData.value = payload.graphData
-  processData.value = JSON.stringify(payload.processData, null, 2)
+  processDataByMethod.value = payload.processDataByMethod
+  lifecycleBindings.value = payload.lifecycleBindings
+  hasSaveResult.value = true
   context.store.set('ui_logic_visible', false)
+}
+
+function formatProcessData(processData: LogicEditorSavePayload['processData']) {
+  return JSON.stringify(processData, null, 2)
 }
 </script>
 
@@ -96,12 +109,46 @@ function handleSave(payload: LogicEditorSavePayload) {
     <section class="low-code-host">
       <ElButton type="primary" @click="openLogicEditor">编辑方法</ElButton>
       <LogicEditor v-model="graphData" :context="context" @save="handleSave" />
-      <p>点击“编辑方法”打开逻辑编辑器。保存后，生成的 processData 会显示在下方。</p>
+      <p>点击“编辑方法”打开逻辑编辑器。保存后，方法流程与生命周期绑定会显示在下方。</p>
     </section>
 
-    <section v-if="hasProcessData" class="low-code-results">
-      <h3>processData</h3>
-      <pre>{{ processData }}</pre>
+    <section v-if="hasSaveResult" class="low-code-results">
+      <article class="low-code-result-card">
+        <h3>生命周期绑定</h3>
+        <div v-if="lifecycleBindings.length" class="lifecycle-bindings">
+          <div v-for="binding in lifecycleBindings" :key="binding.lifecycle" class="lifecycle-binding">
+            <div>
+              <strong>{{ binding.label }}</strong>
+              <code>{{ binding.lifecycle }}</code>
+            </div>
+            <p class="lifecycle-flow-label">↓ 依次触发</p>
+            <ol>
+              <li v-for="methodId in binding.methodIds" :key="methodId">
+                <span>{{ getMethodLabel(methodId) }}</span>
+                <code>{{ methodId }}</code>
+              </li>
+            </ol>
+          </div>
+        </div>
+        <p v-else class="empty-result">尚未连接生命周期。</p>
+      </article>
+
+      <article class="low-code-result-card">
+        <h3>各方法的 processData</h3>
+        <div class="method-process-list">
+          <section
+            v-for="methodResult in processDataByMethod"
+            :key="methodResult.methodId"
+            class="method-process-result"
+          >
+            <div class="method-process-heading">
+              <strong>{{ methodResult.methodName }}</strong>
+              <code>{{ methodResult.methodId }}</code>
+            </div>
+            <pre>{{ formatProcessData(methodResult.processData) }}</pre>
+          </section>
+        </div>
+      </article>
     </section>
   </article>
 </template>
@@ -120,10 +167,26 @@ function handleSave(payload: LogicEditorSavePayload) {
 }
 
 .low-code-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
   margin-top: 24px;
 }
 
-.low-code-results pre {
+.low-code-result-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.36);
+}
+
+.low-code-result-card h3 {
+  margin: 0 0 16px;
+}
+
+.low-code-result-card pre {
+  margin: 0;
   max-height: 360px;
   padding: 16px;
   overflow: auto;
@@ -131,5 +194,71 @@ function handleSave(payload: LogicEditorSavePayload) {
   background: #0f172a;
   color: #e2e8f0;
   white-space: pre-wrap;
+}
+
+.method-process-list {
+  display: grid;
+  gap: 16px;
+}
+
+.method-process-result {
+  min-width: 0;
+}
+
+.method-process-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.method-process-heading code {
+  color: #94a3b8;
+  overflow-wrap: anywhere;
+}
+
+.lifecycle-bindings {
+  display: grid;
+  gap: 12px;
+}
+
+.lifecycle-binding {
+  padding: 16px;
+  border: 1px solid rgba(94, 234, 212, 0.3);
+  border-radius: 10px;
+  background: rgba(13, 148, 136, 0.08);
+}
+
+.lifecycle-binding > div,
+.lifecycle-binding li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lifecycle-binding ol {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding-left: 24px;
+}
+
+.lifecycle-flow-label {
+  margin: 12px 0 0;
+  color: #5eead4;
+  font-size: 13px;
+}
+
+.lifecycle-binding code,
+.empty-result {
+  color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .low-code-results {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
