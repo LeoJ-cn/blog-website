@@ -11,7 +11,7 @@ const categories = (Object.keys(categoryMetadata) as ProjectCategory[]).map((slu
 }))
 
 function getProjectPath(category: ProjectCategory, projectSlug: string) {
-  if (category === 'performance') return '/playground/performance'
+  if (category === 'performance') return `/playground/performance/${projectSlug}`
   if (category === 'engineering') return `/playground/engineering/${projectSlug}`
   if (projectSlug === 'low-code') return '/playground/low-code'
   return `/playground/browser/${projectSlug}`

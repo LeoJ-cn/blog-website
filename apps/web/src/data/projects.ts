@@ -95,7 +95,7 @@ export const projects: ProjectDefinition[] = [
     summary: '优先级队列与 Vue 组件延迟渲染实验',
     description:
       '通过优先级队列依次释放 Vue 组件的渲染时机，观察不同业务模块按计划进入页面的过程。',
-    category: 'browser',
+    category: 'performance',
     status: 'active',
     tags: ['Vue 3', 'Priority Queue', 'Deferred Rendering'],
     featured: true,
@@ -165,7 +165,7 @@ export const projects: ProjectDefinition[] = [
     summary: '设备能力采集、动态基准测试与性能分级',
     description:
       '结合浏览器设备信息、静态硬件指标和带熔断的动态基准测试，生成当前设备的性能等级与渲染建议。',
-    category: 'browser',
+    category: 'performance',
     status: 'active',
     tags: ['User Agent', 'Performance API', 'Circuit Breaker'],
     featured: false,

@@ -44,12 +44,12 @@ const router = createRouter({
           component: () => import('../../pages/PlaygroundAdvancedImagePage.vue'),
         },
         {
-          path: 'browser/render-scheduler',
+          path: 'performance/render-scheduler',
           name: 'playground-render-scheduler',
           component: () => import('../../pages/PlaygroundRenderSchedulerPage.vue'),
         },
         {
-          path: 'browser/device-performance-probe',
+          path: 'performance/device-performance-probe',
           name: 'playground-device-performance-probe',
           component: () => import('../../pages/PlaygroundDevicePerformanceProbePage.vue'),
         },
