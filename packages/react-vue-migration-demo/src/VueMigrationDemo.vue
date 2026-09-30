@@ -8,19 +8,18 @@ let dispose: (() => void) | null = null
 
 onMounted(() => {
   if (!container.value) {
-    startupError.value = 'React migration demo container is unavailable.'
+    startupError.value = 'React 迁移演示容器不可用。'
     return
   }
 
   try {
     dispose = mountReactMigrationDemo(container.value, {
       onError(reason) {
-        startupError.value =
-          reason instanceof Error ? reason.message : 'React migration demo failed to render.'
+        startupError.value = reason instanceof Error ? reason.message : 'React 迁移演示渲染失败。'
       },
     })
   } catch (reason) {
-    startupError.value = reason instanceof Error ? reason.message : 'React migration demo failed to start.'
+    startupError.value = reason instanceof Error ? reason.message : 'React 迁移演示启动失败。'
   }
 })
 

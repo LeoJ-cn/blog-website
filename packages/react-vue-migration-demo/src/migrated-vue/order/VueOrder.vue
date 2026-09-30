@@ -85,25 +85,37 @@ function navigate(method: 'push' | 'replace', orderId: string) {
 
 <template>
   <article class="react-vue-migration-demo__vue-order">
-    <p class="react-vue-migration-demo__eyebrow">Vue Migrated Implementation</p>
+    <p class="react-vue-migration-demo__eyebrow">Vue 迁移版实现</p>
     <h3>Vue Order {{ formatOrderId(orderId) }}</h3>
     <dl>
-      <div><dt>orderId</dt><dd>{{ orderId }}</dd></div>
-      <div><dt>readonly</dt><dd>{{ readonly }}</dd></div>
-      <div><dt>name</dt><dd>{{ orderState.order.value?.name ?? 'Loading…' }}</dd></div>
-      <div><dt>internal count</dt><dd>{{ count }}</dd></div>
+      <div>
+        <dt>orderId</dt>
+        <dd>{{ orderId }}</dd>
+      </div>
+      <div>
+        <dt>readonly</dt>
+        <dd>{{ readonly }}</dd>
+      </div>
+      <div>
+        <dt>name</dt>
+        <dd>{{ orderState.order.value?.name ?? '加载中…' }}</dd>
+      </div>
+      <div>
+        <dt>count</dt>
+        <dd>{{ count }}</dd>
+      </div>
     </dl>
     <p v-if="orderState.error.value" role="alert">{{ orderState.error.value }}</p>
     <p>{{ receivedReactMessage }}</p>
     <div class="react-vue-migration-demo__actions">
       <button type="button" @click="count += 1">内部状态 +1</button>
-      <button type="button" @click="emitSuccess">emit success</button>
-      <button type="button" @click="emitClose">emit close</button>
+      <button type="button" @click="emitSuccess">发送 success</button>
+      <button type="button" @click="emitClose">发送 close</button>
       <button type="button" @click="navigate('push', '10001')">router.push → 10001</button>
       <button type="button" @click="navigate('push', '10002')">router.push → 10002</button>
       <button type="button" @click="navigate('replace', '10002')">router.replace → 10002</button>
       <button type="button" @click="migrationPlatform.router.back()">router.back</button>
-      <button type="button" @click="emitEventBusMessage">EventBus emit</button>
+      <button type="button" @click="emitEventBusMessage">EventBus 发送</button>
     </div>
   </article>
 </template>

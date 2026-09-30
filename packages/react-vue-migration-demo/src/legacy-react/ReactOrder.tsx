@@ -8,7 +8,7 @@ export interface ReactOrderProps {
 export function ReactOrder({ orderId, readonly }: ReactOrderProps) {
   return (
     <article className="react-vue-migration-demo__legacy-order">
-      <p className="react-vue-migration-demo__eyebrow">Legacy React Implementation</p>
+      <p className="react-vue-migration-demo__eyebrow">React 旧版实现</p>
       <h3>React Order {formatOrderId(orderId)}</h3>
       <dl>
         <div>
