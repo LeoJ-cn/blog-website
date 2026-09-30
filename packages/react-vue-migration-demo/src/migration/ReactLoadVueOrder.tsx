@@ -1,10 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import {
-  useNavigate,
-  type NavigateFunction,
-  type NavigateOptions,
-  type To,
-} from 'react-router-dom'
+import { useNavigate, type NavigateFunction, type NavigateOptions, type To } from 'react-router-dom'
 import { mountVueOrder } from '../migrated-vue/order/bootstrap'
 import type {
   OrderModuleEvents,
@@ -85,5 +80,13 @@ export function ReactLoadVueOrder({
     lifecycleRef.current?.update({ orderId, readonly })
   }, [orderId, readonly])
 
-  return <div ref={containerRef} className="react-vue-migration-demo__vue-host" />
+  return (
+    <div className="react-vue-migration-demo__bridge-slot">
+      <div className="react-vue-migration-demo__bridge-lane" aria-label="临时迁移桥接链路">
+        <span>临时迁移桥接</span>
+        <code>ReactLoadVueOrder.tsx → bootstrap.mount / update / unmount</code>
+      </div>
+      <div ref={containerRef} className="react-vue-migration-demo__vue-host" />
+    </div>
+  )
 }

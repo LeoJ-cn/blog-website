@@ -85,6 +85,12 @@ function navigate(method: 'push' | 'replace', orderId: string) {
 
 <template>
   <article class="react-vue-migration-demo__vue-order">
+    <div
+      class="react-vue-migration-demo__boundary-label react-vue-migration-demo__boundary-label--vue-component"
+    >
+      <span>Vue 业务组件</span>
+      <code>VueOrder.vue</code>
+    </div>
     <p class="react-vue-migration-demo__eyebrow">Vue 迁移版实现</p>
     <h3>Vue Order {{ formatOrderId(orderId) }}</h3>
     <dl>

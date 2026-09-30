@@ -116,6 +116,10 @@ function DemoWorkspace() {
 
   return (
     <section className="react-vue-migration-demo">
+      <div className="react-vue-migration-demo__boundary-label react-vue-migration-demo__boundary-label--react-shell">
+        <span>React Shell</span>
+        <code>ReactMigrationDemo.tsx</code>
+      </div>
       <header className="react-vue-migration-demo__header">
         <p className="react-vue-migration-demo__eyebrow">框架迁移实验室</p>
         <h2>React → Vue 渐进迁移</h2>
@@ -180,7 +184,9 @@ function DemoWorkspace() {
           <div className="react-vue-migration-demo__section-heading">
             <div>
               <span>业务组件</span>
-              <strong>{state.implementation === 'vue' ? 'Vue 模块' : 'React 旧版'}</strong>
+              <strong>
+                {state.implementation === 'vue' ? '当前：Vue 迁移版' : '当前：React 旧版'}
+              </strong>
             </div>
             <button type="button" onClick={sendReactEventBusMessage}>
               React EventBus 发送

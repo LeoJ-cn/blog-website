@@ -2,7 +2,46 @@
   --migration-accent: #38bdf8;
   --migration-border: rgba(148, 163, 184, 0.2);
   --migration-muted: #94a3b8;
+  --migration-react: #61dafb;
+  --migration-vue: #42d392;
+  --migration-bridge: #f59e0b;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(97, 218, 251, 0.68);
+  border-radius: 12px;
   color: #e2e8f0;
+  background: rgba(8, 27, 46, 0.42);
+}
+
+.react-vue-migration-demo__boundary-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.react-vue-migration-demo__boundary-label code {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.82;
+}
+
+.react-vue-migration-demo__boundary-label--react-shell,
+.react-vue-migration-demo__boundary-label--react-component {
+  color: var(--migration-react);
+}
+
+.react-vue-migration-demo__boundary-label--react-shell {
+  margin-bottom: 0.8rem;
+}
+
+.react-vue-migration-demo__boundary-label--vue-component {
+  color: var(--migration-vue);
 }
 
 .react-vue-migration-demo button {
@@ -121,6 +160,51 @@
   margin: 0;
 }
 
+.react-vue-migration-demo__vue-order,
+.react-vue-migration-demo__legacy-order {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px dashed;
+  border-radius: 10px;
+}
+
+.react-vue-migration-demo__vue-order {
+  border-color: rgba(66, 211, 146, 0.72);
+  background: rgba(15, 58, 45, 0.18);
+}
+
+.react-vue-migration-demo__legacy-order {
+  border-color: rgba(97, 218, 251, 0.72);
+  background: rgba(8, 47, 73, 0.2);
+}
+
+.react-vue-migration-demo__bridge-lane {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 0.65rem 0.8rem;
+  border-left: 3px solid var(--migration-bridge);
+  border-radius: 0 7px 7px 0;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.react-vue-migration-demo__bridge-lane span {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.react-vue-migration-demo__bridge-lane code {
+  color: #fde68a;
+  font-size: 0.68rem;
+}
+
+.react-vue-migration-demo__vue-host {
+  min-width: 0;
+}
+
 .react-vue-migration-demo__actions {
   display: flex;
   flex-wrap: wrap;
@@ -156,6 +240,10 @@
 }
 
 @media (max-width: 900px) {
+  .react-vue-migration-demo {
+    padding: 0.7rem;
+  }
+
   .react-vue-migration-demo__workspace {
     grid-template-columns: 1fr;
   }

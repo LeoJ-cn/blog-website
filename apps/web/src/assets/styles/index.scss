@@ -211,24 +211,30 @@ h1 span {
   font-family: monospace;
   font-size: 11px;
   letter-spacing: 0.14em;
+  margin: 0;
 }
 
 .project-card h3 {
   font-size: clamp(25px, 3vw, 38px);
   letter-spacing: -0.04em;
-  margin: auto 0 12px;
+  line-height: 1.08;
+  margin: 24px 0 12px;
+  min-height: 2.16em;
+  text-wrap: balance;
 }
 
 .project-card > p:not(.project-card__eyebrow) {
   color: #95a3bc;
+  flex: 1;
   line-height: 1.65;
-  margin-bottom: 24px;
+  margin: 0 0 24px;
 }
 
 .project-card__link {
   color: #dce5f7;
   font-size: 14px;
   font-weight: 700;
+  margin-top: auto;
 }
 
 .playground-toolbar {
@@ -310,8 +316,7 @@ h1 span {
 
 .playground-nav__category.router-link-active {
   background: linear-gradient(100deg, rgb(23 69 70 / 48%), #111a2e 72%);
-  border-color: rgb(98 230 181 / 28%) rgb(98 230 181 / 16%)
-    rgb(98 230 181 / 16%) #62e6b5;
+  border-color: rgb(98 230 181 / 28%) rgb(98 230 181 / 16%) rgb(98 230 181 / 16%) #62e6b5;
   color: #f4f7ff;
 }
 
