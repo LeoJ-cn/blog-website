@@ -31,7 +31,10 @@ function getProjectPath(category: ProjectCategory, projectSlug: string) {
     <aside class="playground-sidebar" aria-label="技术点导航">
       <nav class="playground-nav">
         <div v-for="category in categories" :key="category.slug" class="playground-nav__group">
-          <RouterLink :to="`/playground/${category.slug}`">
+          <RouterLink
+            :to="`/playground/${category.slug}`"
+            class="playground-nav__category"
+          >
             <span>
               <strong>{{ category.name }}</strong>
               <small>{{ category.hint }}</small>
