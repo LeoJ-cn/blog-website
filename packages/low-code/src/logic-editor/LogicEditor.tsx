@@ -116,6 +116,7 @@ export default defineComponent({
                 <ElRadioButton value="method">{this.context.translate('logicEditor.methodList')}</ElRadioButton>
                 <ElRadioButton value="variable">{this.context.translate('logicEditor.variableView')}</ElRadioButton>
               </ElRadioGroup>
+              <ElButton onClick={this.easyLayout}>自动排版</ElButton>
               <ElButton type="primary" loading={this.saving} disabled={this.saving} onClick={this.saveLogicData}>
                 {this.context.translate('save')}
               </ElButton>
