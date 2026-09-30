@@ -46,14 +46,18 @@ export default defineComponent({
           this.context.feedback.error('类型不正确,请重新输入')
           return
         }
+        const schema = Parse(defaultValue)
+        if (!schema) throw new Error('变量值无法生成 schema')
         anchor.data.value = defaultValue
+        // 对象展开直接读取节点锚点的 schema，必须与变量数据源保持同步。
+        anchor.data.schema = schema
         const source = this.context.data.find((item) => item.id === this.dataItem?.id)
         if (source) Object.assign(source, {
           ...this.dataItem,
           label: anchor.data.label,
           value: defaultValue,
           block_data: undefined,
-          schema: Parse(defaultValue),
+          schema,
         })
         const graph = GraphUtil.getInstance().graph
         if (!graph?.findById(this.curSelectedNodeConfig.id)) throw new Error('node unavailable')

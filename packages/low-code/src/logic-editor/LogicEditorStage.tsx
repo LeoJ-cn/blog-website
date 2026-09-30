@@ -11,7 +11,6 @@ import { LOGIC_STATEMENT_EDGE } from './graph/shape/edges/logic-statement-edge'
 import { getMethodDetialGraphData, getMethodListGraph, getVariableGraph, isVariableNode } from './graph/util'
 import {
   beforeAnchorShow,
-  handleKeydown,
   onAfterEdgeSelected,
   onAfterNodeDblclick,
   onAfterNodeSelectedDrop,
@@ -132,7 +131,6 @@ export default defineComponent({
         { eventName: 'before-edge-add', callback: (data: any) => onBeforeEdgeAdd(this as any, data) },
         { eventName: 'after-node-dblclick', callback: (event: IG6GraphEvent) => onAfterNodeDblclick(this as any, event) },
         { eventName: 'wheel', callback: (event: IG6GraphEvent) => onCanvasWheelzoom(this as any, event) },
-        { eventName: 'keydown', callback: (event: IG6GraphEvent) => handleKeydown(this as any, event) },
         { eventName: 'before-anchor-show', callback: (event: IG6GraphEvent) => beforeAnchorShow(this as any, event) },
       ]
       this.graphEvents = events

@@ -623,31 +623,6 @@ export function onAfterNodeDblclick(vm: LogicEditorStage, e: IG6GraphEvent) {
   saveCurMethodDetialGraphData(vm);
 }
 
-export function handleKeydown(vm: LogicEditorStage, e: IG6GraphEvent) {
-  const keyboardEvent = e.originalEvent as KeyboardEvent | undefined;
-  const code = keyboardEvent?.code || e.code;
-  const target = keyboardEvent?.target;
-  const isEditableTarget =
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    (target instanceof HTMLElement && target.isContentEditable);
-
-  // 删除仅响应独立的 Backspace/Delete，避免修饰键和编辑控件中的输入误删画布节点。
-  if (
-    !vm.curSelectedNode ||
-    isEditableTarget ||
-    keyboardEvent?.altKey ||
-    keyboardEvent?.ctrlKey ||
-    keyboardEvent?.metaKey ||
-    keyboardEvent?.shiftKey ||
-    (code !== 'Backspace' && code !== 'Delete')
-  ) {
-    return;
-  }
-
-  vm.deleteNode(vm.curSelectedNode as INode);
-}
-
 /**
  * 删除边或者节点
  * @param item 边 / 节点

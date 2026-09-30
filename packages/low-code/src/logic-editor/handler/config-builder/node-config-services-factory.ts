@@ -147,7 +147,9 @@ export class NodeConfigServicesFactory {
     Object.keys(LogicBlockBaseTplMap).forEach((nodeType) => {
       const type = nodeType as BlockNames_DTS;
       const current = this.map.get(type);
-      if (!current?.getConfig) {
+      // 模板只负责补齐完全没有生成器的节点，不能覆盖异步变量或对象详情等专用生成能力。
+      const hasGenerator = current?.getConfig || current?.getConfigAsync || current?.getVarDetialConfig;
+      if (!hasGenerator) {
         const fallback = new TemplateConfigService(type);
         fallback.intro = current?.intro;
         fallback.operationTree = current?.operationTree;
