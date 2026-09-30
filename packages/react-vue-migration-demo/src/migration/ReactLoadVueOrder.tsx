@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import {
+  useNavigate,
+  type NavigateFunction,
+  type NavigateOptions,
+  type To,
+} from 'react-router-dom'
 import { mountVueOrder } from '../migrated-vue/order/bootstrap'
 import type {
   OrderModuleEvents,
@@ -26,7 +31,21 @@ export function ReactLoadVueOrder({
   const closeRef = useRef(onClose)
   const lifecycleRef = useRef<ReturnType<typeof createBridgeLifecycle> | null>(null)
   const navigate = useNavigate()
-  const platform = useMemo(() => createReactMigrationPlatform(navigate), [navigate])
+  const navigateRef = useRef(navigate)
+  navigateRef.current = navigate
+  // MemoryRouter 会在 location 变化时更换 navigate 引用；稳定代理可确保路由更新只走
+  // bootstrap.update，而不会触发负责 mount/unmount 的 effect 重建 Vue App。
+  const platform = useMemo(() => {
+    const stableNavigate = ((to: To | number, options?: NavigateOptions) => {
+      if (typeof to === 'number') {
+        navigateRef.current(to)
+        return
+      }
+      navigateRef.current(to, options)
+    }) as NavigateFunction
+
+    return createReactMigrationPlatform(stableNavigate)
+  }, [])
 
   successRef.current = onSuccess
   closeRef.current = onClose

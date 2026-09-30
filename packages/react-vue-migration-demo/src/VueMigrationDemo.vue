@@ -13,7 +13,12 @@ onMounted(() => {
   }
 
   try {
-    dispose = mountReactMigrationDemo(container.value)
+    dispose = mountReactMigrationDemo(container.value, {
+      onError(reason) {
+        startupError.value =
+          reason instanceof Error ? reason.message : 'React migration demo failed to render.'
+      },
+    })
   } catch (reason) {
     startupError.value = reason instanceof Error ? reason.message : 'React migration demo failed to start.'
   }

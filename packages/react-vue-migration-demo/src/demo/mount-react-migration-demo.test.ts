@@ -12,7 +12,10 @@ describe('mountReactMigrationDemo', () => {
     dispose()
     dispose()
 
-    expect(rootFactory).toHaveBeenCalledWith(container)
+    expect(rootFactory).toHaveBeenCalledWith(
+      container,
+      expect.objectContaining({ onUncaughtError: expect.any(Function) }),
+    )
     expect(root.render).toHaveBeenCalledOnce()
     expect(root.unmount).toHaveBeenCalledOnce()
   })
@@ -38,5 +41,21 @@ describe('mountReactMigrationDemo', () => {
     })
 
     expect(() => mount(document.createElement('div'))).toThrow(rootError)
+  })
+
+  it('forwards an asynchronous React root error and schedules cleanup', async () => {
+    const root = { render: vi.fn(), unmount: vi.fn() }
+    const onError = vi.fn()
+    const rootFactory = vi.fn((_container, options) => {
+      options?.onUncaughtError(new Error('component failed'))
+      return root
+    })
+    const mount = createReactMigrationDemoMount(rootFactory)
+
+    mount(document.createElement('div'), { onError })
+    await Promise.resolve()
+
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'component failed' }))
+    expect(root.unmount).toHaveBeenCalledOnce()
   })
 })
