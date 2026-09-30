@@ -15,6 +15,11 @@ export const categoryMetadata: Record<
   ProjectCategory,
   { title: string; hint: string; description: string }
 > = {
+  engineering: {
+    title: 'Engineering',
+    hint: '架构与迁移',
+    description: '记录框架迁移、工程边界和渐进式演进实践。',
+  },
   performance: {
     title: 'Performance',
     hint: '运行时与加载',
@@ -24,11 +29,6 @@ export const categoryMetadata: Record<
     title: 'Browser',
     hint: '平台与渲染',
     description: '记录浏览器 API、渲染机制和运行时能力。',
-  },
-  engineering: {
-    title: 'Engineering',
-    hint: '架构与迁移',
-    description: '记录框架迁移、工程边界和渐进式演进实践。',
   },
 }
 
