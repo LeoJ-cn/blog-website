@@ -37,6 +37,7 @@
     "analyze:vite": "生成 Vite Bundle 分析报告",
     "analyze:webpack": "生成 Webpack Bundle 分析报告",
     "benchmark:build": "对比 Vite 和 Webpack 构建时间及产物体积",
+    "check:vite": "检查所有 Workspace Package 的 Vite 声明与实际解析版本是否统一",
     "check:config": "检查 Vite 配置及分层配置的 TypeScript 类型",
     "check:editor": "统一检查配置、Vue/TypeScript、ESLint 和 Stylelint",
     "typecheck": "执行 Vue/TypeScript 类型检查",
@@ -54,7 +55,7 @@
     "dev:vite": "pnpm --filter @blog/web dev:vite",
     "dev:webpack": "pnpm --filter @blog/web dev:webpack",
     "build": "pnpm build:vite",
-    "build:vite": "pnpm --filter @blog/web build:vite",
+    "build:vite": "pnpm check:vite && pnpm --filter @blog/web build:vite",
     "build:webpack": "pnpm --filter @blog/web build:webpack",
     "analyze:webpack": "pnpm --filter @blog/web analyze:webpack",
     "analyze:vite": "pnpm --filter @blog/web analyze:vite",
@@ -65,12 +66,18 @@
     "typecheck": "pnpm --filter @blog/web typecheck && pnpm --filter @blog/low-code typecheck",
     "typecheck:low-code": "pnpm --filter @blog/low-code typecheck",
     "test:monitoring": "pnpm --filter @blog/monitoring test",
-    "check:config": "pnpm --filter @blog/web exec tsc --noEmit -p tsconfig.config.json",
+    "check:vite": "node scripts/check-vite-version.mjs",
+    "check:config": "pnpm check:vite && pnpm --filter @blog/web exec tsc --noEmit -p tsconfig.config.json && pnpm --filter @blog/react-vue-migration-demo typecheck",
     "check:editor": "pnpm check:config && pnpm typecheck && pnpm lint",
     "lint": "pnpm lint:script",
     "lint:script": "eslint .",
     "lint:staged": "lint-staged",
     "format": "prettier --write .",
     "test:e2e": "pnpm --filter @blog/web e2e"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "6.0.11"
+    }
   }
 }
