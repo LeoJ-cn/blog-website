@@ -2,12 +2,13 @@ import { ElEmpty, ElRadioButton, ElRadioGroup } from 'element-plus'
 import { defineComponent, type PropType } from 'vue'
 import type { Data } from '../types/data'
 import type { Method } from '../types/method'
-import type { IFuncNodeConfig, INodeConfig, IVarNodeConfig } from './interface'
+import type { IFuncNodeConfig, IMethodRef, INodeConfig, IVarNodeConfig } from './interface'
 import { StageMode } from './interface'
 import { NodeConfigServicesFactory } from './handler/config-builder/node-config-services-factory'
 import { BlockNames_DTS } from './service/interface'
 import style from './styles/logic-editor.module.scss'
 import MethodNodeConfig from './node-config/MethodNodeConfig'
+import MethodRefNodeConfig from './node-config/MethodRefNodeConfig'
 import VariableNodeConfig from './node-config/VariableNodeConfig'
 import LogicOperationEditor from './operation/LogicOperationEditor'
 
@@ -32,6 +33,9 @@ export default defineComponent({
       }
       if (node.type === BlockNames_DTS.LOGIC_FUNC_NODE) {
         return <MethodNodeConfig stageMode={this.stageMode} curSelectedNodeConfig={node as INodeConfig<IFuncNodeConfig>} allDatas={this.allDatas} methodList={this.methodList} {...{ 'onSelect-node': (value: unknown) => this.$emit('select-node', value) }} />
+      }
+      if (node.type === BlockNames_DTS.LOGIC_METHOD_REF_NODE) {
+        return <MethodRefNodeConfig curSelectedNodeConfig={node as INodeConfig<IMethodRef>} methodList={this.methodList} {...{ 'onSelect-node': (value: unknown) => this.$emit('select-node', value) }} />
       }
       if ([
         BlockNames_DTS.LOGIC_STRING_NODE, BlockNames_DTS.LOGIC_BOOLEAN_NODE,

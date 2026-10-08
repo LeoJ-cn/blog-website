@@ -29,10 +29,11 @@ function registerFunctionShape(type: string, parameterNames: string[], output: b
   JavaScript[type] = (block: Blockly.Block) => {
     const methodId = block.getFieldValue('funcname')
     const method = (block.workspace as CodeGenerationWorkspace).methodRegistry?.get(methodId)
-    const methodName = method?.funcName || methodId || 'missingMethod'
+    if (!methodId) throw new Error(`块 ${block.type} 缺少被调用方法 ID`)
+    if (!method) throw new Error(`块 ${block.type} 引用的方法不存在：${methodId}`)
     const args = parameterNames.map((name) => JavaScript.valueToCode(block, name, JavaScript.ORDER_NONE) || 'undefined')
     const awaitPrefix = method?.sync ? 'await ' : ''
-    const code = `${awaitPrefix}this.${methodName}(${args.join(', ')})`
+    const code = `${awaitPrefix}this.${method.funcName}(${args.join(', ')})`
     return output ? [code, JavaScript.ORDER_FUNCTION_CALL] : `${code};\n`
   }
 }
@@ -67,6 +68,8 @@ export function prepareFunctionBlocklyBlocks(xml: Element): void {
   JavaScript.block_method_ref = (block: Blockly.Block) => {
     const methodId = block.getFieldValue('method')
     const method = (block.workspace as CodeGenerationWorkspace).methodRegistry?.get(methodId)
-    return [`this.${method?.funcName || methodId || 'missingMethod'}`, JavaScript.ORDER_MEMBER]
+    if (!methodId) throw new Error('块 block_method_ref 缺少方法 ID')
+    if (!method) throw new Error(`块 block_method_ref 引用的方法不存在：${methodId}`)
+    return [`this.${method.funcName}`, JavaScript.ORDER_MEMBER]
   }
 }

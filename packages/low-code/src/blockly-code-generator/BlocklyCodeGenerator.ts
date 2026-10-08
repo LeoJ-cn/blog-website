@@ -2,6 +2,7 @@ import './blockly-locale'
 
 import * as Blockly from 'blockly'
 
+import { validateBlockCoverage } from './block-coverage'
 import { JavaScript } from './blockly-javascript'
 import { registerCoreBlocklyBlocks } from './blocks/core'
 import { prepareFunctionBlocklyBlocks } from './blocks/functions'
@@ -30,6 +31,9 @@ export class BlocklyCodeGenerator {
       diagnostics.push({ stage: 'parse', message: getErrorMessage(error) })
       return { code: '', diagnostics }
     }
+
+    diagnostics.push(...validateBlockCoverage(xml))
+    if (diagnostics.length) return { code: '', diagnostics }
 
     const workspace = new Blockly.Workspace() as CodeGenerationWorkspace
     workspace.dataRegistry = new DataRegistry(input.data)

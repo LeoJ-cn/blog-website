@@ -3,8 +3,8 @@ import type { Data } from '../types/data'
 import type { LogicEditorLifecycleBinding } from '../types/logic-editor'
 import type { Method } from '../types/method'
 
-/** 代码生成失败阶段，用于区分 XML、块注册和 JavaScript 生成错误。 */
-export type CodeGenerationStage = 'parse' | 'workspace' | 'generate' | 'assemble'
+/** 代码生成失败阶段，用于区分 XML、块覆盖、Workspace、JavaScript 生成和页面组装错误。 */
+export type CodeGenerationStage = 'parse' | 'coverage' | 'workspace' | 'generate' | 'assemble'
 
 export interface CodeGenerationDiagnostic {
   stage: CodeGenerationStage

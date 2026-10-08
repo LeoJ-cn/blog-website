@@ -35,7 +35,10 @@ export class TranslateMethodRefService extends TranslateBaseService {
       throw new Error('异常: 获取方法引用块 没有配置 “返回值”的锚点，请检查 ！！！')
     }
 
-    const _method = nodeInfo.data.methodId || ''
+    const _method = nodeInfo.data.methodId
+    if (!_method) {
+      throw new Error('获取方法引用节点未选择目标方法')
+    }
 
     const methodRefProcessData = {
       id: this.generateUUID(),
@@ -59,5 +62,4 @@ export class TranslateMethodRefService extends TranslateBaseService {
     this.result = [processData];
   }
 }
-
 

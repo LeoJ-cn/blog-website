@@ -70,7 +70,8 @@ function registerPageVariable(): void {
     const path = block.valueList?.length ? [...block.valueList] : [block.dataId || block.getFieldValue('data')]
     const registry = (block.workspace as CodeGenerationWorkspace).dataRegistry
     const data = registry?.get(path[0])
-    if (!data) return [pathToCode(path), JavaScript.ORDER_MEMBER]
+    if (!path[0]) throw new Error('块 data_schema_get_cascader 缺少变量 ID')
+    if (!data) throw new Error(`块 data_schema_get_cascader 引用的页面变量不存在：${path[0]}`)
 
     const segments = path.slice(1)
     if (data.category === DataCategory.Temp) {
