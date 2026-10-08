@@ -39,6 +39,11 @@ const router = createRouter({
           component: () => import('../../pages/PlaygroundReactVueMigrationPage.vue'),
         },
         {
+          path: 'engineering/openlayers-gis',
+          name: 'playground-openlayers-gis',
+          component: () => import('../../pages/PlaygroundGisPage.vue'),
+        },
+        {
           path: 'browser/advanced-image-loader',
           name: 'playground-advanced-image',
           component: () => import('../../pages/PlaygroundAdvancedImagePage.vue'),

@@ -41,6 +41,7 @@
     "@blog/http": "workspace:^",
     "@blog/low-code": "workspace:2.0.0",
     "@blog/monitoring": "workspace:^",
+    "@blog/openlayers-gis-demo": "workspace:^",
     "@blog/react-vue-migration-demo": "workspace:*",
     "@blog/ui": "workspace:*",
     "@blog/websocket": "workspace:^",

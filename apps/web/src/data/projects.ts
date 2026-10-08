@@ -39,6 +39,18 @@ export const categoryMetadata: Record<
 
 export const projects: ProjectDefinition[] = [
   {
+    slug: 'openlayers-gis',
+    title: '城市巡检 GIS 平台',
+    summary: 'OpenLayers 地图架构与业务数据联动',
+    description: '面向真实巡检业务的地图图层、事件管理与空间交互综合演示。',
+    category: 'engineering',
+    status: 'active',
+    tags: ['OpenLayers', 'Vue 3', 'Pinia'],
+    featured: true,
+    updatedAt: '2026-10-08',
+    sources: [],
+  },
+  {
     slug: 'react-vue-migration',
     title: 'React → Vue 渐进迁移',
     summary: 'React Shell 通过生命周期桥接加载 Vue 业务模块',
