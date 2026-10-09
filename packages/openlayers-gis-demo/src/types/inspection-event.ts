@@ -27,3 +27,14 @@ export interface InspectionEvent {
   /** ISO 8601 格式的创建时间。 */
   createdAt: string
 }
+
+export interface InspectionEventFilter {
+  /** 事件 ID 或地址关键词；空字符串表示不限制关键词。 */
+  keyword: string
+  /** 指定事件类型；null 表示包含全部类型。 */
+  type: EventType | null
+  /** 指定处置状态；null 表示包含全部状态。 */
+  status: EventStatus | null
+  /** 指定调度等级；null 表示包含全部等级。 */
+  level: EventLevel | null
+}

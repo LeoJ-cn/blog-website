@@ -115,6 +115,11 @@ export class SpatialInteractionManager {
     this.select.setActive(active)
   }
 
+  /** 对程序载入的区域复用与 Draw/Modify 相同的空间筛选流程。 */
+  evaluateRegion(geometry: Geometry): void {
+    this.emitRegionSelection(geometry)
+  }
+
   private emitRegionSelection(geometry: Geometry): void {
     // Point 没有面积语义，不将“坐标完全相等”误报为区域框选结果。
     if (geometry.getType() === 'Point') {

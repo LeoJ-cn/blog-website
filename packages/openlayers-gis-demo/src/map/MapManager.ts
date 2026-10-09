@@ -1,4 +1,5 @@
 import OlMap from 'ol/Map.js'
+import Feature from 'ol/Feature.js'
 import Overlay from 'ol/Overlay.js'
 import View from 'ol/View.js'
 import { defaults as defaultControls } from 'ol/control/defaults.js'
@@ -15,11 +16,17 @@ import { createEventLayer } from './layers/create-event-layer'
 import { createRegionLayer } from './layers/create-region-layer'
 import { createSelectionLayer } from './layers/create-selection-layer'
 import { createTrackLayer } from './layers/create-track-layer'
+import { deserializeRegionGeometry, serializeRegionGeometry } from './region-geometry'
 import { LayerManager } from './LayerManager'
 import type { CoreLayerId } from './LayerManager'
+import type { RegionGeometry } from '../types/region'
 import { SpatialInteractionManager } from './interactions/SpatialInteractionManager'
 import type { DrawGeometryType, MapMode } from './interactions/SpatialInteractionManager'
-import { createEventFeature, createEventSource } from './sources/create-event-source'
+import {
+  createEventFeature,
+  createEventSource,
+  updateEventFeature,
+} from './sources/create-event-source'
 
 export type RenderMode =
   | 'point' // 逐个渲染原始事件 Feature，适合小数据量和精确选择。
@@ -31,6 +38,12 @@ export interface MapStats {
   featureCount: number
   /** 决定 featureCount 应解释为原始点数量还是聚合结果数量。 */
   renderMode: RenderMode
+  /** 最近一次批量业务数据转换为 OpenLayers Feature 的主线程耗时，单位为毫秒。 */
+  featureConversionMs: number
+  /** 最近一次 VectorSource 清空并批量写入 Feature 的耗时，单位为毫秒。 */
+  sourceUpdateMs: number
+  /** 从最近一次批量替换开始到地图 rendercomplete 的耗时；null 表示仍在等待完成。 */
+  renderCompleteMs: number | null
 }
 export interface MapManagerOptions {
   /** 初始中心点，按 [WGS84 经度, WGS84 纬度] 排列。 */
@@ -62,6 +75,7 @@ export class MapManager {
   private readonly eventLayer: ReturnType<typeof createEventLayer>
   private readonly clusterLayer: ReturnType<typeof createClusterLayer>['layer']
   private readonly clusterSource: ReturnType<typeof createClusterLayer>['source']
+  private readonly regionSource: ReturnType<typeof createRegionLayer>['source']
   private readonly selectionFeature: ReturnType<typeof createSelectionLayer>['selectedFeature']
   private readonly interactionManager: SpatialInteractionManager
   private readonly trackPlayback: TrackPlaybackController
@@ -70,12 +84,24 @@ export class MapManager {
   private readonly popupOverlay = new Overlay({ positioning: 'bottom-center', offset: [0, -14] })
   private renderMode: RenderMode = 'point'
   private mapMode: MapMode = 'select'
+  private eventLayersVisible = true
+  private featureConversionMs = 0
+  private sourceUpdateMs = 0
+  private renderCompleteMs: number | null = null
+  /** performance.now() 时间戳，单位为毫秒；仅在等待本次批量更新完成渲染时存在。 */
+  private pendingRenderStartedAt: number | null = null
   private mounted = false
   private destroyed = false
 
   constructor(options: MapManagerOptions = {}) {
     const baseLayer = createBaseLayer()
-    this.eventSource = createEventSource(options.events)
+    const conversionStartedAt = performance.now()
+    const initialFeatures = (options.events ?? []).map(createEventFeature)
+    this.featureConversionMs = performance.now() - conversionStartedAt
+    const sourceUpdateStartedAt = performance.now()
+    this.eventSource = createEventSource()
+    this.eventSource.addFeatures(initialFeatures)
+    this.sourceUpdateMs = performance.now() - sourceUpdateStartedAt
     this.eventLayer = createEventLayer(this.eventSource)
     // 普通点位与聚合图层共享事件 Source，切换模式不会重复创建十万条 Feature。
     const cluster = createClusterLayer(this.eventSource)
@@ -84,6 +110,7 @@ export class MapManager {
     const selection = createSelectionLayer()
     this.clusterLayer = cluster.layer
     this.clusterSource = cluster.source
+    this.regionSource = region.source
     this.selectionFeature = selection.selectedFeature
     this.map = new OlMap({
       controls: defaultControls({ rotate: false }),
@@ -122,14 +149,24 @@ export class MapManager {
       onTimeChange: options.onTrackTimeChange,
     })
     const emitStats = () => options.onStatsChange?.(this.getStats())
+    const emitRenderStats = () => {
+      if (this.pendingRenderStartedAt !== null) {
+        this.renderCompleteMs = performance.now() - this.pendingRenderStartedAt
+        this.pendingRenderStartedAt = null
+      }
+      emitStats()
+    }
     this.listenerKeys = [
       this.map.on('moveend', emitStats),
-      this.map.on('rendercomplete', emitStats),
+      this.map.on('rendercomplete', emitRenderStats),
     ]
   }
 
   /** 将已创建的唯一 Map 实例绑定到 DOM；Popup 元素不存在时地图仍可独立工作。 */
   mount(target: HTMLElement, popupElement?: HTMLElement): void {
+    // 首屏渲染只能从绑定真实 DOM 后开始计时，避免把构造阶段的页面等待算入地图耗时。
+    this.renderCompleteMs = null
+    this.pendingRenderStartedAt = performance.now()
     this.map.setTarget(target)
     this.popupOverlay.setElement(popupElement)
     this.mounted = true
@@ -155,23 +192,47 @@ export class MapManager {
 
   /** 批量替换事件数据；调用后原有 Feature 引用全部失效。 */
   setEvents(events: readonly InspectionEvent[]): void {
+    const batchStartedAt = performance.now()
     // 先完成对象转换再批量替换，避免逐条 addFeature 触发大量增量渲染。
+    const conversionStartedAt = performance.now()
     const features = events.map(createEventFeature)
+    this.featureConversionMs = performance.now() - conversionStartedAt
     // Source 清空前解除旧选中 Feature 和 Popup 引用，避免大批数据切换后保留失效对象。
     this.updateSelection(null)
     this.popupOverlay.setPosition(undefined)
+    const sourceUpdateStartedAt = performance.now()
     this.eventSource.clear(true)
     this.eventSource.addFeatures(features)
+    this.sourceUpdateMs = performance.now() - sourceUpdateStartedAt
+    // rendercomplete 是异步信号，因此先保留批次起点，完成前向面板暴露 null。
+    this.renderCompleteMs = null
+    this.pendingRenderStartedAt = batchStartedAt
+  }
+
+  /** 更新单个可见事件并保留原 Feature 身份；返回 false 表示当前筛选 Source 中不存在该事件。 */
+  updateEvent(event: InspectionEvent): boolean {
+    const feature = this.eventSource.getFeatureById(event.id)
+    if (!feature) return false
+    updateEventFeature(feature, event)
+    return true
   }
 
   /** 切换互斥渲染图层；独立 SelectionLayer 会跨渲染模式保留当前选中态。 */
   setRenderMode(mode: RenderMode): void {
     // 两套业务图层互斥显示，但底层事件 Source 始终保持同一份数据。
     this.renderMode = mode
-    this.eventLayer.setVisible(mode === 'point')
-    this.clusterLayer.setVisible(mode === 'cluster')
+    this.eventLayer.setVisible(this.eventLayersVisible && mode === 'point')
+    this.clusterLayer.setVisible(this.eventLayersVisible && mode === 'cluster')
     // Select 同时支持普通点和聚合点，仅由当前交互模式决定是否启用。
     this.interactionManager.setSelectActive(this.mapMode === 'select')
+    this.map.render()
+  }
+
+  /** 统一控制普通点和 Cluster 显隐，并继续保持当前渲染模式的互斥关系。 */
+  setEventLayersVisible(visible: boolean): void {
+    this.eventLayersVisible = visible
+    this.eventLayer.setVisible(visible && this.renderMode === 'point')
+    this.clusterLayer.setVisible(visible && this.renderMode === 'cluster')
     this.map.render()
   }
 
@@ -180,6 +241,38 @@ export class MapManager {
     this.mapMode = mode
     this.interactionManager.setMode(mode, drawType)
     this.interactionManager.setSelectActive(mode === 'select')
+  }
+
+  /** 返回当前 Polygon/Circle 的可序列化 WGS84 协议；Point 或空区域返回 null。 */
+  getCurrentRegionGeometry(): RegionGeometry | null {
+    const geometry = this.regionSource.getFeatures()[0]?.getGeometry()
+    return geometry ? serializeRegionGeometry(geometry) : null
+  }
+
+  /** 载入、定位并重新计算一个已保存区域；传入数据不会保存 OpenLayers 实例。 */
+  showRegion(regionGeometry: RegionGeometry): void {
+    const geometry = deserializeRegionGeometry(regionGeometry)
+    this.regionSource.clear()
+    this.regionSource.addFeature(new Feature({ geometry }))
+    this.interactionManager.evaluateRegion(geometry)
+    this.map.getView().fit(geometry.getExtent(), {
+      duration: 450,
+      maxZoom: 17,
+      padding: [56, 56, 56, 56],
+    })
+  }
+
+  /** 清除当前绘制区域；业务层负责同步清除对应筛选结果。 */
+  clearRegion(): void {
+    this.regionSource.clear()
+  }
+
+  /** 在事件 Source 替换后重新计算当前区域；返回 false 表示当前没有有效区域。 */
+  reevaluateCurrentRegion(): boolean {
+    const geometry = this.regionSource.getFeatures()[0]?.getGeometry()
+    if (!geometry || !serializeRegionGeometry(geometry)) return false
+    this.interactionManager.evaluateRegion(geometry)
+    return true
   }
 
   /** 返回当前 View 与可见业务 Source 的快照，不包含不可见图层数量。 */
@@ -191,6 +284,9 @@ export class MapManager {
           ? this.clusterSource.getFeatures().length
           : this.eventSource.getFeatures().length,
       renderMode: this.renderMode,
+      featureConversionMs: this.featureConversionMs,
+      sourceUpdateMs: this.sourceUpdateMs,
+      renderCompleteMs: this.renderCompleteMs,
     }
   }
 
