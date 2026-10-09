@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import 'ol/ol.css'
 import { MapManager } from '../map/MapManager'
 import type { MapStats, RenderMode } from '../map/MapManager'
@@ -11,7 +11,10 @@ import {
 } from '../map/styles/event-visual'
 import { generateInspectionEvents } from '../mock/generate-events'
 import { mockInspectionTrack } from '../mock/tracks'
-import { serializeInspectionEventsToGeoJson } from '../services/export-events'
+import {
+  parseInspectionEventsGeoJson,
+  serializeInspectionEventsToGeoJson,
+} from '../services/export-events'
 import { useGisStore } from '../stores/gis'
 import type { EventLevel, EventStatus, EventType } from '../types/inspection-event'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus } from '../types/track'
@@ -26,6 +29,28 @@ const LEVEL_LABELS = { HIGH: '高等级', MEDIUM: '中等级', LOW: '低等级' 
 const EVENT_TYPES = Object.keys(TYPE_LABELS) as EventType[]
 const EVENT_STATUSES = Object.keys(EVENT_STATUS_VISUALS) as EventStatus[]
 const EVENT_LEVELS = Object.keys(LEVEL_LABELS) as EventLevel[]
+/** 每页最多创建 100 个事件按钮，避免海量结果把分页收益重新变成 DOM 压力。 */
+const EVENT_LIST_PAGE_SIZE = 100
+type EventListSort =
+  | 'CREATED_DESC' // 按 ISO 上报时间降序，时间相同时以事件 ID 保持稳定顺序。
+  | 'CREATED_ASC' // 按 ISO 上报时间升序，便于追溯最早积压事件。
+  | 'LEVEL_DESC' // 按 HIGH、MEDIUM、LOW 排列，高等级事件优先。
+  | 'STATUS_PENDING_FIRST' // 按待处理、处理中、已完成排列，未闭环事件优先。
+const EVENT_LIST_SORT_OPTIONS: readonly { value: EventListSort; label: string }[] = [
+  { value: 'CREATED_DESC', label: '上报时间：最新优先' },
+  { value: 'CREATED_ASC', label: '上报时间：最早优先' },
+  { value: 'LEVEL_DESC', label: '紧急程度：高优先' },
+  { value: 'STATUS_PENDING_FIRST', label: '处理状态：待处理优先' },
+]
+const EVENT_LEVEL_PRIORITY: Record<EventLevel, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 }
+const EVENT_STATUS_PRIORITY: Record<EventStatus, number> = { PENDING: 0, PROCESSING: 1, DONE: 2 }
+const EVENT_CREATED_AT_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
 type LayerControlId = 'base' | 'events' | 'track' | 'region' | 'selection'
 const LAYER_CONTROLS: readonly { id: LayerControlId; label: string }[] = [
   { id: 'base', label: '底图' },
@@ -39,6 +64,7 @@ const selectionLegendStyle = { '--legend-color': EVENT_SELECTION_COLOR }
 
 const mapTarget = ref<HTMLElement | null>(null)
 const popupElement = ref<HTMLElement | null>(null)
+const eventListElement = ref<HTMLElement | null>(null)
 const store = useGisStore()
 const selectedEvent = computed(() => store.selectedEvent)
 interface EventFormDraft {
@@ -66,6 +92,7 @@ const eventFormError = ref('')
 const isPickingEventLocation = ref(false)
 /** 保存进入二次确认时的事件 ID，避免选择变化后误删另一条事件。 */
 const deleteCandidateId = ref<string | null>(null)
+const importFeedback = ref<{ message: string; error: boolean } | null>(null)
 const statusActionLabel = computed(() => {
   if (selectedEvent.value?.status === 'PENDING') return '开始处理'
   if (selectedEvent.value?.status === 'PROCESSING') return '标记完成'
@@ -79,8 +106,43 @@ const scopedEvents = computed(() => {
   const selectedIds = new Set(store.regionEventIds)
   return store.filteredEvents.filter((event) => selectedIds.has(event.id))
 })
-// 地图和导出使用完整结果；仅限制列表 DOM 为 100 行，避免 Vue 成为海量数据性能瓶颈。
-const visibleEvents = computed(() => scopedEvents.value.slice(0, 100))
+const eventListPage = ref(1)
+const eventListPageInput = ref('1')
+const eventListSort = ref<EventListSort>('CREATED_DESC')
+const eventListPageCount = computed(() =>
+  Math.max(1, Math.ceil(scopedEvents.value.length / EVENT_LIST_PAGE_SIZE)),
+)
+const eventListRange = computed(() => {
+  if (scopedEvents.value.length === 0) return { start: 0, end: 0 }
+  const start = (eventListPage.value - 1) * EVENT_LIST_PAGE_SIZE
+  return {
+    start: start + 1,
+    end: Math.min(start + EVENT_LIST_PAGE_SIZE, scopedEvents.value.length),
+  }
+})
+const sortedScopedEvents = computed(() => {
+  const events = [...scopedEvents.value]
+  events.sort((left, right) => {
+    let difference = 0
+    if (eventListSort.value === 'CREATED_DESC') {
+      difference = right.createdAt.localeCompare(left.createdAt)
+    } else if (eventListSort.value === 'CREATED_ASC') {
+      difference = left.createdAt.localeCompare(right.createdAt)
+    } else if (eventListSort.value === 'LEVEL_DESC') {
+      difference = EVENT_LEVEL_PRIORITY[left.level] - EVENT_LEVEL_PRIORITY[right.level]
+    } else {
+      difference = EVENT_STATUS_PRIORITY[left.status] - EVENT_STATUS_PRIORITY[right.status]
+    }
+    // 相同业务排序值用唯一 ID 兜底，确保翻页过程中顺序确定且不会抖动。
+    return difference || left.id.localeCompare(right.id)
+  })
+  return events
+})
+// 地图和导出使用完整结果；列表只渲染当前页，兼顾全量可访问性与 DOM 上限。
+const visibleEvents = computed(() => {
+  const start = (eventListPage.value - 1) * EVENT_LIST_PAGE_SIZE
+  return sortedScopedEvents.value.slice(start, start + EVENT_LIST_PAGE_SIZE)
+})
 const statusCounts = computed(() => {
   const counts: Record<EventStatus, number> = { PENDING: 0, PROCESSING: 0, DONE: 0 }
   for (const event of store.events) counts[event.status] += 1
@@ -138,10 +200,28 @@ let mapManager: MapManager | null = null
 
 watch(
   () => store.selectedEventId,
-  () => {
+  async (eventId) => {
     deleteCandidateId.value = null
+    if (!eventId) return
+    const selectedIndex = sortedScopedEvents.value.findIndex((event) => event.id === eventId)
+    if (selectedIndex < 0) return
+    // 地图选择可能命中任意分页；先切换页码，再等待 Vue 渲染对应事件按钮。
+    eventListPage.value = Math.floor(selectedIndex / EVENT_LIST_PAGE_SIZE) + 1
+    await nextTick()
+    eventListElement.value
+      ?.querySelector<HTMLElement>('[data-selected="true"]')
+      ?.scrollIntoView({ block: 'nearest' })
   },
 )
+
+watch(eventListPageCount, (pageCount) => {
+  // 删除或筛选可能让末页消失，此时回退到新的最后一页，避免出现空白页。
+  eventListPage.value = Math.min(eventListPage.value, pageCount)
+})
+
+watch(eventListPage, (page) => {
+  eventListPageInput.value = String(page)
+})
 
 /** 性能面板统一保留一位小数，低于计时器分辨率的耗时仍显示为 0.0 ms。 */
 function formatDuration(durationMs: number): string {
@@ -156,6 +236,12 @@ function formatActivityTime(isoTime: string): string {
     minute: '2-digit',
     hour12: false,
   }).format(new Date(isoTime))
+}
+
+function formatEventCreatedAt(isoTime: string): string {
+  const timestamp = Date.parse(isoTime)
+  // 导入数据虽已校验时间，但展示层仍保留降级文案，避免异常业务数据污染整页渲染。
+  return Number.isFinite(timestamp) ? EVENT_CREATED_AT_FORMATTER.format(timestamp) : '时间未知'
 }
 
 function generateEvents(count: number) {
@@ -314,6 +400,7 @@ function changeDataCount(count: number) {
   store.setEvents(events)
   store.selectEvent(null)
   store.selectRegionEvents(null)
+  eventListPage.value = 1
   syncVisibleEvents()
 }
 
@@ -327,6 +414,7 @@ function applyEventFilter() {
   // 筛选后旧选择和空间范围结果可能已不可见，统一清除以避免详情与地图状态不一致。
   store.selectEvent(null)
   store.selectRegionEvents(null)
+  eventListPage.value = 1
   syncVisibleEvents()
 }
 
@@ -338,7 +426,29 @@ function resetEventFilter() {
   store.resetEventFilter()
   store.selectEvent(null)
   store.selectRegionEvents(null)
+  eventListPage.value = 1
   syncVisibleEvents()
+}
+
+function changeEventListPage(page: number) {
+  // 页码只允许落在闭区间 [1, pageCount]，防止快速点击造成越界空页。
+  eventListPage.value = Math.min(Math.max(page, 1), eventListPageCount.value)
+}
+
+function jumpToEventListPage() {
+  const requestedPage = Number(eventListPageInput.value)
+  if (!Number.isFinite(requestedPage)) {
+    eventListPageInput.value = String(eventListPage.value)
+    return
+  }
+  // 页码从 1 开始且只接受整数；小数向下取整后再交给统一边界逻辑处理。
+  changeEventListPage(Math.floor(requestedPage))
+  eventListPageInput.value = String(eventListPage.value)
+}
+
+function changeEventListSort() {
+  // 排序规则改变后回到第一屏，避免用户停留在相同页码却误以为结果缺失。
+  eventListPage.value = 1
 }
 
 function exportCurrentEvents() {
@@ -356,6 +466,45 @@ function exportCurrentEvents() {
   link.remove()
   // 下载已触发后延迟到下一任务释放，兼容仍需读取 Blob URL 的浏览器实现。
   window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0)
+}
+
+function fitCurrentEvents() {
+  // Source 已应用基础筛选；存在空间区域时再用业务 ID 将定位范围收窄到区域结果。
+  mapManager?.fitEvents(store.regionEventIds ?? undefined)
+}
+
+async function importGeoJson(event: Event) {
+  const input = event.currentTarget as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  // 50 MiB 上限用于避免用户误选超大文件后长时间阻塞主线程和占用过多内存。
+  if (file.size > 50 * 1024 * 1024) {
+    importFeedback.value = { message: '导入失败：文件不能超过 50 MiB', error: true }
+    return
+  }
+  try {
+    const parsed = parseInspectionEventsGeoJson(JSON.parse(await file.text()) as unknown)
+    const result = store.addEvents(parsed.events)
+    if (result.addedEvents.length > 0) {
+      syncVisibleEvents()
+      const addedIds = new Set(result.addedEvents.map((addedEvent) => addedEvent.id))
+      const visibleAddedIds = scopedEvents.value
+        .filter((visibleEvent) => addedIds.has(visibleEvent.id))
+        .map((visibleEvent) => visibleEvent.id)
+      // 仅定位当前筛选与空间范围内的新数据，避免导入后视角跳向用户看不到的结果。
+      mapManager?.fitEvents(visibleAddedIds)
+    }
+    importFeedback.value = {
+      message: `已导入 ${result.addedEvents.length} 条，跳过 ${parsed.rejectedCount + result.skippedCount} 条`,
+      error: result.addedEvents.length === 0,
+    }
+  } catch (error) {
+    importFeedback.value = {
+      message: `导入失败：${error instanceof Error ? error.message : '无法解析文件'}`,
+      error: true,
+    }
+  }
 }
 
 function advanceSelectedEventStatus() {
@@ -412,6 +561,7 @@ function showSavedRegion(regionId: string) {
   const region = store.regions.find((item) => item.id === regionId)
   if (!region) return
   store.selectSavedRegion(regionId)
+  eventListPage.value = 1
   mapMode.value = 'modify'
   mapManager?.setInteractionMode('modify')
   mapManager?.showRegion(region.geometry)
@@ -457,6 +607,7 @@ onMounted(() => {
     },
     onRegionSelect: (eventIds) => {
       store.selectRegionEvents(eventIds)
+      eventListPage.value = 1
       const regionId = store.activeRegionId
       const geometry = mapManager?.getCurrentRegionGeometry()
       if (regionId && geometry && eventIds) store.updateRegion(regionId, geometry, eventIds)
@@ -487,7 +638,7 @@ onBeforeUnmount(() => {
       <span class="online">● 系统在线</span>
     </header>
     <div class="gis-workspace">
-      <aside class="event-list">
+      <aside ref="eventListElement" class="event-list">
         <header>
           <strong>巡检事件</strong>
           <span>
@@ -524,6 +675,26 @@ onBeforeUnmount(() => {
             <button type="submit">应用筛选</button>
             <button type="button" @click="resetEventFilter">重置</button>
           </div>
+          <label class="event-sort">
+            <span>列表排序</span>
+            <select v-model="eventListSort" aria-label="事件列表排序" @change="changeEventListSort">
+              <option
+                v-for="option in EVENT_LIST_SORT_OPTIONS"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
+          <button
+            class="event-fit"
+            type="button"
+            :disabled="scopedEvents.length === 0"
+            @click="fitCurrentEvents"
+          >
+            定位当前结果（{{ scopedEvents.length.toLocaleString() }}）
+          </button>
           <button
             class="event-export"
             type="button"
@@ -532,6 +703,17 @@ onBeforeUnmount(() => {
           >
             导出当前结果 GeoJSON（{{ scopedEvents.length.toLocaleString() }}）
           </button>
+          <label class="event-import">
+            导入事件 GeoJSON
+            <input
+              type="file"
+              accept=".geojson,application/geo+json,application/json"
+              @change="importGeoJson"
+            />
+          </label>
+          <p v-if="importFeedback" class="import-feedback" :class="{ error: importFeedback.error }">
+            {{ importFeedback.message }}
+          </p>
           <div class="status-summary" aria-label="事件状态统计">
             <span v-for="status in EVENT_STATUSES" :key="status">
               <i :style="{ backgroundColor: EVENT_STATUS_VISUALS[status].color }"></i>
@@ -540,23 +722,82 @@ onBeforeUnmount(() => {
           </div>
         </form>
         <p v-if="visibleEvents.length === 0" class="filter-empty">当前条件下没有巡检事件</p>
+        <nav v-else class="event-pagination" aria-label="事件列表分页">
+          <span class="event-pagination-summary">
+            {{ eventListRange.start.toLocaleString() }}–{{ eventListRange.end.toLocaleString() }} /
+            {{ scopedEvents.length.toLocaleString() }} · 第 {{ eventListPage }} /
+            {{ eventListPageCount }} 页
+          </span>
+          <button
+            type="button"
+            :disabled="eventListPage === 1"
+            aria-label="首页"
+            @click="changeEventListPage(1)"
+          >
+            «
+          </button>
+          <button
+            type="button"
+            :disabled="eventListPage === 1"
+            aria-label="上一页"
+            @click="changeEventListPage(eventListPage - 1)"
+          >
+            ‹
+          </button>
+          <form class="event-page-jump" @submit.prevent="jumpToEventListPage">
+            <input
+              v-model="eventListPageInput"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              :max="eventListPageCount"
+              step="1"
+              aria-label="目标页码"
+            />
+            <button type="submit">跳转</button>
+          </form>
+          <button
+            type="button"
+            :disabled="eventListPage === eventListPageCount"
+            aria-label="下一页"
+            @click="changeEventListPage(eventListPage + 1)"
+          >
+            ›
+          </button>
+          <button
+            type="button"
+            :disabled="eventListPage === eventListPageCount"
+            aria-label="末页"
+            @click="changeEventListPage(eventListPageCount)"
+          >
+            »
+          </button>
+        </nav>
         <button
           v-for="event in visibleEvents"
           :key="event.id"
           :class="{ active: event.id === store.selectedEventId }"
+          :data-selected="event.id === store.selectedEventId ? 'true' : undefined"
           @click="selectFromList(event.id)"
         >
           <span
             class="level"
             :style="{ backgroundColor: EVENT_STATUS_VISUALS[event.status].color }"
           ></span>
-          <span>
-            <strong>{{ TYPE_LABELS[event.type] }}</strong>
+          <span class="event-list-main">
+            <span class="event-list-title">
+              <strong>{{ TYPE_LABELS[event.type] }}</strong>
+              <b>{{ LEVEL_LABELS[event.level] }}</b>
+            </span>
+            <small class="event-list-id">{{ event.id }}</small>
             <small>{{ event.address }}</small>
           </span>
-          <em :style="{ color: EVENT_STATUS_VISUALS[event.status].color }">
-            {{ EVENT_STATUS_VISUALS[event.status].label }}
-          </em>
+          <span class="event-list-side">
+            <em :style="{ color: EVENT_STATUS_VISUALS[event.status].color }">
+              {{ EVENT_STATUS_VISUALS[event.status].label }}
+            </em>
+            <time :datetime="event.createdAt">{{ formatEventCreatedAt(event.createdAt) }}</time>
+          </span>
         </button>
       </aside>
       <main class="map-panel">
@@ -952,6 +1193,39 @@ onBeforeUnmount(() => {
   color: #71809a;
   margin-top: 5px;
 }
+.event-list-main {
+  min-width: 0;
+}
+.event-list-title {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.event-list-title b {
+  padding: 1px 4px;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 500;
+}
+.event-list-id {
+  overflow: hidden;
+  color: #64748b !important;
+  font-family: monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-list-side {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  white-space: nowrap;
+}
+.event-list-side time {
+  color: #64748b;
+  font-size: 9px;
+}
 .event-list em {
   font-style: normal;
   font-size: 11px;
@@ -1007,6 +1281,14 @@ onBeforeUnmount(() => {
   border-color: #38bdf8;
   background: #0c2d46;
 }
+.event-sort {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  color: #71809a;
+  font-size: 10px;
+}
 .event-export {
   padding: 7px 8px;
   color: #a7f3d0;
@@ -1015,11 +1297,45 @@ onBeforeUnmount(() => {
   border-radius: 5px;
   cursor: pointer;
 }
-.event-export:disabled {
+.event-fit {
+  padding: 7px 8px;
+  color: #fde68a;
+  background: #78350f66;
+  border: 1px solid #f59e0b;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.event-export:disabled,
+.event-fit:disabled {
   color: #475569;
   background: #111827;
   border-color: #334155;
   cursor: not-allowed;
+}
+.event-import {
+  position: relative;
+  padding: 7px 8px;
+  color: #bae6fd;
+  background: #0c4a6e66;
+  border: 1px solid #0ea5e9;
+  border-radius: 5px;
+  text-align: center;
+  cursor: pointer;
+}
+.event-import input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+.import-feedback {
+  margin: 0;
+  color: #86efac;
+  font-size: 10px;
+}
+.import-feedback.error {
+  color: #fca5a5;
 }
 .status-summary {
   display: flex;
@@ -1044,6 +1360,60 @@ onBeforeUnmount(() => {
   color: #71809a;
   text-align: center;
   font-size: 12px;
+}
+.event-pagination {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 30px 30px 1fr 30px 30px;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 10px;
+  color: #94a3b8;
+  background: #0d1729f2;
+  border-bottom: 1px solid #20314c;
+  font-size: 10px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+.event-pagination-summary {
+  grid-column: 1 / -1;
+}
+.event-pagination button {
+  height: 26px;
+  color: #7dd3fc;
+  background: #0c2d46;
+  border: 1px solid #2a3d5c;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.event-page-jump {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px;
+}
+.event-page-jump input {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 26px;
+  padding: 0 4px;
+  color: #dbeafe;
+  background: #111e32;
+  border: 1px solid #2a3d5c;
+  border-radius: 5px;
+  font-size: 10px;
+  text-align: center;
+}
+.event-page-jump button {
+  width: auto;
+  padding: 0 6px;
+  font-size: 10px;
+}
+.event-pagination button:disabled {
+  color: #475569;
+  background: #111827;
+  cursor: not-allowed;
 }
 .level {
   width: 8px;

@@ -5,6 +5,7 @@ import Overlay from 'ol/Overlay.js'
 import View from 'ol/View.js'
 import { defaults as defaultControls } from 'ol/control/defaults.js'
 import type { EventsKey } from 'ol/events.js'
+import { createEmpty, extendCoordinate, isEmpty } from 'ol/extent.js'
 import type BaseLayer from 'ol/layer/Base.js'
 import { unByKey } from 'ol/Observable.js'
 import { fromLonLat, toLonLat } from 'ol/proj.js'
@@ -27,6 +28,7 @@ import type { DrawGeometryType, MapMode } from './interactions/SpatialInteractio
 import {
   createEventFeature,
   createEventSource,
+  type EventFeature,
   updateEventFeature,
 } from './sources/create-event-source'
 
@@ -69,6 +71,10 @@ export interface MapManagerOptions {
 const DEFAULT_CENTER: readonly [number, number] = [121.4737, 31.2304]
 /** 从业务列表定位单个事件时使用的街区级缩放，不会覆盖用户已经更近的视角。 */
 const EVENT_FOCUS_ZOOM = 17.5
+/** 多结果定位时的最大缩放级别，避免相邻点位被放大到建筑细节层级。 */
+const EVENT_RESULTS_MAX_ZOOM = 17
+/** View.fit 的 padding 按 [上, 右, 下, 左] 排列，单位为 CSS 像素。 */
+const EVENT_RESULTS_PADDING: [number, number, number, number] = [64, 64, 64, 64]
 
 export class MapManager {
   private readonly map: OlMap
@@ -200,6 +206,48 @@ export class MapManager {
       zoom: Math.max(view.getZoom() ?? EVENT_FOCUS_ZOOM, EVENT_FOCUS_ZOOM),
       duration: 450,
     })
+  }
+
+  /**
+   * 将地图视角调整到指定事件的完整范围；省略 eventIds 时定位当前 Source 的全部事件。
+   * 返回 false 表示没有找到可定位的有效点位，调用方可保持当前视角不变。
+   */
+  fitEvents(eventIds?: readonly string[]): boolean {
+    const extent = createEmpty()
+    let firstCoordinate: number[] | null = null
+    let coordinateCount = 0
+    const includeFeature = (feature: EventFeature | null): void => {
+      const coordinate = feature?.getGeometry()?.getCoordinates()
+      if (!coordinate) return
+      firstCoordinate ??= coordinate
+      coordinateCount += 1
+      extendCoordinate(extent, coordinate)
+    }
+    if (eventIds) {
+      for (const eventId of eventIds) includeFeature(this.eventSource.getFeatureById(eventId))
+    } else {
+      // 直接遍历 Source，避免定位十万点时额外创建 Feature 与坐标数组。
+      this.eventSource.forEachFeature(includeFeature)
+    }
+    if (coordinateCount === 0 || !firstCoordinate) return false
+
+    const view = this.map.getView()
+    if (coordinateCount === 1) {
+      view.animate({
+        center: firstCoordinate,
+        zoom: Math.max(view.getZoom() ?? EVENT_FOCUS_ZOOM, EVENT_FOCUS_ZOOM),
+        duration: 450,
+      })
+      return true
+    }
+
+    if (isEmpty(extent)) return false
+    view.fit(extent, {
+      duration: 450,
+      maxZoom: EVENT_RESULTS_MAX_ZOOM,
+      padding: EVENT_RESULTS_PADDING,
+    })
+    return true
   }
 
   /** 批量替换事件数据；调用后原有 Feature 引用全部失效。 */

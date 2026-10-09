@@ -102,6 +102,23 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     return true
   }
 
+  /** 批量追加不冲突事件；同批重复或已存在 ID 均跳过，不覆盖当前业务状态。 */
+  function addEvents(nextEvents: readonly InspectionEvent[]) {
+    const knownIds = new Set(events.value.map((event) => event.id))
+    const addedEvents: InspectionEvent[] = []
+    let skippedCount = 0
+    for (const event of nextEvents) {
+      if (knownIds.has(event.id)) {
+        skippedCount += 1
+        continue
+      }
+      knownIds.add(event.id)
+      addedEvents.push(event)
+    }
+    if (addedEvents.length > 0) events.value = [...addedEvents, ...events.value]
+    return { addedEvents, skippedCount }
+  }
+
   /** 编辑事件的业务字段和坐标；状态仍由独立处置流程管理。 */
   function updateEvent(
     eventId: string,
@@ -239,6 +256,7 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     selectEvent,
     selectRegionEvents,
     addEvent,
+    addEvents,
     updateEvent,
     removeEvent,
     setEventFilter,
