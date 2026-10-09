@@ -1,7 +1,7 @@
 import { defineComponent } from 'vue'
 import { RouterLink } from 'vue-router'
 import { buildInfo } from '@blog/config'
-import { projects } from '../data/projects'
+import { getProjectPath, projects } from '../data/projects'
 
 const featuredProjects = projects.filter((project) => project.featured)
 
@@ -41,7 +41,7 @@ export default defineComponent({
             {featuredProjects.map((project) => (
               <RouterLink
                 class={['project-card', project.slug === 'scheduler' && 'project-card--featured']}
-                to={`/playground/${project.category}`}
+                to={getProjectPath(project.category, project.slug)}
               >
                 <p class="project-card__eyebrow">{project.category.toUpperCase()}</p>
                 <h3>{project.title}</h3>

@@ -6,8 +6,8 @@ export interface EventFeatureProperties {
   eventId: string
   /** 决定点位的业务分类和列表展示文案。 */
   eventType: EventType
-  /** 当前处置进度，仅用于展示，不由地图层修改。 */
+  /** 当前处置进度，决定地图点位填充色；地图层只读取、不修改该值。 */
   status: EventStatus
-  /** 决定普通点位的颜色等级。 */
+  /** 调度优先级，保留用于业务详情和后续筛选，不再与处置状态共用颜色。 */
   level: EventLevel
 }

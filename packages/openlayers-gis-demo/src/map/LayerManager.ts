@@ -7,6 +7,7 @@ export type CoreLayerId =
   | 'cluster' // 事件聚合图层，与普通事件图层互斥显示。
   | 'region' // 用户绘制和修改的空间范围图层。
   | 'track' // 完整巡检轨迹和人员当前位置图层。
+  | 'selection' // 当前选中事件的独立高亮图层，不修改原始事件 Feature。
 
 /**
  * 管理 OpenLayers Layer 的所有权和地图挂载关系。

@@ -233,3 +233,12 @@ export const projects: ProjectDefinition[] = [
 export function getProjectsByCategory(category: ProjectCategory) {
   return projects.filter((project) => project.category === category)
 }
+
+/**
+ * 返回项目的可访问路由，供首页卡片和 Playground 导航共用。
+ * low-code 沿用既有顶层路径，其余项目按分类和 slug 组成二级路径。
+ */
+export function getProjectPath(category: ProjectCategory, projectSlug: string): string {
+  if (projectSlug === 'low-code') return '/playground/low-code'
+  return `/playground/${category}/${projectSlug}`
+}

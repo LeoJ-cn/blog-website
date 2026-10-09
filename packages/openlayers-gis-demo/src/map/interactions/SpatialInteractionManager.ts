@@ -1,5 +1,6 @@
 import type OlMap from 'ol/Map.js'
 import type Feature from 'ol/Feature.js'
+import { boundingExtent } from 'ol/extent.js'
 import type Geometry from 'ol/geom/Geometry.js'
 import Draw from 'ol/interaction/Draw.js'
 import Modify from 'ol/interaction/Modify.js'
@@ -8,6 +9,7 @@ import type VectorLayer from 'ol/layer/Vector.js'
 import type VectorSource from 'ol/source/Vector.js'
 import { unByKey } from 'ol/Observable.js'
 import type { EventsKey } from 'ol/events.js'
+import type { createClusterLayer } from '../layers/create-cluster-layer'
 import type { EventFeature } from '../sources/create-event-source'
 
 export type MapMode =
@@ -22,8 +24,10 @@ export type DrawGeometryType =
 interface Options {
   /** Interaction 所属地图；销毁管理器时会从该地图移除全部 Interaction。 */
   map: OlMap
-  /** Select 只命中普通事件图层，避免把区域或聚合 Feature 当作业务事件。 */
+  /** 普通事件图层；命中后直接返回业务事件 ID。 */
   eventLayer: VectorLayer<VectorSource<EventFeature>>
+  /** 聚合事件图层；单事件聚合返回 ID，多事件聚合缩放到其空间范围。 */
+  clusterLayer: ReturnType<typeof createClusterLayer>['layer']
   /** 空间筛选的数据源，包含完整事件点集合。 */
   eventSource: VectorSource<EventFeature>
   /** Draw 与 Modify 共享的区域数据源，同一时间只保留一个绘制结果。 */
@@ -42,7 +46,13 @@ export class SpatialInteractionManager {
   private drawListenerKeys: EventsKey[] = []
 
   constructor(private readonly options: Options) {
-    this.select = new Select({ layers: [options.eventLayer], hitTolerance: 5 })
+    // 允许点击图标边缘附近的像素，兼顾鼠标和触控设备上的实际点击误差。
+    this.select = new Select({
+      layers: [options.eventLayer, options.clusterLayer],
+      hitTolerance: 8,
+      // 视觉高亮由独立 SelectionLayer 负责，Select 仅处理命中和选择事件。
+      style: null,
+    })
     this.modify = new Modify({ source: options.regionSource })
     this.modify.setActive(false)
     options.map.addInteraction(this.select)
@@ -50,7 +60,30 @@ export class SpatialInteractionManager {
 
     this.listenerKeys.push(
       this.select.on('select', (event) => {
-        const id = event.selected[0]?.getId()
+        const selectedFeature = event.selected[0]
+        const clusterFeatures = selectedFeature?.get('features') as EventFeature[] | undefined
+        if (clusterFeatures?.length === 1) {
+          const id = clusterFeatures[0]?.getId()
+          options.onEventSelect?.(typeof id === 'string' ? id : null)
+          return
+        }
+        if (clusterFeatures && clusterFeatures.length > 1) {
+          // 多点聚合没有唯一业务事件：缩放到成员范围，让用户继续下钻选择具体点位。
+          const coordinates = clusterFeatures.flatMap((feature) => {
+            const coordinate = feature.getGeometry()?.getCoordinates()
+            return coordinate ? [coordinate] : []
+          })
+          if (coordinates.length > 0) {
+            options.map.getView().fit(boundingExtent(coordinates), {
+              duration: 350,
+              maxZoom: 18,
+              padding: [48, 48, 48, 48],
+            })
+          }
+          options.onEventSelect?.(null)
+          return
+        }
+        const id = selectedFeature?.getId()
         options.onEventSelect?.(typeof id === 'string' ? id : null)
       }),
       this.modify.on('modifyend', (event) => {

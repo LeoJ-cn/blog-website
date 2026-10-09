@@ -4,6 +4,11 @@ import 'ol/ol.css'
 import { MapManager } from '../map/MapManager'
 import type { MapStats, RenderMode } from '../map/MapManager'
 import type { DrawGeometryType, MapMode } from '../map/interactions/SpatialInteractionManager'
+import {
+  EVENT_LEVEL_VISUALS,
+  EVENT_SELECTION_COLOR,
+  EVENT_STATUS_VISUALS,
+} from '../map/styles/event-visual'
 import { generateInspectionEvents } from '../mock/generate-events'
 import { mockInspectionTrack } from '../mock/tracks'
 import { useGisStore } from '../stores/gis'
@@ -15,8 +20,8 @@ const TYPE_LABELS = {
   GARBAGE: '垃圾堆积',
   MANHOLE: '井盖异常',
 } as const
-const STATUS_LABELS = { PENDING: '待处理', PROCESSING: '处理中', DONE: '已完成' } as const
-const LEVEL_LABELS = { HIGH: '高', MEDIUM: '中', LOW: '低' } as const
+const statusLegend = Object.values(EVENT_STATUS_VISUALS)
+const selectionLegendStyle = { '--legend-color': EVENT_SELECTION_COLOR }
 
 const mapTarget = ref<HTMLElement | null>(null)
 const popupElement = ref<HTMLElement | null>(null)
@@ -133,16 +138,38 @@ onBeforeUnmount(() => {
           :class="{ active: event.id === store.selectedEventId }"
           @click="selectFromList(event.id)"
         >
-          <span class="level" :data-level="event.level"></span>
+          <span
+            class="level"
+            :style="{ backgroundColor: EVENT_STATUS_VISUALS[event.status].color }"
+          ></span>
           <span>
             <strong>{{ TYPE_LABELS[event.type] }}</strong>
             <small>{{ event.address }}</small>
           </span>
-          <em>{{ STATUS_LABELS[event.status] }}</em>
+          <em :style="{ color: EVENT_STATUS_VISUALS[event.status].color }">
+            {{ EVENT_STATUS_VISUALS[event.status].label }}
+          </em>
         </button>
       </aside>
       <main class="map-panel">
         <div ref="mapTarget" class="map-canvas"></div>
+        <section class="map-legend" aria-label="地图点位图例">
+          <strong>点位图例</strong>
+          <div class="legend-group">
+            <span class="legend-title">处置状态</span>
+            <span v-for="item in statusLegend" :key="item.label" class="legend-item">
+              <i class="legend-level" :style="{ '--legend-color': item.color }"></i>
+              {{ item.label }}
+            </span>
+          </div>
+          <div class="legend-group">
+            <span class="legend-title">当前选择</span>
+            <span class="legend-item">
+              <i class="legend-status legend-selection" :style="selectionLegendStyle"></i>
+              青色光圈
+            </span>
+          </div>
+        </section>
         <div ref="popupElement" class="map-popup" :class="{ visible: selectedEvent }">
           <template v-if="selectedEvent">
             <strong>{{ TYPE_LABELS[selectedEvent.type] }}</strong>
@@ -158,9 +185,9 @@ onBeforeUnmount(() => {
             <dt>事件类型</dt>
             <dd>{{ TYPE_LABELS[selectedEvent.type] }}</dd>
             <dt>处理状态</dt>
-            <dd>{{ STATUS_LABELS[selectedEvent.status] }}</dd>
+            <dd>{{ EVENT_STATUS_VISUALS[selectedEvent.status].label }}</dd>
             <dt>紧急程度</dt>
-            <dd>{{ LEVEL_LABELS[selectedEvent.level] }}</dd>
+            <dd>{{ EVENT_LEVEL_VISUALS[selectedEvent.level].label }}</dd>
             <dt>上报位置</dt>
             <dd>{{ selectedEvent.address }}</dd>
             <dt>上报时间</dt>
@@ -324,12 +351,6 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   background: #22c55e;
 }
-.level[data-level='HIGH'] {
-  background: #ef4444;
-}
-.level[data-level='MEDIUM'] {
-  background: #f59e0b;
-}
 .map-panel {
   position: relative;
   min-width: 0;
@@ -338,6 +359,62 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   background: #dbe4ec;
+}
+.map-legend {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  min-width: 210px;
+  padding: 10px 12px;
+  color: #dbeafe;
+  background: #08101fe6;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px #02061752;
+  font-size: 11px;
+  pointer-events: none;
+}
+.map-legend strong {
+  font-size: 12px;
+}
+.legend-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.legend-title {
+  width: 48px;
+  color: #94a3b8;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.legend-level,
+.legend-status {
+  --legend-color: #94a3b8;
+  display: inline-block;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.legend-level {
+  background: var(--legend-color);
+  border: 1px solid #ffffff;
+}
+.legend-status {
+  border: 2px solid var(--legend-color);
+}
+.legend-selection {
+  width: 12px;
+  height: 12px;
+  border-width: 3px;
 }
 .map-popup {
   display: none;

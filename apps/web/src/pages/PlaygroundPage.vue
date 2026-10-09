@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import { categoryMetadata, getProjectsByCategory } from '../data/projects'
+import { categoryMetadata, getProjectPath, getProjectsByCategory } from '../data/projects'
 import type { ProjectCategory } from '../types/project'
 
 const categories = (Object.keys(categoryMetadata) as ProjectCategory[]).map((slug) => ({
@@ -9,13 +9,6 @@ const categories = (Object.keys(categoryMetadata) as ProjectCategory[]).map((slu
   hint: categoryMetadata[slug].hint,
   projects: getProjectsByCategory(slug),
 }))
-
-function getProjectPath(category: ProjectCategory, projectSlug: string) {
-  if (category === 'performance') return `/playground/performance/${projectSlug}`
-  if (category === 'engineering') return `/playground/engineering/${projectSlug}`
-  if (projectSlug === 'low-code') return '/playground/low-code'
-  return `/playground/browser/${projectSlug}`
-}
 </script>
 
 <template>
@@ -31,10 +24,7 @@ function getProjectPath(category: ProjectCategory, projectSlug: string) {
     <aside class="playground-sidebar" aria-label="技术点导航">
       <nav class="playground-nav">
         <div v-for="category in categories" :key="category.slug" class="playground-nav__group">
-          <RouterLink
-            :to="`/playground/${category.slug}`"
-            class="playground-nav__category"
-          >
+          <RouterLink :to="`/playground/${category.slug}`" class="playground-nav__category">
             <span>
               <strong>{{ category.name }}</strong>
               <small>{{ category.hint }}</small>

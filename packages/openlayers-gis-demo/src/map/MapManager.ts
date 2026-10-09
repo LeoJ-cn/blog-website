@@ -13,17 +13,13 @@ import { createBaseLayer } from './layers/create-base-layer'
 import { createClusterLayer } from './layers/create-cluster-layer'
 import { createEventLayer } from './layers/create-event-layer'
 import { createRegionLayer } from './layers/create-region-layer'
+import { createSelectionLayer } from './layers/create-selection-layer'
 import { createTrackLayer } from './layers/create-track-layer'
 import { LayerManager } from './LayerManager'
 import type { CoreLayerId } from './LayerManager'
 import { SpatialInteractionManager } from './interactions/SpatialInteractionManager'
 import type { DrawGeometryType, MapMode } from './interactions/SpatialInteractionManager'
-import {
-  createEventFeature,
-  createEventSource,
-  type EventFeature,
-} from './sources/create-event-source'
-import { selectedEventStyle } from './styles/event-style'
+import { createEventFeature, createEventSource } from './sources/create-event-source'
 
 export type RenderMode =
   | 'point' // 逐个渲染原始事件 Feature，适合小数据量和精确选择。
@@ -56,6 +52,8 @@ export interface MapManagerOptions {
 }
 
 const DEFAULT_CENTER: readonly [number, number] = [121.4737, 31.2304]
+/** 从业务列表定位单个事件时使用的街区级缩放，不会覆盖用户已经更近的视角。 */
+const EVENT_FOCUS_ZOOM = 17.5
 
 export class MapManager {
   private readonly map: OlMap
@@ -64,12 +62,12 @@ export class MapManager {
   private readonly eventLayer: ReturnType<typeof createEventLayer>
   private readonly clusterLayer: ReturnType<typeof createClusterLayer>['layer']
   private readonly clusterSource: ReturnType<typeof createClusterLayer>['source']
+  private readonly selectionFeature: ReturnType<typeof createSelectionLayer>['selectedFeature']
   private readonly interactionManager: SpatialInteractionManager
   private readonly trackPlayback: TrackPlaybackController
   private readonly listenerKeys: EventsKey[]
   /** offset 按 [水平像素, 垂直像素] 排列，负值让 Popup 位于点位图标上方。 */
   private readonly popupOverlay = new Overlay({ positioning: 'bottom-center', offset: [0, -14] })
-  private selectedFeature: EventFeature | null = null
   private renderMode: RenderMode = 'point'
   private mapMode: MapMode = 'select'
   private mounted = false
@@ -83,8 +81,10 @@ export class MapManager {
     const cluster = createClusterLayer(this.eventSource)
     const region = createRegionLayer()
     const track = createTrackLayer(options.trackPoints ?? [])
+    const selection = createSelectionLayer()
     this.clusterLayer = cluster.layer
     this.clusterSource = cluster.source
+    this.selectionFeature = selection.selectedFeature
     this.map = new OlMap({
       controls: defaultControls({ rotate: false }),
       view: new View({
@@ -100,15 +100,17 @@ export class MapManager {
     this.layerManager.addLayer('cluster', this.clusterLayer)
     this.layerManager.addLayer('region', region.layer)
     this.layerManager.addLayer('track', track.layer)
+    this.layerManager.addLayer('selection', selection.layer)
     this.map.addOverlay(this.popupOverlay)
     this.interactionManager = new SpatialInteractionManager({
       map: this.map,
       eventLayer: this.eventLayer,
+      clusterLayer: this.clusterLayer,
       eventSource: this.eventSource,
       regionSource: region.source,
       onEventSelect: (eventId) => {
         const feature = eventId ? this.eventSource.getFeatureById(eventId) : null
-        this.selectFeature(feature)
+        this.updateSelection(feature)
         this.popupOverlay.setPosition(feature?.getGeometry()?.getCoordinates())
         options.onEventSelect?.(eventId)
       },
@@ -140,9 +142,15 @@ export class MapManager {
     const coordinates = feature?.getGeometry()?.getCoordinates()
     if (!feature || !coordinates) return
     if (this.renderMode !== 'point') this.setRenderMode('point')
-    this.selectFeature(feature)
+    this.updateSelection(feature)
     this.popupOverlay.setPosition(coordinates)
-    this.map.getView().animate({ center: coordinates, duration: 450 })
+    const view = this.map.getView()
+    view.animate({
+      center: coordinates,
+      // 列表定位需要让点位清晰可见，但用户已手动放得更近时不应突然缩小。
+      zoom: Math.max(view.getZoom() ?? EVENT_FOCUS_ZOOM, EVENT_FOCUS_ZOOM),
+      duration: 450,
+    })
   }
 
   /** 批量替换事件数据；调用后原有 Feature 引用全部失效。 */
@@ -150,21 +158,20 @@ export class MapManager {
     // 先完成对象转换再批量替换，避免逐条 addFeature 触发大量增量渲染。
     const features = events.map(createEventFeature)
     // Source 清空前解除旧选中 Feature 和 Popup 引用，避免大批数据切换后保留失效对象。
-    this.selectFeature(null)
+    this.updateSelection(null)
     this.popupOverlay.setPosition(undefined)
     this.eventSource.clear(true)
     this.eventSource.addFeatures(features)
   }
 
-  /** 切换互斥渲染图层，同时清除旧模式下的高亮和 Popup。 */
+  /** 切换互斥渲染图层；独立 SelectionLayer 会跨渲染模式保留当前选中态。 */
   setRenderMode(mode: RenderMode): void {
     // 两套业务图层互斥显示，但底层事件 Source 始终保持同一份数据。
     this.renderMode = mode
     this.eventLayer.setVisible(mode === 'point')
     this.clusterLayer.setVisible(mode === 'cluster')
-    this.interactionManager.setSelectActive(mode === 'point' && this.mapMode === 'select')
-    this.popupOverlay.setPosition(undefined)
-    this.selectFeature(null)
+    // Select 同时支持普通点和聚合点，仅由当前交互模式决定是否启用。
+    this.interactionManager.setSelectActive(this.mapMode === 'select')
     this.map.render()
   }
 
@@ -172,7 +179,7 @@ export class MapManager {
   setInteractionMode(mode: MapMode, drawType: DrawGeometryType = 'Polygon'): void {
     this.mapMode = mode
     this.interactionManager.setMode(mode, drawType)
-    this.interactionManager.setSelectActive(mode === 'select' && this.renderMode === 'point')
+    this.interactionManager.setSelectActive(mode === 'select')
   }
 
   /** 返回当前 View 与可见业务 Source 的快照，不包含不可见图层数量。 */
@@ -230,10 +237,9 @@ export class MapManager {
     return this.layerManager.removeLayer(layerId)
   }
 
-  private selectFeature(feature: EventFeature | null): void {
-    this.selectedFeature?.setStyle(undefined)
-    this.selectedFeature = feature
-    this.selectedFeature?.setStyle(selectedEventStyle)
+  private updateSelection(feature: ReturnType<typeof createEventFeature> | null): void {
+    // 克隆 Point 可避免高亮层和事件层共享可变 Geometry，后续扩展动画时互不影响。
+    this.selectionFeature.setGeometry(feature?.getGeometry()?.clone())
   }
 
   /** 幂等释放监听器、Interaction、Overlay 和海量 Feature；未挂载实例也必须释放。 */
@@ -245,7 +251,7 @@ export class MapManager {
     this.trackPlayback.destroy()
     this.popupOverlay.setElement(undefined)
     this.map.removeOverlay(this.popupOverlay)
-    this.selectFeature(null)
+    this.updateSelection(null)
     this.eventSource.clear(true)
     // 主动解除 ClusterSource 对事件 Source 的引用，便于大数据集合及时回收。
     this.clusterSource.setSource(null)

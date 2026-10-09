@@ -18,6 +18,7 @@
 - 城市巡检事件列表、地图点位、Popup 和详情面板双向联动。
 - 1k、10k、50k、100k 稳定 Mock 数据切换。
 - 普通 `VectorLayer` 与 `Cluster` 聚合模式切换。
+- 点位填充色表达处置状态（待处理红、处理中橙、已完成绿），SelectionLayer 使用独立青色光圈；事件等级保留为文字信息。
 - 数据量、渲染模式、Zoom 和当前 Feature 数量展示。
 - `Select`、Point/Polygon/Circle `Draw` 和 `Modify`。
 - Polygon/Circle 区域内事件筛选及修改后重新计算。
@@ -36,7 +37,7 @@ packages/openlayers-gis-demo/
 │   │   ├── LayerManager.ts             # Layer 注册、查询、显隐、移除和销毁
 │   │   ├── interactions/
 │   │   │   └── SpatialInteractionManager.ts
-│   │   ├── layers/                     # Base/Event/Cluster/Region/Track Layer
+│   │   ├── layers/                     # Base/Event/Cluster/Region/Track/Selection Layer
 │   │   ├── sources/                    # 业务事件到 Feature 的转换
 │   │   ├── styles/                     # 事件和聚合样式缓存
 │   │   └── types/                      # Feature 业务属性协议
@@ -78,15 +79,16 @@ OpenLayers 是有状态的命令式对象系统，Vue 是声明式响应式系�
 
 ## Layer 架构
 
-| Layer ID  | 实现                         | 职责                   |
-| --------- | ---------------------------- | ---------------------- |
-| `base`    | `TileLayer<OSM>`             | 在线基础底图           |
-| `event`   | `VectorLayer`                | 普通事件点位和精确选择 |
-| `cluster` | `VectorLayer<ClusterSource>` | 海量点位聚合展示       |
-| `region`  | `VectorLayer`                | Draw/Modify 空间范围   |
-| `track`   | `VectorLayer`                | 完整轨迹和人员当前位置 |
+| Layer ID    | 实现                         | 职责                   |
+| ----------- | ---------------------------- | ---------------------- |
+| `base`      | `TileLayer<OSM>`             | 在线基础底图           |
+| `event`     | `VectorLayer`                | 普通事件点位和精确选择 |
+| `cluster`   | `VectorLayer<ClusterSource>` | 海量点位聚合展示       |
+| `region`    | `VectorLayer`                | Draw/Modify 空间范围   |
+| `track`     | `VectorLayer`                | 完整轨迹和人员当前位置 |
+| `selection` | `VectorLayer`                | 当前选中事件的独立高亮 |
 
-`LayerManager` 维护 Layer ID 到实例的唯一映射，统一提供 `addLayer`、`removeLayer`、`getLayer`、`showLayer`、`hideLayer` 和 `destroy`。普通点位与 Cluster 共享同一个事件 `VectorSource`，避免切换模式时重复维护十万条 Feature。
+`LayerManager` 维护 Layer ID 到实例的唯一映射，统一提供 `addLayer`、`removeLayer`、`getLayer`、`showLayer`、`hideLayer` 和 `destroy`。普通点位与 Cluster 共享同一个事件 `VectorSource`，避免切换模式时重复维护十万条 Feature。SelectionLayer 复用一个只保存坐标的 Feature，不修改原始事件 Feature，并在普通点与 Cluster 模式之间保留一致的选中效果。点位颜色只表达处置状态，避免与事件等级产生重复语义。
 
 ## 海量点优化方案
 
