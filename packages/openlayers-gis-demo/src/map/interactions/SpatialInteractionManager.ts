@@ -115,6 +115,13 @@ export class SpatialInteractionManager {
     this.select.setActive(active)
   }
 
+  /** 暂停全部主动交互，供事件地图选点等一次性点击流程独占下一次点击。 */
+  setAllInactive(): void {
+    this.removeDraw()
+    this.select.setActive(false)
+    this.modify.setActive(false)
+  }
+
   /** 对程序载入的区域复用与 Draw/Modify 相同的空间筛选流程。 */
   evaluateRegion(geometry: Geometry): void {
     this.emitRegionSelection(geometry)

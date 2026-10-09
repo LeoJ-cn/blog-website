@@ -19,6 +19,8 @@
 - 按事件 ID/地址、处置状态、事件类型和调度等级筛选，地图、Cluster 与列表同步更新。
 - 待处理、处理中和已完成事件数量统计。
 - 事件按“待处理 → 处理中 → 已完成”单向流转，并同步地图颜色、列表、筛选结果与统计。
+- 支持地图选点新建、编辑和二次确认删除事件；业务字段、WGS84 坐标、筛选结果、地图点位与空间区域统计同步更新。
+- 事件详情展示上报、资料编辑、开始处理和完成处置的增量时间线。
 - 1k、10k、50k、100k 稳定 Mock 数据切换。
 - 普通 `VectorLayer` 与 `Cluster` 聚合模式切换。
 - 点位填充色表达处置状态（待处理红、处理中橙、已完成绿），SelectionLayer 使用独立青色光圈；事件等级保留为文字信息。
@@ -27,6 +29,7 @@
 - `Select`、Point/Polygon/Circle `Draw` 和 `Modify`。
 - Polygon/Circle 区域内事件筛选及修改后重新计算。
 - Polygon/Circle 区域保存、预设区域载入、定位、修改、删除及事件数量同步。
+- 支持将区域内待处理或处理中事件按状态机批量推进，并同步筛选、地图颜色与处置记录。
 - 完整巡检轨迹、人员当前位置和时间插值动画。
 - 播放、暂停、重置、1x/2x/8x 速度控制和当前巡检时间展示。
 
@@ -84,14 +87,15 @@ OpenLayers 是有状态的命令式对象系统，Vue 是声明式响应式系�
 
 ## Layer 架构
 
-| Layer ID    | 实现                         | 职责                   |
-| ----------- | ---------------------------- | ---------------------- |
-| `base`      | `TileLayer<OSM>`             | 在线基础底图           |
-| `event`     | `VectorLayer`                | 普通事件点位和精确选择 |
-| `cluster`   | `VectorLayer<ClusterSource>` | 海量点位聚合展示       |
-| `region`    | `VectorLayer`                | Draw/Modify 空间范围   |
-| `track`     | `VectorLayer`                | 完整轨迹和人员当前位置 |
-| `selection` | `VectorLayer`                | 当前选中事件的独立高亮 |
+| Layer ID     | 实现                         | 职责                         |
+| ------------ | ---------------------------- | ---------------------------- |
+| `base`       | `TileLayer<OSM>`             | 在线基础底图                 |
+| `event`      | `VectorLayer`                | 普通事件点位和精确选择       |
+| `cluster`    | `VectorLayer<ClusterSource>` | 海量点位聚合展示             |
+| `region`     | `VectorLayer`                | Draw/Modify 空间范围         |
+| `track`      | `VectorLayer`                | 完整轨迹和人员当前位置       |
+| `selection`  | `VectorLayer`                | 当前选中事件的独立高亮       |
+| `eventDraft` | `VectorLayer`                | 新建或编辑事件的临时选点标记 |
 
 `LayerManager` 维护 Layer ID 到实例的唯一映射，统一提供 `addLayer`、`removeLayer`、`getLayer`、`showLayer`、`hideLayer` 和 `destroy`。普通点位与 Cluster 共享同一个事件 `VectorSource`，避免切换模式时重复维护十万条 Feature。SelectionLayer 复用一个只保存坐标的 Feature，不修改原始事件 Feature，并在普通点与 Cluster 模式之间保留一致的选中效果。点位颜色只表达处置状态，避免与事件等级产生重复语义。
 

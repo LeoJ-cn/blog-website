@@ -9,6 +9,8 @@ export type { CoreLayerId } from './map/LayerManager'
 export type { DrawGeometryType, MapMode } from './map/interactions/SpatialInteractionManager'
 export type {
   EventLevel,
+  EventActivity,
+  EventActivityType,
   EventStatus,
   EventType,
   InspectionEvent,

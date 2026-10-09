@@ -8,6 +8,7 @@ export type CoreLayerId =
   | 'region' // 用户绘制和修改的空间范围图层。
   | 'track' // 完整巡检轨迹和人员当前位置图层。
   | 'selection' // 当前选中事件的独立高亮图层，不修改原始事件 Feature。
+  | 'eventDraft' // 新建或编辑事件时的临时选点标记，保存或取消后清空。
 
 /**
  * 管理 OpenLayers Layer 的所有权和地图挂载关系。

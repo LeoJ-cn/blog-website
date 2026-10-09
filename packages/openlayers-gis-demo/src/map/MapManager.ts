@@ -1,18 +1,20 @@
 import OlMap from 'ol/Map.js'
 import Feature from 'ol/Feature.js'
+import Point from 'ol/geom/Point.js'
 import Overlay from 'ol/Overlay.js'
 import View from 'ol/View.js'
 import { defaults as defaultControls } from 'ol/control/defaults.js'
 import type { EventsKey } from 'ol/events.js'
 import type BaseLayer from 'ol/layer/Base.js'
 import { unByKey } from 'ol/Observable.js'
-import { fromLonLat } from 'ol/proj.js'
+import { fromLonLat, toLonLat } from 'ol/proj.js'
 import type { InspectionEvent } from '../types/inspection-event'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
 import { TrackPlaybackController } from '../services/TrackPlaybackController'
 import { createBaseLayer } from './layers/create-base-layer'
 import { createClusterLayer } from './layers/create-cluster-layer'
 import { createEventLayer } from './layers/create-event-layer'
+import { createEventDraftLayer } from './layers/create-event-draft-layer'
 import { createRegionLayer } from './layers/create-region-layer'
 import { createSelectionLayer } from './layers/create-selection-layer'
 import { createTrackLayer } from './layers/create-track-layer'
@@ -77,6 +79,9 @@ export class MapManager {
   private readonly clusterSource: ReturnType<typeof createClusterLayer>['source']
   private readonly regionSource: ReturnType<typeof createRegionLayer>['source']
   private readonly selectionFeature: ReturnType<typeof createSelectionLayer>['selectedFeature']
+  private readonly eventDraftFeature: ReturnType<typeof createEventDraftLayer>['draftFeature']
+  private readonly startEventDraftPulse: ReturnType<typeof createEventDraftLayer>['startPulse']
+  private readonly stopEventDraftPulse: ReturnType<typeof createEventDraftLayer>['stopPulse']
   private readonly interactionManager: SpatialInteractionManager
   private readonly trackPlayback: TrackPlaybackController
   private readonly listenerKeys: EventsKey[]
@@ -84,7 +89,9 @@ export class MapManager {
   private readonly popupOverlay = new Overlay({ positioning: 'bottom-center', offset: [0, -14] })
   private renderMode: RenderMode = 'point'
   private mapMode: MapMode = 'select'
+  private drawType: DrawGeometryType = 'Polygon'
   private eventLayersVisible = true
+  private eventLocationPickKey: EventsKey | null = null
   private featureConversionMs = 0
   private sourceUpdateMs = 0
   private renderCompleteMs: number | null = null
@@ -108,10 +115,14 @@ export class MapManager {
     const region = createRegionLayer()
     const track = createTrackLayer(options.trackPoints ?? [])
     const selection = createSelectionLayer()
+    const eventDraft = createEventDraftLayer()
     this.clusterLayer = cluster.layer
     this.clusterSource = cluster.source
     this.regionSource = region.source
     this.selectionFeature = selection.selectedFeature
+    this.eventDraftFeature = eventDraft.draftFeature
+    this.startEventDraftPulse = eventDraft.startPulse
+    this.stopEventDraftPulse = eventDraft.stopPulse
     this.map = new OlMap({
       controls: defaultControls({ rotate: false }),
       view: new View({
@@ -128,6 +139,7 @@ export class MapManager {
     this.layerManager.addLayer('region', region.layer)
     this.layerManager.addLayer('track', track.layer)
     this.layerManager.addLayer('selection', selection.layer)
+    this.layerManager.addLayer('eventDraft', eventDraft.layer)
     this.map.addOverlay(this.popupOverlay)
     this.interactionManager = new SpatialInteractionManager({
       map: this.map,
@@ -209,11 +221,28 @@ export class MapManager {
     this.pendingRenderStartedAt = batchStartedAt
   }
 
+  /** 向当前可见 Source 增量加入事件；ID 已存在时返回 false，避免覆盖既有 Feature。 */
+  addEvent(event: InspectionEvent): boolean {
+    if (this.eventSource.getFeatureById(event.id)) return false
+    this.eventSource.addFeature(createEventFeature(event))
+    return true
+  }
+
   /** 更新单个可见事件并保留原 Feature 身份；返回 false 表示当前筛选 Source 中不存在该事件。 */
   updateEvent(event: InspectionEvent): boolean {
     const feature = this.eventSource.getFeatureById(event.id)
     if (!feature) return false
     updateEventFeature(feature, event)
+    return true
+  }
+
+  /** 删除当前可见 Source 中的事件，并清除可能指向该事件的高亮和 Popup。 */
+  removeEvent(eventId: string): boolean {
+    const feature = this.eventSource.getFeatureById(eventId)
+    if (!feature) return false
+    this.eventSource.removeFeature(feature)
+    this.updateSelection(null)
+    this.popupOverlay.setPosition(undefined)
     return true
   }
 
@@ -238,9 +267,50 @@ export class MapManager {
 
   /** 激活一种空间交互；Draw 模式下 drawType 决定新建几何类型。 */
   setInteractionMode(mode: MapMode, drawType: DrawGeometryType = 'Polygon'): void {
+    this.cancelEventLocationPick(false)
     this.mapMode = mode
+    this.drawType = drawType
     this.interactionManager.setMode(mode, drawType)
     this.interactionManager.setSelectActive(mode === 'select')
+  }
+
+  /**
+   * 独占下一次地图单击并返回 [WGS84 经度, WGS84 纬度]；完成后恢复此前空间交互。
+   */
+  startEventLocationPick(onPick: (coordinate: readonly [number, number]) => void): void {
+    this.cancelEventLocationPick()
+    this.interactionManager.setAllInactive()
+    const targetElement = this.map.getTargetElement()
+    if (targetElement) targetElement.style.cursor = 'crosshair'
+    this.eventLocationPickKey = this.map.once('singleclick', (event) => {
+      const [lng, lat] = toLonLat(event.coordinate)
+      this.setEventDraftLocation([lng, lat])
+      this.eventLocationPickKey = null
+      this.restoreInteractionAfterLocationPick()
+      onPick([lng, lat])
+    })
+  }
+
+  /** 更新临时事件标记；坐标按 [WGS84 经度, WGS84 纬度] 排列，null 表示清除。 */
+  setEventDraftLocation(coordinate: readonly [number, number] | null): void {
+    this.eventDraftFeature.setGeometry(
+      coordinate ? new Point(fromLonLat([...coordinate])) : undefined,
+    )
+    if (coordinate) this.startEventDraftPulse()
+    else this.stopEventDraftPulse()
+  }
+
+  /** 取消尚未完成的地图选点；默认恢复进入选点前的空间交互模式。 */
+  cancelEventLocationPick(restoreInteraction = true): void {
+    const wasPicking = this.eventLocationPickKey !== null
+    if (this.eventLocationPickKey) {
+      unByKey(this.eventLocationPickKey)
+      this.eventLocationPickKey = null
+    }
+    const targetElement = this.map.getTargetElement()
+    if (targetElement) targetElement.style.cursor = ''
+    // 没有待取消监听时不重复重建 Draw，避免普通表单关闭影响正在进行的空间绘制。
+    if (restoreInteraction && wasPicking) this.restoreInteractionAfterLocationPick()
   }
 
   /** 返回当前 Polygon/Circle 的可序列化 WGS84 协议；Point 或空区域返回 null。 */
@@ -338,9 +408,17 @@ export class MapManager {
     this.selectionFeature.setGeometry(feature?.getGeometry()?.clone())
   }
 
+  private restoreInteractionAfterLocationPick(): void {
+    const targetElement = this.map.getTargetElement()
+    if (targetElement) targetElement.style.cursor = ''
+    this.interactionManager.setMode(this.mapMode, this.drawType)
+    this.interactionManager.setSelectActive(this.mapMode === 'select')
+  }
+
   /** 幂等释放监听器、Interaction、Overlay 和海量 Feature；未挂载实例也必须释放。 */
   destroy(): void {
     if (this.destroyed) return
+    this.cancelEventLocationPick(false)
     if (this.mounted) this.map.setTarget(undefined)
     unByKey(this.listenerKeys)
     this.interactionManager.destroy()
@@ -348,6 +426,7 @@ export class MapManager {
     this.popupOverlay.setElement(undefined)
     this.map.removeOverlay(this.popupOverlay)
     this.updateSelection(null)
+    this.setEventDraftLocation(null)
     this.eventSource.clear(true)
     // 主动解除 ClusterSource 对事件 Source 的引用，便于大数据集合及时回收。
     this.clusterSource.setSource(null)

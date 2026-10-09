@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import 'ol/ol.css'
 import { MapManager } from '../map/MapManager'
 import type { MapStats, RenderMode } from '../map/MapManager'
@@ -40,6 +40,31 @@ const mapTarget = ref<HTMLElement | null>(null)
 const popupElement = ref<HTMLElement | null>(null)
 const store = useGisStore()
 const selectedEvent = computed(() => store.selectedEvent)
+interface EventFormDraft {
+  type: EventType
+  level: EventLevel
+  address: string
+  /** WGS84 经度，合法范围为闭区间 [-180, 180]。 */
+  lng: number
+  /** WGS84 纬度，合法范围为闭区间 [-90, 90]。 */
+  lat: number
+}
+
+const createDefaultEventDraft = (): EventFormDraft => ({
+  type: 'ROAD_DAMAGE',
+  level: 'MEDIUM',
+  address: '',
+  lng: 121.4737,
+  lat: 31.2304,
+})
+const eventFormOpen = ref(false)
+/** null 表示创建事件，否则为正在编辑且保持不变的业务 ID。 */
+const editingEventId = ref<string | null>(null)
+const eventForm = reactive<EventFormDraft>(createDefaultEventDraft())
+const eventFormError = ref('')
+const isPickingEventLocation = ref(false)
+/** 保存进入二次确认时的事件 ID，避免选择变化后误删另一条事件。 */
+const deleteCandidateId = ref<string | null>(null)
 const statusActionLabel = computed(() => {
   if (selectedEvent.value?.status === 'PENDING') return '开始处理'
   if (selectedEvent.value?.status === 'PROCESSING') return '标记完成'
@@ -57,6 +82,15 @@ const visibleEvents = computed(() => {
 const statusCounts = computed(() => {
   const counts: Record<EventStatus, number> = { PENDING: 0, PROCESSING: 0, DONE: 0 }
   for (const event of store.events) counts[event.status] += 1
+  return counts
+})
+const regionStatusCounts = computed(() => {
+  const counts: Record<EventStatus, number> = { PENDING: 0, PROCESSING: 0, DONE: 0 }
+  if (store.regionEventIds === null) return counts
+  const regionIds = new Set(store.regionEventIds)
+  for (const event of store.events) {
+    if (regionIds.has(event.id)) counts[event.status] += 1
+  }
   return counts
 })
 // 空字符串是原生 select 的“全部”值，应用时转换为业务筛选协议中的 null。
@@ -100,9 +134,26 @@ const formattedTrackTime = computed(() =>
 )
 let mapManager: MapManager | null = null
 
+watch(
+  () => store.selectedEventId,
+  () => {
+    deleteCandidateId.value = null
+  },
+)
+
 /** 性能面板统一保留一位小数，低于计时器分辨率的耗时仍显示为 0.0 ms。 */
 function formatDuration(durationMs: number): string {
   return `${durationMs.toFixed(1)} ms`
+}
+
+function formatActivityTime(isoTime: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(isoTime))
 }
 
 function generateEvents(count: number) {
@@ -122,6 +173,136 @@ function selectFromList(eventId: string) {
   if (renderMode.value === 'cluster') changeRenderMode('point')
   store.selectEvent(eventId)
   mapManager?.focusEvent(eventId)
+}
+
+function openCreateEventForm() {
+  mapManager?.setEventDraftLocation(null)
+  editingEventId.value = null
+  Object.assign(eventForm, createDefaultEventDraft())
+  eventFormError.value = ''
+  eventFormOpen.value = true
+}
+
+function openEditEventForm() {
+  const event = selectedEvent.value
+  if (!event) return
+  editingEventId.value = event.id
+  Object.assign(eventForm, {
+    type: event.type,
+    level: event.level,
+    address: event.address,
+    lng: event.lng,
+    lat: event.lat,
+  })
+  mapManager?.setEventDraftLocation([event.lng, event.lat])
+  eventFormError.value = ''
+  eventFormOpen.value = true
+}
+
+function closeEventForm() {
+  mapManager?.cancelEventLocationPick()
+  isPickingEventLocation.value = false
+  mapManager?.setEventDraftLocation(null)
+  eventFormOpen.value = false
+  editingEventId.value = null
+  eventFormError.value = ''
+}
+
+function validateEventForm(): boolean {
+  if (!Number.isFinite(eventForm.lng) || eventForm.lng < -180 || eventForm.lng > 180) {
+    eventFormError.value = '经度必须在 -180 到 180 之间'
+    return false
+  }
+  if (!Number.isFinite(eventForm.lat) || eventForm.lat < -90 || eventForm.lat > 90) {
+    eventFormError.value = '纬度必须在 -90 到 90 之间'
+    return false
+  }
+  eventFormError.value = ''
+  return true
+}
+
+function pickEventLocationFromMap() {
+  if (!mapManager) return
+  isPickingEventLocation.value = true
+  eventFormError.value = ''
+  mapManager.startEventLocationPick(([lng, lat]) => {
+    // 表单保留六位小数，约为城市巡检场景下的亚米级经纬度输入精度。
+    eventForm.lng = Number(lng.toFixed(6))
+    eventForm.lat = Number(lat.toFixed(6))
+    isPickingEventLocation.value = false
+  })
+}
+
+function saveEventForm() {
+  if (!validateEventForm()) return
+  const changes = {
+    type: eventForm.type,
+    level: eventForm.level,
+    // 未填写文字描述时使用坐标生成可识别标签，地图选点无需再强制手工输入地址。
+    address:
+      eventForm.address.trim() ||
+      `地图选点 ${eventForm.lng.toFixed(6)}, ${eventForm.lat.toFixed(6)}`,
+    lng: eventForm.lng,
+    lat: eventForm.lat,
+  }
+  let savedEventId: string
+
+  if (editingEventId.value) {
+    const updatedEvent = store.updateEvent(editingEventId.value, changes)
+    if (!updatedEvent) {
+      eventFormError.value = '事件不存在，无法保存'
+      return
+    }
+    savedEventId = updatedEvent.id
+    const remainsVisible = store.filteredEvents.some((event) => event.id === updatedEvent.id)
+    // 编辑可能让事件进入或离开当前筛选结果；仅在仍可见且 Feature 存在时走增量更新。
+    if (!remainsVisible || !mapManager?.updateEvent(updatedEvent)) syncVisibleEvents()
+  } else {
+    const createdEvent = {
+      id: `EVT-MANUAL-${Date.now()}`,
+      status: 'PENDING' as const,
+      createdAt: new Date().toISOString(),
+      ...changes,
+    }
+    if (!store.addEvent(createdEvent)) {
+      eventFormError.value = '事件 ID 冲突，请重试'
+      return
+    }
+    savedEventId = createdEvent.id
+    if (store.filteredEvents.some((event) => event.id === createdEvent.id)) {
+      mapManager?.addEvent(createdEvent)
+    }
+  }
+
+  mapManager?.reevaluateCurrentRegion()
+  const isVisible = store.filteredEvents.some((event) => event.id === savedEventId)
+  store.selectEvent(isVisible ? savedEventId : null)
+  if (isVisible) mapManager?.focusEvent(savedEventId)
+  closeEventForm()
+}
+
+function requestDeleteSelectedEvent() {
+  deleteCandidateId.value = store.selectedEventId
+}
+
+function cancelDeleteEvent() {
+  deleteCandidateId.value = null
+}
+
+function confirmDeleteEvent() {
+  const eventId = deleteCandidateId.value
+  // 二次确认期间选择若发生变化则拒绝删除，确保目标仍是用户刚才看到的事件。
+  if (!eventId || store.selectedEventId !== eventId) {
+    cancelDeleteEvent()
+    return
+  }
+  if (!store.removeEvent(eventId)) {
+    cancelDeleteEvent()
+    return
+  }
+  mapManager?.removeEvent(eventId)
+  mapManager?.reevaluateCurrentRegion()
+  cancelDeleteEvent()
 }
 
 function changeDataCount(count: number) {
@@ -170,6 +351,15 @@ function advanceSelectedEventStatus() {
   // 状态筛选可能在流转后排除当前事件，此时批量同步可见 Source 并清除失效选择。
   store.selectEvent(null)
   store.selectRegionEvents(null)
+  syncVisibleEvents()
+}
+
+function batchAdvanceRegionEvents(fromStatus: Exclude<EventStatus, 'DONE'>) {
+  if (store.regionEventIds === null) return
+  const updatedEvents = store.advanceEventStatuses(store.regionEventIds, fromStatus)
+  if (updatedEvents.length === 0) return
+  // 状态筛选可能排除批量更新后的事件，整体同步一次比逐条维护可见 Source 更稳定。
+  store.selectEvent(null)
   syncVisibleEvents()
 }
 
@@ -380,8 +570,82 @@ onBeforeUnmount(() => {
         </div>
       </main>
       <aside class="event-detail">
-        <header><strong>事件详情</strong></header>
-        <template v-if="selectedEvent">
+        <header>
+          <strong>
+            {{ eventFormOpen ? (editingEventId ? '编辑事件' : '新建事件') : '事件详情' }}
+          </strong>
+          <button
+            v-if="!eventFormOpen"
+            class="detail-create"
+            type="button"
+            @click="openCreateEventForm"
+          >
+            新建
+          </button>
+        </header>
+        <form v-if="eventFormOpen" class="event-editor" @submit.prevent="saveEventForm">
+          <label>
+            <span>事件类型</span>
+            <select v-model="eventForm.type">
+              <option v-for="type in EVENT_TYPES" :key="type" :value="type">
+                {{ TYPE_LABELS[type] }}
+              </option>
+            </select>
+          </label>
+          <label>
+            <span>紧急程度</span>
+            <select v-model="eventForm.level">
+              <option v-for="level in EVENT_LEVELS" :key="level" :value="level">
+                {{ LEVEL_LABELS[level] }}
+              </option>
+            </select>
+          </label>
+          <label>
+            <span>位置描述（可选）</span>
+            <input
+              v-model="eventForm.address"
+              type="text"
+              maxlength="80"
+              placeholder="未填写时使用选点坐标"
+            />
+          </label>
+          <button
+            class="map-location-picker"
+            :class="{ active: isPickingEventLocation }"
+            type="button"
+            @click="pickEventLocationFromMap"
+          >
+            {{ isPickingEventLocation ? '请点击地图选择位置…' : '在地图上选择位置' }}
+          </button>
+          <div class="coordinate-fields">
+            <label>
+              <span>WGS84 经度</span>
+              <input
+                v-model.number="eventForm.lng"
+                type="number"
+                min="-180"
+                max="180"
+                step="0.000001"
+              />
+            </label>
+            <label>
+              <span>WGS84 纬度</span>
+              <input
+                v-model.number="eventForm.lat"
+                type="number"
+                min="-90"
+                max="90"
+                step="0.000001"
+              />
+            </label>
+          </div>
+          <p v-if="eventFormError" class="event-editor-error">{{ eventFormError }}</p>
+          <div class="event-editor-actions">
+            <button type="button" @click="closeEventForm">取消</button>
+            <button type="submit">保存事件</button>
+          </div>
+        </form>
+        <template v-else-if="selectedEvent">
           <div class="detail-id">{{ selectedEvent.id }}</div>
           <dl>
             <dt>事件类型</dt>
@@ -405,16 +669,68 @@ onBeforeUnmount(() => {
           >
             {{ statusActionLabel }}
           </button>
-          <p v-else class="status-finished">该事件已完成处置</p>
+          <div v-else class="status-finished" aria-label="该事件已完成处置">
+            <i aria-hidden="true"></i>
+            <span>
+              <small>处理状态</small>
+              <strong>已完成</strong>
+            </span>
+          </div>
+          <div class="event-detail-actions">
+            <button class="event-edit" type="button" @click="openEditEventForm">编辑事件</button>
+            <button class="event-delete" type="button" @click="requestDeleteSelectedEvent">
+              删除事件
+            </button>
+          </div>
+          <div v-if="deleteCandidateId" class="delete-confirmation" role="alert">
+            <strong>确认删除 {{ deleteCandidateId }}？</strong>
+            <span>删除后无法在当前演示数据中恢复。</span>
+            <div>
+              <button type="button" @click="cancelDeleteEvent">取消</button>
+              <button type="button" @click="confirmDeleteEvent">确认删除</button>
+            </div>
+          </div>
+          <section class="event-timeline" aria-label="事件处置记录">
+            <strong>处置记录</strong>
+            <ol>
+              <li v-for="activity in store.selectedEventActivities" :key="activity.id">
+                <i aria-hidden="true"></i>
+                <span>
+                  <b>{{ activity.description }}</b>
+                  <small>{{ formatActivityTime(activity.occurredAt) }}</small>
+                </span>
+              </li>
+            </ol>
+          </section>
         </template>
-        <p v-else class="empty">点击地图点位或左侧事件查看详情</p>
-        <section class="region-manager">
+        <p v-else-if="!eventFormOpen" class="empty">点击地图点位或左侧事件查看详情</p>
+        <section v-if="!eventFormOpen" class="region-manager">
           <header>
             <strong>巡检区域</strong>
             <button type="button" :disabled="!canSaveCurrentRegion" @click="saveCurrentRegion">
               保存当前
             </button>
           </header>
+          <div v-if="store.regionEventIds !== null" class="region-batch-actions">
+            <strong>区域批量处置</strong>
+            <span>
+              待处理 {{ regionStatusCounts.PENDING }} · 处理中 {{ regionStatusCounts.PROCESSING }}
+            </span>
+            <button
+              type="button"
+              :disabled="regionStatusCounts.PENDING === 0"
+              @click="batchAdvanceRegionEvents('PENDING')"
+            >
+              批量开始处理
+            </button>
+            <button
+              type="button"
+              :disabled="regionStatusCounts.PROCESSING === 0"
+              @click="batchAdvanceRegionEvents('PROCESSING')"
+            >
+              批量标记完成
+            </button>
+          </div>
           <p v-if="store.regions.length === 0" class="region-empty">暂无保存区域</p>
           <div
             v-for="region in store.regions"
@@ -828,6 +1144,180 @@ onBeforeUnmount(() => {
 .event-detail dd {
   margin: 0;
 }
+.detail-create {
+  padding: 4px 9px;
+  color: #7dd3fc;
+  background: #0c2d46;
+  border: 1px solid #38bdf8;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.event-editor {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+.event-editor label {
+  display: grid;
+  gap: 5px;
+  color: #71809a;
+  font-size: 11px;
+}
+.event-editor input,
+.event-editor select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  color: #dbeafe;
+  background: #111e32;
+  border: 1px solid #2a3d5c;
+  border-radius: 5px;
+}
+.coordinate-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.map-location-picker {
+  padding: 9px 10px;
+  color: #7dd3fc;
+  background: #0c2d46;
+  border: 1px solid #38bdf8;
+  border-radius: 5px;
+  cursor: crosshair;
+}
+.map-location-picker.active {
+  color: #fef3c7;
+  background: #78350f;
+  border-color: #f59e0b;
+}
+.event-editor-error {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 11px;
+}
+.event-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+.event-editor-actions button,
+.event-edit {
+  flex: 1;
+  padding: 8px 10px;
+  color: #94a3b8;
+  background: #111e32;
+  border: 1px solid #2a3d5c;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.event-editor-actions button:last-child {
+  color: #e0f2fe;
+  background: #075985;
+  border-color: #38bdf8;
+}
+.event-detail-actions {
+  display: flex;
+  gap: 8px;
+  margin: 18px 16px 0;
+  padding-top: 14px;
+  border-top: 1px solid #20314c;
+}
+.event-delete {
+  flex: 1;
+  padding: 8px 10px;
+  color: #fca5a5;
+  background: #450a0a66;
+  border: 1px solid #991b1b;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.delete-confirmation {
+  display: grid;
+  gap: 8px;
+  margin: 10px 16px 0;
+  padding: 10px;
+  color: #fecaca;
+  background: #450a0a80;
+  border: 1px solid #991b1b;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.delete-confirmation span {
+  color: #fca5a5;
+}
+.delete-confirmation div {
+  display: flex;
+  gap: 8px;
+}
+.delete-confirmation button {
+  flex: 1;
+  padding: 6px;
+  color: #cbd5e1;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.delete-confirmation button:last-child {
+  color: #fee2e2;
+  background: #7f1d1d;
+  border-color: #ef4444;
+}
+.event-timeline {
+  margin: 20px 16px 0;
+  padding-top: 16px;
+  border-top: 1px solid #20314c;
+}
+.event-timeline > strong {
+  font-size: 12px;
+}
+.event-timeline ol {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.event-timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 8px;
+  min-height: 42px;
+}
+.event-timeline li:not(:last-child)::after {
+  position: absolute;
+  top: 12px;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: #2a3d5c;
+  content: '';
+}
+.event-timeline i {
+  position: relative;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  margin-top: 3px;
+  background: #38bdf8;
+  border: 1px solid #0b1424;
+  border-radius: 50%;
+}
+.event-timeline span {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+.event-timeline b {
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 500;
+}
+.event-timeline small {
+  color: #64748b;
+  font-size: 10px;
+}
 .status-action {
   width: calc(100% - 32px);
   margin: 22px 16px 0;
@@ -842,13 +1332,32 @@ onBeforeUnmount(() => {
   background: #0369a1;
 }
 .status-finished {
+  display: flex;
+  gap: 10px;
+  align-items: center;
   margin: 22px 16px 0;
-  padding: 9px 12px;
+  padding: 8px 10px;
   color: #86efac;
-  background: #14532d4d;
-  border: 1px solid #22c55e66;
-  border-radius: 6px;
-  text-align: center;
+  background: #14532d33;
+  border-left: 3px solid #22c55e;
+  border-radius: 0 4px 4px 0;
+}
+.status-finished i {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px #22c55e1f;
+}
+.status-finished span {
+  display: grid;
+  gap: 2px;
+}
+.status-finished small {
+  color: #6ee7b7;
+  font-size: 10px;
+}
+.status-finished strong {
   font-size: 12px;
 }
 .region-manager {
@@ -867,6 +1376,41 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .region-manager header button:disabled {
+  color: #475569;
+  background: #111827;
+  border-color: #334155;
+  cursor: not-allowed;
+}
+.region-batch-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 10px;
+  padding: 10px;
+  background: #111e32;
+  border: 1px solid #2a3d5c;
+  border-radius: 6px;
+}
+.region-batch-actions strong,
+.region-batch-actions span {
+  grid-column: 1 / -1;
+}
+.region-batch-actions strong {
+  font-size: 11px;
+}
+.region-batch-actions span {
+  color: #71809a;
+  font-size: 10px;
+}
+.region-batch-actions button {
+  padding: 7px 5px;
+  color: #7dd3fc;
+  background: #0c2d46;
+  border: 1px solid #38bdf8;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.region-batch-actions button:disabled {
   color: #475569;
   background: #111827;
   border-color: #334155;

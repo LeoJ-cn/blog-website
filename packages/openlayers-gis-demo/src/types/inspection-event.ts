@@ -38,3 +38,16 @@ export interface InspectionEventFilter {
   /** 指定调度等级；null 表示包含全部等级。 */
   level: EventLevel | null
 }
+
+export type EventActivityType =
+  | 'CREATED' // 事件首次上报；由事件 createdAt 派生，不为海量 Mock 数据额外存储日志。
+  | 'EDITED' // 事件类型、等级、位置描述或坐标被编辑。
+  | 'STATUS_CHANGED' // 事件按处置状态机进入下一状态。
+
+export interface EventActivity {
+  id: string
+  type: EventActivityType
+  description: string
+  /** ISO 8601 格式的操作发生时间。 */
+  occurredAt: string
+}
