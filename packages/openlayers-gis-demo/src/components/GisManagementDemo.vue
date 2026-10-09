@@ -17,6 +17,7 @@ import {
 } from '../services/export-events'
 import { useGisStore } from '../stores/gis'
 import type { EventLevel, EventStatus, EventType } from '../types/inspection-event'
+import type { Wgs84Coordinate } from '../types/region'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus } from '../types/track'
 
 const TYPE_LABELS = {
@@ -180,6 +181,11 @@ const stats = ref<MapStats>({
   featureConversionMs: 0,
   sourceUpdateMs: 0,
   renderCompleteMs: null,
+})
+const pointerCoordinate = ref<Wgs84Coordinate | null>(null)
+const formattedPointerCoordinate = computed(() => {
+  const coordinate = pointerCoordinate.value
+  return coordinate ? `${coordinate[0].toFixed(6)}, ${coordinate[1].toFixed(6)}` : '—'
 })
 /** 最近一次生成 mock 业务事件的同步耗时，单位为毫秒。 */
 const dataGenerationMs = ref(0)
@@ -604,6 +610,9 @@ onMounted(() => {
     onEventSelect: store.selectEvent,
     onStatsChange: (nextStats) => {
       stats.value = nextStats
+    },
+    onPointerCoordinate: (coordinate) => {
+      pointerCoordinate.value = coordinate
     },
     onRegionSelect: (eventIds) => {
       store.selectRegionEvents(eventIds)
@@ -1108,6 +1117,7 @@ onBeforeUnmount(() => {
       <span>筛选结果：{{ store.filteredEvents.length.toLocaleString() }}</span>
       <span>渲染模式：{{ renderMode === 'cluster' ? 'Cluster' : '普通点位' }}</span>
       <span>Zoom：{{ stats.zoom }}</span>
+      <span>经纬度：{{ formattedPointerCoordinate }}</span>
       <span>当前 Feature：{{ stats.featureCount.toLocaleString() }}</span>
       <span>框选事件：{{ (store.regionEventIds?.length ?? 0).toLocaleString() }}</span>
     </footer>
@@ -1429,6 +1439,21 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   background: #dbe4ec;
+}
+.map-canvas :deep(.ol-scale-line) {
+  right: 10px;
+  bottom: 10px;
+  left: auto;
+  padding: 3px 6px;
+  background: #08101fd9;
+  border: 1px solid #334155;
+  border-radius: 5px;
+}
+.map-canvas :deep(.ol-scale-line-inner) {
+  color: #dbeafe;
+  border-color: #dbeafe;
+  border-top: 0;
+  font-size: 10px;
 }
 .map-legend {
   position: absolute;

@@ -4,6 +4,7 @@ import Point from 'ol/geom/Point.js'
 import Overlay from 'ol/Overlay.js'
 import View from 'ol/View.js'
 import { defaults as defaultControls } from 'ol/control/defaults.js'
+import ScaleLine from 'ol/control/ScaleLine.js'
 import type { EventsKey } from 'ol/events.js'
 import { createEmpty, extendCoordinate, isEmpty } from 'ol/extent.js'
 import type BaseLayer from 'ol/layer/Base.js'
@@ -22,7 +23,7 @@ import { createTrackLayer } from './layers/create-track-layer'
 import { deserializeRegionGeometry, serializeRegionGeometry } from './region-geometry'
 import { LayerManager } from './LayerManager'
 import type { CoreLayerId } from './LayerManager'
-import type { RegionGeometry } from '../types/region'
+import type { RegionGeometry, Wgs84Coordinate } from '../types/region'
 import { SpatialInteractionManager } from './interactions/SpatialInteractionManager'
 import type { DrawGeometryType, MapMode } from './interactions/SpatialInteractionManager'
 import {
@@ -60,6 +61,8 @@ export interface MapManagerOptions {
   onEventSelect?: (eventId: string | null) => void
   /** 地图移动或渲染完成后的性能指标回调。 */
   onStatsChange?: (stats: MapStats) => void
+  /** 指针所在位置，按 [WGS84 经度, WGS84 纬度] 排列；离开地图时返回 null。 */
+  onPointerCoordinate?: (coordinate: Wgs84Coordinate | null) => void
   /** Draw 或 Modify 完成后返回区域内事件 ID；null 表示没有有效区域筛选。 */
   onRegionSelect?: (eventIds: string[] | null) => void
   /** 按 timestamp 升序排列的轨迹点；时间单位为 Unix 毫秒。 */
@@ -75,6 +78,8 @@ const EVENT_FOCUS_ZOOM = 17.5
 const EVENT_RESULTS_MAX_ZOOM = 17
 /** View.fit 的 padding 按 [上, 右, 下, 左] 排列，单位为 CSS 像素。 */
 const EVENT_RESULTS_PADDING: [number, number, number, number] = [64, 64, 64, 64]
+/** 鼠标坐标通知的最小间隔，单位为毫秒；约 12 Hz 足以读取且避免高频触发 Vue 渲染。 */
+const POINTER_COORDINATE_INTERVAL_MS = 80
 
 export class MapManager {
   private readonly map: OlMap
@@ -91,6 +96,7 @@ export class MapManager {
   private readonly interactionManager: SpatialInteractionManager
   private readonly trackPlayback: TrackPlaybackController
   private readonly listenerKeys: EventsKey[]
+  private readonly handlePointerLeave: () => void
   /** offset 按 [水平像素, 垂直像素] 排列，负值让 Popup 位于点位图标上方。 */
   private readonly popupOverlay = new Overlay({ positioning: 'bottom-center', offset: [0, -14] })
   private renderMode: RenderMode = 'point'
@@ -101,6 +107,8 @@ export class MapManager {
   private featureConversionMs = 0
   private sourceUpdateMs = 0
   private renderCompleteMs: number | null = null
+  /** 最近一次坐标回调的 performance.now() 时间戳，单位为毫秒。 */
+  private lastPointerCoordinateEmittedAt = 0
   /** performance.now() 时间戳，单位为毫秒；仅在等待本次批量更新完成渲染时存在。 */
   private pendingRenderStartedAt: number | null = null
   private mounted = false
@@ -130,7 +138,10 @@ export class MapManager {
     this.startEventDraftPulse = eventDraft.startPulse
     this.stopEventDraftPulse = eventDraft.stopPulse
     this.map = new OlMap({
-      controls: defaultControls({ rotate: false }),
+      controls: defaultControls({ rotate: false }).extend([
+        // 比例尺由 View 分辨率自动换算，使用 metric 输出米或千米。
+        new ScaleLine({ units: 'metric' }),
+      ]),
       view: new View({
         center: fromLonLat([...(options.center ?? DEFAULT_CENTER)]),
         zoom: options.zoom ?? 12,
@@ -167,6 +178,7 @@ export class MapManager {
       onTimeChange: options.onTrackTimeChange,
     })
     const emitStats = () => options.onStatsChange?.(this.getStats())
+    this.handlePointerLeave = () => options.onPointerCoordinate?.(null)
     const emitRenderStats = () => {
       if (this.pendingRenderStartedAt !== null) {
         this.renderCompleteMs = performance.now() - this.pendingRenderStartedAt
@@ -177,6 +189,14 @@ export class MapManager {
     this.listenerKeys = [
       this.map.on('moveend', emitStats),
       this.map.on('rendercomplete', emitRenderStats),
+      this.map.on('pointermove', (event) => {
+        if (event.dragging) return
+        const now = performance.now()
+        if (now - this.lastPointerCoordinateEmittedAt < POINTER_COORDINATE_INTERVAL_MS) return
+        this.lastPointerCoordinateEmittedAt = now
+        const [lng, lat] = toLonLat(event.coordinate)
+        options.onPointerCoordinate?.([lng, lat])
+      }),
     ]
   }
 
@@ -186,6 +206,7 @@ export class MapManager {
     this.renderCompleteMs = null
     this.pendingRenderStartedAt = performance.now()
     this.map.setTarget(target)
+    target.addEventListener('pointerleave', this.handlePointerLeave)
     this.popupOverlay.setElement(popupElement)
     this.mounted = true
     this.map.updateSize()
@@ -467,7 +488,10 @@ export class MapManager {
   destroy(): void {
     if (this.destroyed) return
     this.cancelEventLocationPick(false)
-    if (this.mounted) this.map.setTarget(undefined)
+    if (this.mounted) {
+      this.map.getTargetElement()?.removeEventListener('pointerleave', this.handlePointerLeave)
+      this.map.setTarget(undefined)
+    }
     unByKey(this.listenerKeys)
     this.interactionManager.destroy()
     this.trackPlayback.destroy()
