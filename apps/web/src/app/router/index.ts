@@ -13,8 +13,22 @@ const router = createRouter({
       path: '/playground',
       name: 'playground',
       component: () => import('../../pages/PlaygroundPage.vue'),
-      redirect: '/playground/performance',
+      redirect: '/playground/solutions',
       children: [
+        {
+          path: 'solutions',
+          redirect: '/playground/solutions/openlayers-gis',
+        },
+        {
+          path: 'solutions/openlayers-gis',
+          name: 'playground-openlayers-gis',
+          component: () => import('../../pages/PlaygroundGisPage.vue'),
+        },
+        {
+          path: 'solutions/low-code',
+          name: 'playground-low-code',
+          component: () => import('../../pages/PlaygroundLowCodePage.vue'),
+        },
         {
           path: 'performance',
           name: 'playground-performance',
@@ -22,12 +36,11 @@ const router = createRouter({
         },
         {
           path: 'low-code',
-          name: 'playground-low-code',
-          component: () => import('../../pages/PlaygroundLowCodePage.vue'),
+          redirect: '/playground/solutions/low-code',
         },
         {
           path: 'browser',
-          redirect: '/playground/browser/advanced-image-loader',
+          redirect: '/playground/browser/text-labeling',
         },
         {
           path: 'engineering',
@@ -40,11 +53,14 @@ const router = createRouter({
         },
         {
           path: 'engineering/openlayers-gis',
-          name: 'playground-openlayers-gis',
-          component: () => import('../../pages/PlaygroundGisPage.vue'),
+          redirect: '/playground/solutions/openlayers-gis',
         },
         {
           path: 'browser/advanced-image-loader',
+          redirect: '/playground/performance/advanced-image-loader',
+        },
+        {
+          path: 'performance/advanced-image-loader',
           name: 'playground-advanced-image',
           component: () => import('../../pages/PlaygroundAdvancedImagePage.vue'),
         },

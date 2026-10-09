@@ -17,12 +17,14 @@ export interface ProjectedTrackPoint {
   timestamp: number
 }
 
-const lineStyle = new Style({ stroke: new Stroke({ color: '#22d3ee', width: 4 }) })
+// 紫色只表达巡检轨迹，避开事件状态的红橙绿、Cluster 蓝色和选中态青色。
+const lineStyle = new Style({ stroke: new Stroke({ color: '#8b5cf6', width: 4 }) })
 const personStyle = new Style({
   image: new CircleStyle({
     radius: 8,
-    fill: new Fill({ color: '#f8fafc' }),
-    stroke: new Stroke({ color: '#0ea5e9', width: 4 }),
+    // 浅紫填充与深紫描边沿用轨迹语义，同时保留足够的底图对比度。
+    fill: new Fill({ color: '#ede9fe' }),
+    stroke: new Stroke({ color: '#7c3aed', width: 4 }),
   }),
   zIndex: 30,
 })

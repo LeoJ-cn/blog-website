@@ -2,7 +2,8 @@
 
 .vscode/settings.json
 {
-"js/ts.tsdk.path": "node_modules/typescript/lib",
+"typescript.tsdk": "node_modules/typescript/lib",
+"typescript.enablePromptUseWorkspaceTsdk": true,
 
 // Vue 2
 "vetur.validation.script": true,
@@ -74,7 +75,8 @@
 .vscode/settings.json
 {
 // TypeScript
-"js/ts.tsdk.path": "node_modules/typescript/lib",
+"typescript.tsdk": "node_modules/typescript/lib",
+"typescript.enablePromptUseWorkspaceTsdk": true,
 
 // Vue 3 / Volar
 // 禁用 Vetur 能力，避免和 Vue - Official 冲突

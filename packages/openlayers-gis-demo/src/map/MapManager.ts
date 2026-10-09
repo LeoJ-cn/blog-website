@@ -7,7 +7,7 @@ import type BaseLayer from 'ol/layer/Base.js'
 import { unByKey } from 'ol/Observable.js'
 import { fromLonLat } from 'ol/proj.js'
 import type { InspectionEvent } from '../types/inspection-event'
-import type { TrackPlaybackStatus, TrackPoint } from '../types/track'
+import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
 import { TrackPlaybackController } from '../services/TrackPlaybackController'
 import { createBaseLayer } from './layers/create-base-layer'
 import { createClusterLayer } from './layers/create-cluster-layer'
@@ -209,8 +209,8 @@ export class MapManager {
     this.trackPlayback.reset()
   }
 
-  /** 设置轨迹时间倍率，仅支持演示面板暴露的 1x 或 2x。 */
-  setTrackSpeed(speed: 1 | 2): void {
+  /** 设置轨迹时间倍率，仅支持演示面板暴露的 1x、2x 或 8x。 */
+  setTrackSpeed(speed: TrackPlaybackSpeed): void {
     this.trackPlayback.setSpeed(speed)
   }
 

@@ -20,6 +20,11 @@ export const categoryMetadata: Record<
   ProjectCategory,
   { title: string; hint: string; description: string }
 > = {
+  solutions: {
+    title: 'Solutions',
+    hint: '复杂业务解决方案',
+    description: '展示面向真实业务场景的模块设计、状态联动和综合工程能力。',
+  },
   engineering: {
     title: 'Engineering',
     hint: '架构与迁移',
@@ -27,13 +32,13 @@ export const categoryMetadata: Record<
   },
   performance: {
     title: 'Performance',
-    hint: '运行时与加载',
-    description: '记录页面加载、运行时性能和资源表现。',
+    hint: '性能与调度',
+    description: '记录页面加载、任务调度、运行时性能和资源表现。',
   },
   browser: {
     title: 'Browser',
-    hint: '平台与渲染',
-    description: '记录浏览器 API、渲染机制和运行时能力。',
+    hint: '浏览器能力与交互',
+    description: '记录浏览器 API、文本交互和平台原生能力。',
   },
 }
 
@@ -43,7 +48,7 @@ export const projects: ProjectDefinition[] = [
     title: '城市巡检 GIS 平台',
     summary: 'OpenLayers 地图架构与业务数据联动',
     description: '面向真实巡检业务的地图图层、事件管理与空间交互综合演示。',
-    category: 'engineering',
+    category: 'solutions',
     status: 'active',
     tags: ['OpenLayers', 'Vue 3', 'Pinia'],
     featured: true,
@@ -100,7 +105,7 @@ export const projects: ProjectDefinition[] = [
     summary: '图形化逻辑编排与流程数据生成',
     description:
       '通过完整节点、连线与配置交互，生成兼容旧协议的 SimpleProcessData[] 和 blockData。',
-    category: 'browser',
+    category: 'solutions',
     status: 'active',
     tags: ['Vue 3', 'G6', 'Low Code'],
     featured: true,
@@ -112,7 +117,7 @@ export const projects: ProjectDefinition[] = [
     title: 'Advanced Image Loader',
     summary: '并发加载、Canvas 裁剪与失败降级',
     description: '观察缩略图、原图、Canvas 裁剪、并发队列和失败回退组成的高性能图片方案。',
-    category: 'browser',
+    category: 'performance',
     status: 'active',
     tags: ['Canvas', 'Scheduler', 'ImageBitmap'],
     featured: true,
@@ -236,9 +241,8 @@ export function getProjectsByCategory(category: ProjectCategory) {
 
 /**
  * 返回项目的可访问路由，供首页卡片和 Playground 导航共用。
- * low-code 沿用既有顶层路径，其余项目按分类和 slug 组成二级路径。
+ * 所有项目统一按分类和 slug 组成二级路径，避免首页和侧边栏各自维护例外规则。
  */
 export function getProjectPath(category: ProjectCategory, projectSlug: string): string {
-  if (projectSlug === 'low-code') return '/playground/low-code'
   return `/playground/${category}/${projectSlug}`
 }

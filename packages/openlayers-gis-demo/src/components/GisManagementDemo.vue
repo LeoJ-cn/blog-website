@@ -12,7 +12,7 @@ import {
 import { generateInspectionEvents } from '../mock/generate-events'
 import { mockInspectionTrack } from '../mock/tracks'
 import { useGisStore } from '../stores/gis'
-import type { TrackPlaybackStatus } from '../types/track'
+import type { TrackPlaybackSpeed, TrackPlaybackStatus } from '../types/track'
 
 const TYPE_LABELS = {
   ROAD_DAMAGE: '道路破损',
@@ -38,7 +38,7 @@ const renderMode = ref<RenderMode>('cluster')
 const stats = ref<MapStats>({ zoom: 12, featureCount: 0, renderMode: 'cluster' })
 const mapMode = ref<MapMode>('select')
 const drawType = ref<DrawGeometryType>('Polygon')
-const trackSpeed = ref<1 | 2>(1)
+const trackSpeed = ref<TrackPlaybackSpeed>(1)
 const trackStatus = ref<TrackPlaybackStatus>('idle')
 const trackTime = ref(mockInspectionTrack[0]?.timestamp ?? 0)
 const formattedTrackTime = computed(() =>
@@ -80,7 +80,7 @@ function changeRenderMode(mode: RenderMode) {
   mapManager?.setRenderMode(mode)
 }
 
-function changeTrackSpeed(speed: 1 | 2) {
+function changeTrackSpeed(speed: TrackPlaybackSpeed) {
   trackSpeed.value = speed
   mapManager?.setTrackSpeed(speed)
 }
@@ -248,6 +248,7 @@ onBeforeUnmount(() => {
       <button @click="mapManager?.resetTrack()">重置</button>
       <button :class="{ active: trackSpeed === 1 }" @click="changeTrackSpeed(1)">1x</button>
       <button :class="{ active: trackSpeed === 2 }" @click="changeTrackSpeed(2)">2x</button>
+      <button :class="{ active: trackSpeed === 8 }" @click="changeTrackSpeed(8)">8x</button>
       <span>当前巡检时间：{{ formattedTrackTime }}</span>
       <span>状态：{{ trackStatus }}</span>
     </div>

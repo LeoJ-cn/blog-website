@@ -1,7 +1,7 @@
 import type Feature from 'ol/Feature.js'
 import type Point from 'ol/geom/Point.js'
 import type { ProjectedTrackPoint } from '../map/layers/create-track-layer'
-import type { TrackPlaybackStatus } from '../types/track'
+import type { TrackPlaybackSpeed, TrackPlaybackStatus } from '../types/track'
 
 interface Options {
   /** 动画过程中持续复用的人员位置 Feature。 */
@@ -15,7 +15,7 @@ interface Options {
 export class TrackPlaybackController {
   private frameId: number | null = null
   private status: TrackPlaybackStatus = 'idle'
-  private speed = 1
+  private speed: TrackPlaybackSpeed = 1
   private elapsed = 0
   private frameStartedAt = 0
   private segmentIndex = 0
@@ -56,7 +56,7 @@ export class TrackPlaybackController {
   }
 
   /** 设置时间倍率；播放中切换时先结算旧倍率，避免位置发生跳变。 */
-  setSpeed(speed: 1 | 2): void {
+  setSpeed(speed: TrackPlaybackSpeed): void {
     if (this.status === 'playing') {
       this.commitElapsed(performance.now())
       this.frameStartedAt = performance.now()

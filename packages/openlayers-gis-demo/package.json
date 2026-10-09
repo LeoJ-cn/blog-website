@@ -6,7 +6,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "pnpm --filter @blog/web exec vue-tsc --noEmit -p ../../packages/openlayers-gis-demo/tsconfig.json"
   },
   "dependencies": {
     "ol": "10.10.0"
