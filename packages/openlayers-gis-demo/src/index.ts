@@ -4,6 +4,7 @@ export { default as GisManagementDemo } from './components/GisManagementDemo.vue
 export { useGisStore } from './stores/gis'
 export { generateInspectionEvents } from './mock/generate-events'
 export { mockInspectionRegions } from './mock/regions'
+export { serializeInspectionEventsToGeoJson } from './services/export-events'
 export type { MapManagerOptions, MapStats, RenderMode } from './map/MapManager'
 export type { CoreLayerId } from './map/LayerManager'
 export type { DrawGeometryType, MapMode } from './map/interactions/SpatialInteractionManager'
@@ -18,3 +19,7 @@ export type {
 } from './types/inspection-event'
 export type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from './types/track'
 export type { InspectionRegion, RegionGeometry, Wgs84Coordinate } from './types/region'
+export type {
+  InspectionEventGeoJson,
+  InspectionEventGeoJsonFeature,
+} from './services/export-events'

@@ -1,9 +1,0 @@
-{
-  "global": {
-    "menu": {
-      "login": "anmelden",
-      "register": "registrieren",
-      "search": "suchen"
-    }
-  }
-}

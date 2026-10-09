@@ -1,9 +1,0 @@
-{
-  "global": {
-    "menu": {
-      "login": "登录",
-      "register": "注册",
-      "search": "搜索"
-    }
-  }
-}

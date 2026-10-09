@@ -11,6 +11,7 @@ import {
 } from '../map/styles/event-visual'
 import { generateInspectionEvents } from '../mock/generate-events'
 import { mockInspectionTrack } from '../mock/tracks'
+import { serializeInspectionEventsToGeoJson } from '../services/export-events'
 import { useGisStore } from '../stores/gis'
 import type { EventLevel, EventStatus, EventType } from '../types/inspection-event'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus } from '../types/track'
@@ -73,12 +74,13 @@ const statusActionLabel = computed(() => {
 const canSaveCurrentRegion = computed(
   () => store.regionEventIds !== null && store.activeRegionId === null,
 )
-const visibleEvents = computed(() => {
-  // 地图只显示已应用筛选的数据；列表仍限制 100 行，避免 Vue DOM 成为性能瓶颈。
-  if (store.regionEventIds === null) return store.filteredEvents.slice(0, 100)
+const scopedEvents = computed(() => {
+  if (store.regionEventIds === null) return store.filteredEvents
   const selectedIds = new Set(store.regionEventIds)
-  return store.filteredEvents.filter((event) => selectedIds.has(event.id)).slice(0, 100)
+  return store.filteredEvents.filter((event) => selectedIds.has(event.id))
 })
+// 地图和导出使用完整结果；仅限制列表 DOM 为 100 行，避免 Vue 成为海量数据性能瓶颈。
+const visibleEvents = computed(() => scopedEvents.value.slice(0, 100))
 const statusCounts = computed(() => {
   const counts: Record<EventStatus, number> = { PENDING: 0, PROCESSING: 0, DONE: 0 }
   for (const event of store.events) counts[event.status] += 1
@@ -339,6 +341,23 @@ function resetEventFilter() {
   syncVisibleEvents()
 }
 
+function exportCurrentEvents() {
+  if (scopedEvents.value.length === 0) return
+  const geoJson = serializeInspectionEventsToGeoJson(scopedEvents.value)
+  const blob = new Blob([JSON.stringify(geoJson, null, 2)], {
+    type: 'application/geo+json;charset=utf-8',
+  })
+  const downloadUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = downloadUrl
+  link.download = `inspection-events-${new Date().toISOString().slice(0, 10)}.geojson`
+  document.body.append(link)
+  link.click()
+  link.remove()
+  // 下载已触发后延迟到下一任务释放，兼容仍需读取 Blob URL 的浏览器实现。
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0)
+}
+
 function advanceSelectedEventStatus() {
   const eventId = store.selectedEventId
   if (!eventId) return
@@ -505,6 +524,14 @@ onBeforeUnmount(() => {
             <button type="submit">应用筛选</button>
             <button type="button" @click="resetEventFilter">重置</button>
           </div>
+          <button
+            class="event-export"
+            type="button"
+            :disabled="scopedEvents.length === 0"
+            @click="exportCurrentEvents"
+          >
+            导出当前结果 GeoJSON（{{ scopedEvents.length.toLocaleString() }}）
+          </button>
           <div class="status-summary" aria-label="事件状态统计">
             <span v-for="status in EVENT_STATUSES" :key="status">
               <i :style="{ backgroundColor: EVENT_STATUS_VISUALS[status].color }"></i>
@@ -979,6 +1006,20 @@ onBeforeUnmount(() => {
   color: #7dd3fc;
   border-color: #38bdf8;
   background: #0c2d46;
+}
+.event-export {
+  padding: 7px 8px;
+  color: #a7f3d0;
+  background: #064e3b66;
+  border: 1px solid #10b981;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.event-export:disabled {
+  color: #475569;
+  background: #111827;
+  border-color: #334155;
+  cursor: not-allowed;
 }
 .status-summary {
   display: flex;
