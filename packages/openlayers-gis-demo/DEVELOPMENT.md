@@ -41,7 +41,7 @@ export function createBaseLayer() {
 
 ### 2.2 巡检事件：前端固定种子 Mock
 
-巡检事件不是从后端 API 获取，而是由 `src/mock/generate-events.ts` 在浏览器中生成。界面可以切换 1k、10k、50k 和 100k 数据量。
+巡检事件不是从后端 API 获取，而是由 `src/viewport/mock-viewport-event-service.ts` 在浏览器中管理。Service 调用 `src/mock/generate-events.ts` 建立 1k、10k、50k 或 100k 完整确定性数据集，并构建固定经纬度网格；完整数组不进入 Pinia 或 OpenLayers Source。
 
 数据以中国上海市中心附近的 WGS84 坐标 `[121.4737, 31.2304]` 为基准，模拟分布在黄浦区、静安区、徐汇区、虹口区和浦东新区。行政区名称用于生成演示地址，不代表真实行政边界或真实事件。
 
@@ -488,34 +488,41 @@ const coordinate: [number, number] = [
 
 ## 13. 10 万点性能方案
 
-### 13.1 避免深层响应式
+### 13.1 视口 BBOX 与固定网格
 
-事件集合使用 `shallowRef`。事件修改时替换目标对象和数组，既能通知 Vue，又不会为每个对象建立深层 Proxy。
+`MapManager.getViewportBbox()` 将当前投影 extent 转为 WGS84 `[minLng,minLat,maxLng,maxLat]`，只在首次挂载和 `moveend` 后通知页面。Mock Service 使用 `0.01°` 固定网格返回相交桶候选，再按真实闭区间 BBOX 和 keyword/type/status/level 精筛。该网格是前端 Mock 查询实现，不是 R-tree、PostGIS 或通用生产索引。
 
-### 13.2 批量转换和写入
+### 13.2 请求治理与有界缓存
 
-`MapManager.setEvents` 先批量生成 Feature，再一次清空 Source、一次 `addFeatures`。项目分别记录：
+`ViewportQueryController` 在新请求前 Abort 旧请求，同时使用递增 request ID 和 `expectedDatasetVersion` 防止旧响应覆盖。普通错误保留上一成功结果并提供重试；Abort 不进入错误状态。Service 使用包含数据集版本、向外量化 BBOX 和业务筛选的有界 LRU，缓存命中后仍按真实 BBOX 精筛。
 
-- 前端 Mock 数据生成耗时；
-- 业务对象转 Feature 耗时；
-- Source 批量更新耗时；
+### 13.3 Feature ID Diff
+
+正常视口查询调用 `MapManager.syncEvents`：按事件 ID 统计 added/updated/removed/unchanged，就地更新已有 Feature，未变化 Feature 保持对象身份。只有数据集版本切换才调用 `setEvents([])` 进行整体重置。
+
+项目记录：
+
+- 完整 Mock 数据生成耗时；
+- 固定网格索引构建耗时；
+- BBOX 候选数、命中数、缓存命中和纯查询耗时；
+- Feature Diff 计数和耗时；
 - 更新开始到 `rendercomplete` 的延迟。
 
-这些都是实际测量值，不使用一次主线程耗时推算 FPS。
+这些是运行时测量字段，不使用一次主线程耗时推算 FPS；仓库未保存固定环境的优化前后样本，因此具体收益仍为「待验证」。
 
-### 13.3 Cluster 和共享 Source
+### 13.4 Cluster 和共享 Source
 
 低 Zoom 使用 Cluster 减少当前帧实际绘制和命中的图形数量。普通点、Cluster 和 Heatmap 共享同一个事件 Source，因此切换模式或分析图层不会维护多份十万 Feature。
 
-### 13.4 Style 缓存
+### 13.5 Style 缓存
 
 事件样式按三个状态缓存；Cluster 样式按聚合数量缓存；轨迹节点样式按状态和标签缓存。高频 style 回调不会每帧创建大量 `Style`、`Fill`、`Stroke` 和 `Text`。
 
-### 13.5 控制 DOM 数量
+### 13.6 控制 DOM 数量
 
-地图点由 OpenLayers Canvas 渲染，不为每个点创建 Vue DOM。列表分页固定 100 行，因此十万点数据不会同时产生十万行 DOM。
+地图点由 OpenLayers Canvas 渲染，不为每个点创建 Vue DOM。地图和列表只消费当前视口结果，列表分页进一步固定为 100 行。
 
-### 13.6 复用 Feature 和节制更新
+### 13.7 复用 Feature 和节制更新
 
 - 选中效果复用单个 Feature；
 - 事件编辑就地更新既有 Feature；
@@ -523,21 +530,23 @@ const coordinate: [number, number] = [
 - 鼠标经纬度通知限制为约 12 Hz，减少高频 Vue 渲染；
 - 操作记录和责任人只为发生业务变化的事件保存。
 
-当前版本没有引入 Web Worker、服务端聚合、矢量瓦片或 WebGL Layer，因为本项目首先展示 OpenLayers Canvas、Cluster、批量更新和状态边界。生产数据规模或性能指标超出预算时，再根据测量结果引入这些能力。
+当前版本没有引入 Web Worker、真实后端、服务端聚合、矢量瓦片或 WebGL Layer。生产数据规模或性能指标超出预算时，应先把 Mock Service 替换为服务端空间查询，再依据测量结果选择后续能力。
 
 ## 14. 状态同步
 
 ### 14.1 Vue 到地图
 
 ```text
-筛选/区域/责任人/SLA 条件变化
-→ 计算 scopedEvents
-→ MapManager.setEvents
-→ 批量转换 Feature 并更新 Event Source
+Map mount / moveend / 基础筛选变化
+→ WGS84 BBOX + InspectionEventFilter
+→ ViewportQueryController 取消旧请求并分配 request ID
+→ MockViewportEventService 固定网格候选 + 精确过滤 + LRU
+→ Pinia.replaceViewportEvents
+→ MapManager.syncEvents
 → Event、Cluster、Heatmap 自动使用最新数据
 ```
 
-单事件新建、编辑和删除优先调用增量方法，避免每次都重建全部 Feature。
+Pinia 只保存当前视口业务事件。责任人、SLA 和区域条件继续作用于当前已加载结果；Polygon/Circle 不代表对完整 100k 数据集执行全局空间查询。单事件新建、编辑和删除只作用于当前会话、当前已加载事件，并优先调用增量方法。
 
 ### 14.2 地图到 Vue
 
@@ -552,7 +561,10 @@ Pinia 不保存 Map、Layer、Source、Feature、Geometry、Interaction 或 Over
 
 ## 15. 生命周期和资源释放
 
-组件挂载时只创建一次 `MapManager`。卸载时依次：
+组件挂载时依次创建 Mock Service、Query Controller 和唯一 `MapManager`。卸载时先停止数据回调，再释放地图资源：
+
+- 销毁 Query Controller，取消在途查询；
+- 销毁 Mock Service，清空完整数据集、索引和 LRU；
 
 - 停止事件选点脉冲和位置监听；
 - 销毁 Select、Draw、Modify；
@@ -582,20 +594,21 @@ packages/openlayers-gis-demo/
 ├── src/services/export-events.ts               # GeoJSON 交换
 ├── src/stores/gis.ts                           # Pinia 业务状态
 ├── src/types/                                  # 业务协议
+├── src/viewport/                               # BBOX Service、固定网格、LRU、Controller
 ├── src/index.ts                                # 唯一公共入口
 ├── README.md                                   # 项目概览
 └── DEVELOPMENT.md                              # 本开发说明
 ```
 
-`src/index.ts` 对外提供完整组件、MapManager、LayerManager、Store、Mock 生成器、预设区域、GeoJSON 服务以及必要类型。宿主应用应从公共入口使用 Package，不应直接依赖内部 Layer 或 Service 文件。
+`src/index.ts` 对外提供完整组件、MapManager、LayerManager、Store、`ViewportEventService` 协议、Mock Service 工厂、Query Controller、预设区域、GeoJSON 服务以及必要类型。宿主应用应从公共入口使用 Package，不应直接依赖内部 Layer 或 Service 文件。
 
 ## 17. 如何替换为真实生产数据
 
 ### 17.1 事件 API
 
-将 `generateInspectionEvents` 替换为后端查询结果，并在 API 适配层转换成 `InspectionEvent[]`。地图层不需要改变，因为它只依赖公共业务协议。
+实现一个 HTTP Adapter 替换 `MockViewportEventService`，继续遵守 `ViewportEventService.query({ bbox, filter, signal })` 和 `ViewportEventQueryResult`。后端负责数据库空间索引、权限、时间窗和业务筛选；Vue、Query Controller 与 MapManager 的边界不需要改变。
 
-大量生产数据不应一次返回全部事件。可根据视口 extent、Zoom、时间和筛选条件请求服务端数据，并考虑服务端聚合、矢量瓦片或 WebGL 渲染。
+Mock Service 的固定网格只用于前端演示。生产实现应根据数据规模选择 PostGIS/R-tree、服务端聚合、矢量瓦片或 WebGL 渲染，不应把前端网格直接描述成数据库空间索引。
 
 ### 17.2 区域和任务持久化
 
@@ -616,6 +629,8 @@ packages/openlayers-gis-demo/
 - 行政区名称、责任网格、事件和轨迹均为演示数据；
 - 现场图片只生成本地预览，不上传服务器；
 - 前端十万点用于工程演示，不等于生产系统应一次下载十万条记录；
+- 固定网格、LRU 与查询耗时只模拟 BBOX 服务边界，不代表真实网络和数据库性能；
+- 区域查询、导出和单事件 CRUD 只覆盖当前视口/当前会话数据；
 - SLA 使用固定演示规则，没有节假日、工作时段或服务端时钟；
 - 空间查询以点和单个当前区域为主，没有空间数据库、拓扑修复或复杂空间分析；
 - 页面交互和性能体验需要在真实浏览器中由用户手动验证。

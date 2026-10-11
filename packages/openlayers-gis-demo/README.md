@@ -2,7 +2,7 @@
 
 `@blog/openlayers-gis-demo` 是面向城市巡检业务的 OpenLayers 综合管理项目。它不是 API 示例集合，而是一个具备地图架构、海量点位、空间交互、业务状态联动和轨迹回放能力的独立 Feature Package。
 
-应用入口：`/playground/engineering/openlayers-gis`
+应用入口：`/playground/solutions/openlayers-gis`
 
 ## 技术栈
 
@@ -32,7 +32,10 @@
 - 事件详情展示上报、资料编辑、开始处理和完成处置的增量时间线。
 - 事件可在当前会话添加最多 3 张现场图片，支持缩略图、文件信息、移除和 Blob URL 生命周期释放。
 - 单事件处置执行责任门禁：待处理事件必须先分派责任人，处理中事件必须至少添加 1 张现场图片后才能完成；禁用按钮会直接提示缺失条件。
-- 1k、10k、50k、100k 稳定 Mock 数据切换。
+- 1k、10k、50k、100k 稳定 Mock 完整数据集切换；Pinia 和地图只保存当前视口命中结果。
+- `moveend` 触发 WGS84 BBOX 查询，支持请求取消、request ID、数据集版本校验、错误保留与重试。
+- 前端 Mock Service 使用固定经纬度网格缩小候选集、有界 LRU 缓存查询，并对真实 BBOX 再做精确过滤。
+- OpenLayers Event Source 使用事件 ID Diff 增删改，未变化和更新 Feature 保持对象身份。
 - 普通 `VectorLayer` 与 `Cluster` 聚合模式切换。
 - 点位填充色表达处置状态（待处理红、处理中橙、已完成绿），SelectionLayer 使用独立青色光圈；事件等级保留为文字信息。
 - 底图、事件、轨迹、绘制区域和选中高亮图层可独立控制显隐。
@@ -82,6 +85,7 @@ packages/openlayers-gis-demo/
 │   ├── mock/                           # 固定 seed 事件与轨迹数据
 │   ├── services/
 │   │   └── TrackPlaybackController.ts  # requestAnimationFrame 时间插值
+│   ├── viewport/                        # BBOX 服务、固定网格、缓存和请求治理
 │   ├── stores/                         # 可序列化业务状态
 │   ├── types/                          # 事件与轨迹业务类型
 │   └── index.ts                        # 唯一公共入口
@@ -94,7 +98,9 @@ packages/openlayers-gis-demo/
 
 ```text
 GisManagementDemo.vue
-├── Pinia：事件、选中 ID、区域筛选结果
+├── MockViewportEventService：完整 Mock 数据集、固定网格和 LRU
+├── ViewportQueryController：Abort、request ID、版本保护和重试
+├── Pinia：当前视口事件、选中 ID、区域筛选结果
 └── MapManager
     ├── OpenLayers Map / View / Overlay
     ├── LayerManager
@@ -127,7 +133,7 @@ OpenLayers 是有状态的命令式对象系统，Vue 是声明式响应式系�
 | `selection`  | `VectorLayer`                | 当前选中事件的独立高亮       |
 | `eventDraft` | `VectorLayer`                | 新建或编辑事件的临时选点标记 |
 
-`LayerManager` 维护 Layer ID 到实例的唯一映射，统一提供 `addLayer`、`removeLayer`、`getLayer`、`showLayer`、`hideLayer` 和 `destroy`。普通点位与 Cluster 共享同一个事件 `VectorSource`，避免切换模式时重复维护十万条 Feature。SelectionLayer 复用一个只保存坐标的 Feature，不修改原始事件 Feature，并在普通点与 Cluster 模式之间保留一致的选中效果。点位颜色只表达处置状态，避免与事件等级产生重复语义。
+`LayerManager` 维护 Layer ID 到实例的唯一映射，统一提供 `addLayer`、`removeLayer`、`getLayer`、`showLayer`、`hideLayer` 和 `destroy`。普通点位、Cluster 与 Heatmap 共享同一个当前视口事件 `VectorSource`，避免按渲染方式复制 Feature。SelectionLayer 复用一个只保存坐标的 Feature，不修改原始事件 Feature，并在普通点与 Cluster 模式之间保留一致的选中效果。点位颜色只表达处置状态，避免与事件等级产生重复语义。
 
 ## 海量点优化方案
 
@@ -137,23 +143,23 @@ Cluster 按当前分辨率合并邻近点位，低 Zoom 下只绘制聚合结果
 
 ### 2. Style 缓存
 
-事件样式按等级缓存，Cluster 样式按聚合数量缓存。渲染回调不会为每个 Feature、每一帧重复创建 `Style`、`Fill`、`Stroke` 和 `Text`。Cluster 缓存设有容量上限，避免长时间缩放后持续增长。
+事件样式按处置状态缓存，Cluster 样式按聚合数量缓存。渲染回调不会为每个 Feature、每一帧重复创建 `Style`、`Fill`、`Stroke` 和 `Text`。Cluster 缓存设有容量上限，避免长时间缩放后持续增长。
 
-### 3. 批量更新 Source
+### 3. 视口加载与 Feature Diff
 
-数据切换时先完成 Feature 转换，再使用一次 `clear` 和一次 `addFeatures` 批量替换，避免逐条写入造成重复渲染。
+完整 1k–100k 数据集只存在于 Mock Service。地图 `moveend` 后将当前 extent 转为 WGS84 BBOX，查询固定网格候选并精确过滤；正常视口更新通过事件 ID Diff 增删改 Source，数据集版本切换才使用整体清空。
 
 ### 4. 控制 Vue DOM 数量
 
-地图保留完整的 1k–100k Feature，但列表最多渲染 100 行。每个地图点都由 Canvas 渲染，不创建 Vue DOM Marker，因此测试结果主要体现 OpenLayers 渲染压力。
+地图只保留当前视口 Feature，列表最多渲染当前结果中的 100 行。每个地图点都由 Canvas 渲染，不创建 Vue DOM Marker。
 
 ### 5. 避免深层响应式代理
 
-Pinia 中的事件集合使用 `shallowRef` 并整体替换，不为十万个只读 Mock 对象创建深层 Vue Proxy。
+Pinia 中的当前视口事件集合使用 `shallowRef` 并整体替换，完整 1k–100k Mock 数据不会进入 Vue 响应式系统。
 
 ### 10 万点为什么需要优化
 
-十万条业务对象、Feature、Geometry、空间索引和命中检测都会占用内存与主线程时间。如果逐点创建 DOM、每帧创建 Style，或在响应式系统中深层代理所有字段，拖拽和缩放会产生明显卡顿与 GC 抖动。当前方案优先采用 Cluster、Style Cache、批量更新和有限 DOM，不在第一阶段引入 Web Worker 或额外 GIS 库。
+十万条业务对象和前端索引仍会占用内存与主线程时间，但它们只由 Mock Service 持有；地图、Pinia 和列表只处理当前视口结果。当前方案同时采用固定网格候选、LRU、Feature Diff、Cluster、Style Cache 和有限 DOM，未引入 Web Worker、矢量瓦片、WebGL Layer 或额外 GIS 库。
 
 ## Select、Draw 和 Modify
 
@@ -232,8 +238,10 @@ Map、Layer、Source、Feature、Geometry、Interaction、Overlay 都由普通 T
 
 ## 生命周期与资源释放
 
-组件 `onMounted` 只创建一次 `MapManager`，`onBeforeUnmount` 调用幂等 `destroy`。销毁流程包括：
+组件 `onMounted` 依次创建 Mock Service、Query Controller 和唯一 `MapManager`；`onBeforeUnmount` 先停止查询回调，再释放地图。销毁流程包括：
 
+- 取消在途 BBOX 请求，销毁 Controller；
+- 清空 Service 的完整数据集、网格索引和 LRU；
 - 解除 Map target。
 - 解绑 OpenLayers 事件监听器。
 - 移除 Select、Draw 和 Modify。
@@ -251,7 +259,7 @@ pnpm dev:vite
 访问：
 
 ```text
-http://127.0.0.1:4173/#/playground/engineering/openlayers-gis
+http://127.0.0.1:4173/#/playground/solutions/openlayers-gis
 ```
 
 静态检查：
@@ -265,13 +273,15 @@ pnpm build:vite
 
 仓库约束要求页面交互和性能体验由用户手动验证，不默认执行 Webpack 构建。
 
-性能测试区会记录最近一次批量更新的业务数据生成、OpenLayers Feature 转换、VectorSource 更新和地图 `rendercomplete` 延迟，单位均为毫秒。该面板只展示实际测量值，不用主线程单次耗时推算 FPS。
+手动验收重点：首屏只出现当前视口结果；快速平移后只提交最终请求；回到相同视口显示缓存命中；切换 1k/10k/50k/100k 后重建数据集；筛选、列表、统计和地图数量一致；选中事件离开视口后清理详情与 Popup；Polygon/Circle 和 GeoJSON 导出均明确只作用于当前视口结果。
+
+性能测试区会记录数据集生成、固定网格构建、BBOX 候选/命中、缓存命中、纯查询、Feature Diff 和地图 `rendercomplete` 延迟。面板展示的是当前浏览器单次运行值；仓库没有保存固定环境的对照样本，因此不能据此宣称具体提升比例。
 
 ## 面试问题与回答
 
 ### OpenLayers 10 万点怎么优化？
 
-先判断瓶颈是数据创建、响应式代理还是绘制。当前项目使用 Cluster 降低同屏 Feature 数量，缓存 Style，批量更新 VectorSource，限制 Vue 列表 DOM，并用 `shallowRef` 避免十万对象深层代理。若真实生产数据仍超过主线程预算，再基于测量结果考虑视口加载、服务端聚合、矢量瓦片、WebGL Layer 或 Worker，而不是第一步就增加复杂度。
+先判断瓶颈是数据查询、响应式代理、Source 更新还是绘制。当前项目让完整 Mock 数据只存在于 Service，通过 BBOX 固定网格查询和有界缓存缩小结果，使用 Feature ID Diff 更新 Source，再用 Cluster、Style Cache、`shallowRef` 和 100 行分页控制渲染与 DOM。真实生产环境仍应把同一 `ViewportEventService` 协议替换为 HTTP/PostGIS、服务端聚合或矢量瓦片方案。
 
 ### Cluster 解决什么问题？
 
@@ -309,3 +319,4 @@ Cluster 主要解决低 Zoom 下大量相邻点重复绘制、视觉遮挡和命
 - Phase 7–8：轨迹回放和统一生命周期完成。
 - Phase 9：性能、资源和 TypeScript 审查完成。
 - Phase 10：README 与面试说明完成。
+- 视口加载自动化单元测试已执行；真实页面交互、浏览器内存和性能对照仍待用户手动验证。

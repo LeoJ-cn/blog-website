@@ -8,13 +8,15 @@
 
 ### 保守版
 
-负责基于 Vue 3、TypeScript、Pinia 与 OpenLayers 10 开发城市巡检 GIS 综合管理 Demo，封装地图、图层、空间交互和轨迹回放边界，实现事件点位、客户端聚合、热力分析、Polygon/Circle 区域筛选、GeoJSON 导入导出、事件处置联动及 1k～100k Mock 点位切换。通过共享 VectorSource、样式缓存、批量写入、有限 DOM、`shallowRef` 和显式资源销毁控制大数据量场景的前端开销，并对数据生成、Feature 转换、Source 更新和 `rendercomplete` 延迟进行运行时测量。
+负责基于 Vue 3、TypeScript、Pinia 与 OpenLayers 10 开发城市巡检 GIS 综合管理 Demo，封装地图、图层、空间交互和轨迹回放边界，实现 1k～100k Mock 数据集的当前视口 BBOX 加载、客户端聚合、热力分析、Polygon/Circle 区域筛选和 GeoJSON 交换。通过固定网格候选、请求取消与竞态保护、有界 LRU、Feature ID Diff、共享 VectorSource、有限 DOM 和显式资源销毁控制前端开销，并对索引、查询、Diff 与 `rendercomplete` 分阶段测量。
 
 ### 技术亮点版
 
 - 设计 `MapManager + LayerManager + SpatialInteractionManager` 分层架构，将 OpenLayers 命令式对象生命周期与 Vue/Pinia 可序列化业务状态隔离，宿主只通过业务 ID、WGS84 坐标和回调协议通信。
 - 构建 Event、Cluster、Heatmap、ResponsibilityGrid、Region、Track、Selection、EventDraft 与 OSM Base 九类图层；普通点、Cluster 和 Heatmap 复用同一事件 `VectorSource`，避免维护多份海量 Feature。
-- 实现 1k、10k、50k、100k 可复现 Mock 点位切换，结合 `shallowRef`、批量 `addFeatures`、状态/聚合样式缓存和列表 100 行分页，降低深层响应式、短生命周期对象和 DOM 数量。
+- 将 1k、10k、50k、100k 可复现完整 Mock 数据封装在框架无关 Service 中，基于 WGS84 BBOX、固定经纬度网格和有界 LRU 只向 Pinia/地图提交当前视口结果。
+- 使用 AbortController、递增 request ID 和 datasetVersion 实现三层竞态保护；普通错误保留旧地图并允许重试。
+- 按事件 ID Diff OpenLayers Source，统计 added/updated/removed/unchanged，更新和未变化 Feature 保持对象身份。
 - 基于 `VectorSource.forEachFeatureInExtent` 做外接矩形粗筛，再用 `geometry.intersectsCoordinate` 精确判断，实现 Polygon/Circle 区域筛选、修改、保存、恢复及区域内事件批量处置。
 - 基于 `requestAnimationFrame` 与轨迹时间戳实现 1x/2x/8x 回放、暂停、重置、时间轴跳转和线段插值；复用人员 Point 和已巡 LineString，避免逐帧创建 Feature。
 - 实现 WGS84 与 Web Mercator 边界转换、标准 GeoJSON Point FeatureCollection 导入导出、字段/坐标/重复 ID 校验以及导入结果定位。
@@ -119,8 +121,12 @@
 **真实能力：**
 
 - 1k～100k 固定种子 Mock；
-- 事件数组使用 `shallowRef`；
-- 批量 Feature 转换和 `addFeatures`；
+- 完整数据集只存在于 Mock Service；
+- 固定经纬度网格缩小 BBOX 候选集；
+- 查询缓存使用有界 LRU，量化范围向外扩张且返回前按真实 BBOX 精筛；
+- AbortController、request ID、datasetVersion 防止旧响应提交；
+- 当前视口事件数组使用 `shallowRef`；
+- 正常查询使用 Feature ID Diff，数据集切换才整体清空；
 - 普通点、Cluster、Heatmap 共享 Source；
 - 事件 Style 按状态缓存；
 - Cluster Style 缓存上限 2,048；
@@ -130,7 +136,10 @@
 
 **源码证据：**
 
-- `src/mock/generate-events.ts`
+- `src/viewport/mock-viewport-event-service.ts`
+- `src/viewport/spatial-grid-index.ts`
+- `src/viewport/viewport-query-controller.ts`
+- `src/map/sources/sync-event-source.ts`
 - `src/stores/gis.ts`
 - `MapManager.setEvents/addEvent/updateEvent/removeEvent`
 - `src/map/styles/event-style.ts`
@@ -143,13 +152,14 @@
 
 ### 8. 性能测量
 
-**真实能力：** 页面实时采集最近一次数据生成、Feature 转换、Source 更新和从批量替换到 `rendercomplete` 的耗时。
+**真实能力：** 页面实时采集数据集生成、网格索引构建、BBOX 候选/命中、缓存命中、纯查询、Feature Diff 和到 `rendercomplete` 的耗时。
 
 **源码证据：**
 
-- `MapManager.constructor/setEvents`
+- `MockViewportEventService.setDatasetSize/query`
+- `syncEventSource`、`MapManager.syncEvents`
 - `MapManager` 的 `rendercomplete` Listener
-- `GisManagementDemo.vue` 中 `generateEvents` 和性能面板
+- `GisManagementDemo.vue` 的视口性能面板
 
 **可以写进简历：** 建立 GIS 数据更新分阶段性能埋点。
 
@@ -188,13 +198,13 @@
 - `src/map/LayerManager.ts`
 - `GisManagementDemo.vue` 的 `changeWorkspaceScene/applyLayerVisibility`
 
-**不能写：** 矢量瓦片 LOD、WebGL 分层或按视口动态装卸图层数据。
+**不能写：** 矢量瓦片 LOD、WebGL 分层或服务端按视口装卸数据。
 
 ## 三、明确不能写进简历的能力
 
 以下能力在当前源码中不存在：
 
-- 按地图视口或 BBOX 请求后端数据；
+- 真实 HTTP BBOX 后端；
 - 服务端空间索引或 PostGIS；
 - 服务端 Cluster；
 - 矢量瓦片、MVT、WebGL Points；
@@ -202,7 +212,7 @@
 - 实时 WebSocket GPS 轨迹；
 - 进入/离开围栏事件和越界告警；
 - 离线瓦片和离线地图；
-- 多级缓存或瓦片缓存治理；
+- 多级缓存或瓦片缓存治理；当前只有前端有界查询 LRU；
 - 自动化性能基准结果；
 - 已验证的 FPS、内存或耗时提升比例。
 
@@ -212,29 +222,32 @@
 | --- | --- | --- |
 | “支持 10 万 Mock 点位切换” | 是 | UI 和生成器均明确支持 100,000 |
 | “实现客户端 Cluster 聚合” | 是 | 使用 OpenLayers ClusterSource |
-| “实现空间索引查询” | 有条件 | 可说使用 VectorSource extent 粗筛；不能说实现了自研 R-tree |
+| “实现空间索引查询” | 有条件 | 可说为 Mock BBOX Service 实现固定网格候选；不能说 R-tree/PostGIS |
 | “实现电子围栏” | 不建议 | 只有区域绘制、保存和点内查询，没有告警语义 |
-| “实现视口加载” | 否 | 没有按 extent 请求或卸载数据 |
+| “实现视口加载” | 是，需限定 | 前端 Mock Service 按 WGS84 BBOX 返回当前视口；不是生产后端 |
 | “性能提升 60%” | 否 | 没有基线与结果记录 |
-| “实现增量更新” | 是 | 单事件 add/update/remove 为增量；筛选和换数据仍是批量替换 |
+| “实现增量更新” | 是 | 正常视口结果按事件 ID Diff；数据集版本切换整体重置 |
 | “完整资源回收” | 基本安全 | 有显式销毁链；浏览器实际内存回收效果仍需工具验证 |
 
 ## 五、面试时必须主动说明的边界
 
-1. 十万点是前端固定 Mock，不是一次从生产接口拉取十万条数据的推荐方案。
-2. Cluster 降低低 Zoom 下的绘制和命中压力，但不会减少业务对象、原始 Feature 创建和网络成本。
-3. `forEachFeatureInExtent` 使用的是 OpenLayers VectorSource 内部空间索引能力，不是项目自研空间索引。
+1. 十万点是 Mock Service 内部完整数据集，地图和 Pinia 只持有当前视口结果。
+2. Cluster 降低当前视口低 Zoom 下的绘制和命中压力，不替代 BBOX 查询。
+3. BBOX 候选使用项目实现的固定网格；区域查询另用 OpenLayers VectorSource 内部空间索引。两者都不能描述成 R-tree/PostGIS。
 4. 当前“围栏”是静态区域筛选，不包含实时人员越界告警。
 5. 性能面板能测量当前运行，但仓库没有固定测试环境和历史结果，不能承诺具体提升。
-6. 单事件操作使用增量更新；改变筛选、数据量或批量状态后会整体重建当前可见 Source。
+6. 正常视口和筛选查询使用 Feature ID Diff；只有完整数据集版本切换才允许整体清空。
 
 ## 六、必须脱离 Codex 掌握的简历亮点
 
 - 能画出 Vue/Pinia → MapManager → Source/Layer，以及地图回调 → Pinia 的双向数据流；
-- 能解释 ClusterSource 为什么没有减少原始 Feature；
+- 能解释当前视口加载与 Cluster 的职责差异；
 - 能手写 WGS84/Web Mercator 转换边界；
+- 能解释固定网格键、闭区间 BBOX、向外量化缓存和真实 BBOX 精筛；
+- 能解释 Abort、request ID、datasetVersion 为什么缺一不可；
+- 能脱离工具实现事件 ID Diff，并处理选择失效和 Feature 身份保留；
 - 能解释 extent 粗筛与精确点面判断；
 - 能推导轨迹时间插值公式；
-- 能区分单事件增量更新和筛选后的批量重建；
+- 能区分正常视口 Diff 和数据集版本切换的整体重置；
 - 能逐项说明 Listener、Interaction、RAF、Overlay、Source、Layer 和 Blob URL 如何释放；
-- 能诚实说明视口加载、实时围栏告警和性能对照数据尚未实现。
+- 能诚实说明当前是前端 Mock BBOX Service，真实后端、实时围栏告警和性能对照数据尚未实现。

@@ -366,32 +366,73 @@ targetTimestamp = 起始轨迹时间 + currentElapsed
 
 ### 10.1 结论
 
-**未实现真正的视口加载。**
+**已实现前端 Mock BBOX 视口加载，但尚未接入真实 HTTP/数据库后端。**
 
-源码存在：
+实际调用链：
 
-- `View.fit` 定位单点、多点、区域和轨迹；
-- `moveend` 用于上报 MapStats；
-- VectorSource 内部空间索引用于区域查询。
+```text
+MapManager mount / moveend
+→ calculateWgs84ViewportBbox
+→ GisManagementDemo.queryViewport
+→ ViewportQueryController.query
+→ MockViewportEventService.query
+→ SpatialGridIndex.queryCandidates
+→ 真实 BBOX + 业务筛选精筛
+→ Pinia.replaceViewportEvents
+→ MapManager.syncEvents
+```
 
-源码不存在：
+关键实现：
 
-- 根据当前 extent/BBOX 请求接口；
-- Zoom/extent 作为查询参数；
-- 离开视口时卸载事件；
-- 请求取消、竞态防护、视口缓存；
-- VectorSource `loader` 或 bbox strategy。
+- `viewport-bbox.ts` 使用 `transformExtent` 把当前投影 extent 转为闭区间 WGS84 BBOX；
+- `ViewportQueryController` 同时使用 AbortController、request ID 和 datasetVersion；
+- Mock Service 使用向外量化 BBOX 的有界 LRU，命中后按真实 BBOX 再精筛；
+- 普通错误保留旧地图，空结果与错误分开；
+- Pinia 和 Event Source 只持有当前视口结果。
+
+核心代码的提交门禁在 Controller：
+
+```ts
+const result = await service.query({
+  bbox: paramsSnapshot.bbox,
+  filter: paramsSnapshot.filter,
+  signal: abortController.signal,
+})
+if (requestId !== nextRequestId) return
+if (result.datasetVersion !== paramsSnapshot.expectedDatasetVersion) return
+```
+
+缓存范围必须向外扩张，不能用四舍五入缩小真实视口：
+
+```ts
+const quantizedBbox: Wgs84Bbox = [
+  floorToCell(minLongitude),
+  floorToCell(minLatitude),
+  ceilToCell(maxLongitude),
+  ceilToCell(maxLatitude),
+]
+const events = cached.events.filter((event) => isEventInsideBbox(event, realBbox))
+```
+
+这里省略了源码中的 WGS84 上下限裁剪，但保留了最重要的“外扩缓存、真实范围精筛”顺序。
+
+未实现：真实 HTTP、PostGIS、服务端 Cluster、VectorSource loader/bbox strategy、Zoom 参数和矢量瓦片。
 
 ### 10.2 面试标准答案
 
 **问题：项目是否做了视口加载？**
 
-回答：没有。当前是一次生成并持有筛选后的完整前端数据，`fit` 只是调整视图，不是按视口加载。生产化时可以监听稳定后的 moveend，读取 extent 并转换坐标，携带 zoom/filter 请求后端；需要 AbortController、请求序号、缓存键和边界扩张来避免频繁抖动。
+回答：实现了可运行的前端 Mock 视口加载。`moveend` 后把 extent 转为 WGS84 BBOX，通过框架无关 Service 查询；Controller 负责取消、request ID 和数据集版本保护，结果按 ID Diff 到 Source。它证明的是前端协议和请求治理，不等于已经有生产后端；生产化时替换 Service Adapter，并由 PostGIS 或其他服务端索引执行 BBOX 查询。
+
+**连续追问：为什么 AbortController 之外还需要 request ID？**
+
+回答：取消信号存在传播窗口，异步步骤也可能忽略 signal。request ID 在提交点再次判断“是否仍是最新请求”，防止迟到响应覆盖。datasetVersion 再隔离数据集切换前后的响应，三者处理不同失效维度。
 
 ## 11. 空间索引核查
 
 ### 11.1 真实存在的部分
 
+- `SpatialGridIndex` 按 `floor(lng/cellSize)`、`floor(lat/cellSize)` 建固定网格，用于 Mock BBOX 候选缩小；
 - OpenLayers VectorSource 为 Feature 查询提供内部空间索引；
 - 区域查询调用 `forEachFeatureInExtent`；
 - `getFeatureById` 用于业务 ID 定位；
@@ -401,8 +442,12 @@ targetTimestamp = 起始轨迹时间 + currentElapsed
 
 - 没有自研 R-tree；
 - 没有数据库空间索引；
-- 没有对索引开关、构建时间和内存做基准；
+- 固定网格构建耗时和候选数可在页面观察，但没有固定环境对照基准；
 - 不能声称查询复杂度已经在本项目中实测为某个量级。
+
+**问题：固定网格和 R-tree 有什么区别？**
+
+标准答案：固定网格按确定单元直接分桶，实现简单，适合分布范围已知的城市 Mock 点；数据倾斜或跨尺度查询时可能出现热点桶和大量空桶遍历。R-tree 以层级包围盒组织对象，适合更通用的空间范围查询。当前实现只能称固定经纬度网格，不能包装成 R-tree。
 
 ## 12. 增量更新核查
 
@@ -416,22 +461,32 @@ targetTimestamp = 起始轨迹时间 + currentElapsed
 
 更新时保留 Feature 身份，有利于减少不必要对象创建和索引重建。
 
-### 12.2 批量替换
+### 12.2 视口结果 ID Diff
 
-以下场景会调用 `setEvents`：
+`syncEventSource` 一次建立新结果 `eventId → event` Map，遍历旧 Feature 删除缺失项、比较并更新变化项，再批量添加剩余新项。比较范围是进入 Feature 的 `eventId/type/status/level` 和投影坐标；address/createdAt 只在 Vue 业务对象更新。未变化与更新 Feature 都保持对象身份。
 
-- 切换数据量；
-- 应用/重置筛选；
-- 条件导致可见集合整体变化；
-- 批量状态推进后同步结果。
+核心循环：
 
-`setEvents` 批量 `events.map(createEventFeature)`，然后 `clear(true)` 与 `addFeatures(features)`。这是批量更新，不是增量 diff。
+```ts
+for (const feature of source.getFeatures()) {
+  const featureId = feature.getId()
+  const nextEvent = typeof featureId === 'string' ? nextEventsById.get(featureId) : undefined
+  if (!nextEvent) {
+    featuresToRemove.push(feature)
+    continue
+  }
+  if (hasEventFeatureChanged(feature, nextEvent)) updateEventFeature(feature, nextEvent)
+  nextEventsById.delete(featureId)
+}
+```
+
+`setEvents` 仍保留给数据集版本切换和明确重置，此时允许 `clear(true) + addFeatures`。
 
 ### 12.3 面试回答
 
 **问题：项目是否全部采用增量更新？**
 
-标准答案：不是。单事件 CRUD 是增量的；筛选和批量变化采用全量替换当前 Source，逻辑简单且结果确定。若生产数据更大，应根据变更集合做 ID diff，或让服务端/瓦片层决定可见数据。
+标准答案：当前正常视口和筛选响应使用 ID Diff，单事件 CRUD 也使用增量 API；完整数据集版本切换才整体重置。Diff 自身有构建 Map 和字段比较成本，因此仍需根据变化率和结果规模测量，不能无条件声称优于重建。
 
 ## 13. 性能优化与证据等级
 
@@ -439,10 +494,14 @@ targetTimestamp = 起始轨迹时间 + currentElapsed
 
 | 技术 | 源码证据 | 预期作用 | 是否有量化结果 |
 | --- | --- | --- | --- |
-| `shallowRef<InspectionEvent[]>` | `stores/gis.ts` | 避免十万对象深层 Proxy | 无，待验证 |
+| 当前视口 Store | `mock-viewport-event-service.ts`、`stores/gis.ts` | 完整数据集不进入 Vue/地图 | 有数量指标，无内存对照 |
+| 固定网格候选 | `spatial-grid-index.ts` | 缩小 Mock BBOX 精筛输入 | 有候选/命中指标，无线性扫描对照 |
+| 有界查询 LRU | `mock-viewport-event-service.ts` | 复用量化 BBOX 与筛选结果 | 有命中状态，无长期命中率样本 |
+| Feature ID Diff | `sync-event-source.ts` | 保留身份并只处理变化项 | 有计数/耗时，无重建对照 |
+| `shallowRef<InspectionEvent[]>` | `stores/gis.ts` | 避免当前视口对象深层 Proxy | 无，待验证 |
 | ClusterSource | `create-cluster-layer.ts` | 减少低 Zoom 绘制符号 | 无，待验证 |
 | Source 共享 | `MapManager` | 避免 Event/Cluster/Heatmap 多份 Feature | 无内存对照，待验证 |
-| 批量 `addFeatures` | `MapManager.setEvents` | 避免逐条触发更新 | 无逐条对照，待验证 |
+| 批量 `addFeatures` | `MapManager.setEvents` | 数据集重置时避免逐条触发 | 无逐条对照，待验证 |
 | Event Style Cache | `event-style.ts` | 减少 Style 分配 | 无 GC 对照，待验证 |
 | Cluster Style Cache | `cluster-style.ts` | 减少 Style/Text 分配 | 无 GC 对照，待验证 |
 | 缓存上限 2,048 | `cluster-style.ts` | 防止样式缓存无限增长 | 无长期内存数据 |
@@ -453,6 +512,13 @@ targetTimestamp = 起始轨迹时间 + currentElapsed
 ### 13.2 已实现的测量
 
 项目使用 `performance.now()` 测量：
+
+- 完整 Mock 数据生成和固定网格构建；
+- BBOX 纯查询；
+- Event Source ID Diff；
+- Diff 开始到 `rendercomplete`。
+
+同时记录 datasetSize、indexedCellCount、candidateCount、matchedCount、cacheHit 和 added/updated/removed/unchanged。以上是测量能力，不是已经完成的优化前后结论。
 
 1. Mock 业务数据生成；
 2. `InspectionEvent[] → Feature[]`；
@@ -633,13 +699,13 @@ Draw/Modify 完成
 
 回答：可以创建派生 Source，但要明确同步策略、内存代价和更新频率；或让 weight 返回 0 排除不需要的 Feature。当前项目采用后者处理已完成事件的弱权重，而不是彻底剔除。
 
-### 17.2 为什么 `clear(true)` 后再 `addFeatures`？
+### 17.2 为什么正常查询使用 ID Diff，数据集切换仍整体重置？
 
-标准答案：筛选集合整体变化时，批量重建逻辑简单且一致；`clear(true)` 快速清空后一次 addFeatures，避免逐条触发大量变化。代价是原 Feature 身份失效、索引重建和全量转换。
+标准答案：同一数据集内的视口变化有稳定事件 ID，适合删除缺失项、就地更新变化项并添加新项，选择态和 Feature 身份也容易保持。切换 1k/10k/50k/100k 会改变完整数据集版本，旧请求、缓存和身份整体失效，此时先清空再查询新版本，语义更明确。
 
-追问：如何做真正的 diff？
+追问：Diff 一定比重建快吗？
 
-回答：按 ID 构建 next map，删除缺失 ID，更新属性或坐标变化的 Feature，新增新 ID；需要权衡 diff 的 CPU/内存与重建成本，并用不同变更率实测。
+回答：不一定。Diff 需要构建新 Map、遍历旧 Feature 和比较字段；当结果很小或几乎全部变化时，重建可能更简单。项目记录 Diff 耗时和变更计数，但尚未保存不同变化率的对照数据，所以只说明机制，不承诺性能倍数。
 
 ### 17.3 Style Cache 为什么重要？
 
@@ -663,7 +729,7 @@ Draw/Modify 完成
 
 ### 17.6 为什么列表分页而地图不分页？
 
-标准答案：DOM 行成本远高于 Canvas 批量绘制，分页把 UI DOM 固定到 100 行；地图需要表达完整空间分布，因此仍持有完整当前作用域 Feature。生产环境更大数据应配合视口加载或瓦片，而不是无限持有。
+标准答案：DOM 行成本远高于 Canvas 批量绘制，分页把 UI DOM 固定到 100 行；地图表达当前视口空间分布，因此持有当前视口 Feature。更大生产数据还可以使用服务端聚合或矢量瓦片，而不是扩大单次 BBOX 结果。
 
 ### 17.7 `rendercomplete` 能代表首屏性能吗？
 
@@ -684,7 +750,7 @@ Draw/Modify 完成
 5. `SpatialInteractionManager.setMode/removeDraw/destroy`；
 6. extent 粗筛和 `intersectsCoordinate` 精筛；
 7. `TrackPlaybackController` 的 elapsed、speed、timestamp、ratio；
-8. `setEvents` 批量更新与 add/update/remove 增量更新的区别；
+8. `syncEvents` ID Diff、单事件 API 与数据集切换 `setEvents` 的区别；
 9. Pinia 为什么只保存可序列化业务状态；
 10. 资源释放链和每种资源不释放的后果。
 
@@ -696,9 +762,9 @@ Draw/Modify 完成
 4. 新增 GeoJSON 字段并更新导入校验与导出协议；
 5. 修复轨迹倍速切换或 Seek 后的位置错误；
 6. 排查重复进入页面后的 Listener/RAF/Blob 泄漏；
-7. 将筛选后的全量重建改为 ID diff；
+7. 修改 Feature ID Diff 比较字段并保持选择失效语义；
 8. 为容器尺寸变化补充 ResizeObserver；
-9. 设计真正的 BBOX 视口加载和请求竞态控制；
+9. 把 Mock `ViewportEventService` 替换为真实 HTTP BBOX Adapter；
 10. 将 3,700 行主组件拆成业务 composable 和展示组件。
 
 ### C 级：面试前必须亲自完成的待验证项
@@ -714,8 +780,8 @@ Draw/Modify 完成
 
 这个项目是基于 Vue 3、Pinia 和 OpenLayers 的城市巡检 GIS Demo。架构上，我没有把 Map、Layer、Feature 这类命令式对象放进响应式状态，而是用 MapManager 管地图生命周期、LayerManager 管九类图层、SpatialInteractionManager 管 Select/Draw/Modify，Vue 和 Pinia 只保存可序列化业务数据，通过事件 ID、WGS84 坐标和回调通信。
 
-数据层支持 1 千到 10 万固定种子 Mock。普通点、Cluster 和 Heatmap 共享同一个 VectorSource；低缩放级别可以切 Cluster，事件和聚合样式都有缓存，列表固定每页 100 行。单事件 CRUD 使用增量 Feature 更新，筛选和大批量变化采用批量重建 Source。
+数据层支持 1 千到 10 万固定种子 Mock，但完整数据只存在于框架无关 Service。地图在 mount 和 moveend 后查询 WGS84 BBOX，Service 用固定网格缩小候选并用有界 LRU 复用结果；Controller 通过 Abort、request ID 和 datasetVersion 防止旧响应提交。Pinia 和 OpenLayers 只持有当前视口，Source 按事件 ID Diff。
 
 空间能力包括 Polygon/Circle 绘制、修改、保存和区域内事件查询，先用 VectorSource extent 空间索引粗筛，再做精确点包含判断。轨迹回放按照时间戳和 RAF 时间差推进，在线段内插值，并复用 Point 和 LineString Feature。
 
-项目还对数据生成、Feature 转换、Source 更新和 rendercomplete 做了分阶段计时，但目前没有保存固定环境下的性能结果，所以我只把它描述为已有测量能力，不会编造提升比例。真正的视口加载、服务端聚合和实时越界告警尚未实现，是后续生产化方向。
+项目对数据生成、索引构建、候选/命中、缓存、查询、Feature Diff 和 rendercomplete 做了分阶段计时，但没有保存固定环境下的优化前后结果，所以不会编造提升比例。当前视口加载是前端 Mock Service；真实 HTTP/PostGIS、服务端聚合和实时越界告警仍是生产化方向。

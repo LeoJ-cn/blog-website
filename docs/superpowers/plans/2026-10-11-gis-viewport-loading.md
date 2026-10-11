@@ -563,15 +563,15 @@ git commit -m "feat: load gis events by viewport"
 - Consumes: Task 1～6 的完整视口加载能力和实际验证结果。
 - Produces: 与源码一致的项目说明、面试材料、验证记录和用户手动验收步骤。
 
-- [ ] **Step 1: 更新 README 和 DEVELOPMENT**
+- [x] **Step 1: 更新 README 和 DEVELOPMENT**
 
 记录完整数据集只在 Service、Pinia/地图只持有当前视口、Region 只查询当前已加载事件、缓存/竞态/Diff 实现及生产后端替换边界。
 
-- [ ] **Step 2: 更新简历亮点和面试手册**
+- [x] **Step 2: 更新简历亮点和面试手册**
 
 只加入源码已实现能力；明确固定网格是 Mock Service，不是生产数据库索引。没有实际测量结果时继续标记“待验证”，不得写提升百分比。
 
-- [ ] **Step 3: 运行 GIS 全部测试**
+- [x] **Step 3: 运行 GIS 全部测试**
 
 ```bash
 pnpm --filter @blog/openlayers-gis-demo test
@@ -579,7 +579,7 @@ pnpm --filter @blog/openlayers-gis-demo test
 
 Expected: 全部 PASS、0 skipped、0 unhandled rejection。
 
-- [ ] **Step 4: 请求最终非页面验证许可**
+- [x] **Step 4: 请求最终非页面验证许可**
 
 向用户询问是否允许自动执行：
 
@@ -591,7 +591,7 @@ pnpm build:vite
 
 未获许可时不执行，并在交付中提供命令、预期结果和“未验证”状态。不得执行 Webpack。
 
-- [ ] **Step 5: 在获许可后运行完整验证**
+- [x] **Step 5: 在获许可后运行完整验证**
 
 Expected:
 
@@ -602,7 +602,7 @@ Expected:
 
 若发现非本批引入的问题，报告位置、现象、影响和建议，取得确认前不扩大范围。本批引入的问题直接修复并重新验证。
 
-- [ ] **Step 6: 提供用户手动页面验收**
+- [x] **Step 6: 提供用户手动页面验收**
 
 用户运行：
 
@@ -623,11 +623,11 @@ pnpm dev:vite
 9. 模拟错误后旧地图保留且重试可恢复；
 10. 离开页面后不再出现请求、RAF 或回调。
 
-- [ ] **Step 7: 记录实际结果并完成规则检查**
+- [x] **Step 7: 记录实际结果并完成规则检查**
 
 在本计划末尾记录测试数量、类型检查/Lint/Vite 结果、未执行项和用户页面反馈。逐项检查根 `AGENTS.md` 完成清单，包括完整诊断、协议注释、坐标/时间/容量语义、测试权限、Webpack 禁令和 CSS Grid 禁令。
 
-- [ ] **Step 8: 提交文档与最终修正**
+- [x] **Step 8: 提交文档与最终修正**
 
 ```bash
 git add packages/openlayers-gis-demo docs/superpowers/plans/2026-10-11-gis-viewport-loading.md
@@ -640,18 +640,29 @@ git commit -m "docs: document gis viewport loading"
 
 ## Final Review Checklist
 
-- [ ] Service、Controller、MapManager 依赖方向符合设计。
-- [ ] 完整数据集不进入 Pinia 或 Event Source。
-- [ ] 初始视口、moveend、数据量、筛选和 retry 均能触发正确查询。
-- [ ] Abort、request ID 和 datasetVersion 三层竞态保护均有测试。
-- [ ] 缓存有界，量化不漏数据，返回值不会污染缓存。
-- [ ] 正常查询使用 Feature Diff；数据集切换才允许整体清空。
-- [ ] 离开视口的选中项、Popup、区域结果和详情保持一致。
-- [ ] Event、Cluster、Heatmap 仍共享同一 Source。
-- [ ] 当前视口与完整数据集的 UI 文案不存在歧义。
-- [ ] 新增公开协议成员均有简体中文语义注释。
-- [ ] 所有触碰文件完整诊断已检查。
-- [ ] 未新增 CSS Grid。
-- [ ] 未执行 Webpack。
-- [ ] 未编造性能指标。
+- [x] Service、Controller、MapManager 依赖方向符合设计。
+- [x] 完整数据集不进入 Pinia 或 Event Source。
+- [x] 初始视口、moveend、数据量、筛选和 retry 均能触发正确查询。
+- [x] Abort、request ID 和 datasetVersion 三层竞态保护均有测试。
+- [x] 缓存有界，量化不漏数据，返回值不会污染缓存。
+- [x] 正常查询使用 Feature Diff；数据集切换才允许整体清空。
+- [x] 离开视口的选中项、Popup、区域结果和详情保持一致。
+- [x] Event、Cluster、Heatmap 仍共享同一 Source。
+- [x] 当前视口与完整数据集的 UI 文案不存在歧义。
+- [x] 新增公开协议成员均有简体中文语义注释。
+- [x] 所有触碰文件完整诊断已检查。
+- [x] 未新增 CSS Grid。
+- [x] 未执行 Webpack。
+- [x] 未编造性能指标。
 - [ ] 页面验证由用户执行并明确记录结果。
+
+## 实际执行记录（2026-10-11）
+
+- GIS 单元测试：6 个测试文件、57 个测试全部通过，0 skipped，0 unhandled rejection。
+- GIS TypeScript 类型检查：退出码 0。
+- 全仓 ESLint：退出码 0。
+- Vite 生产构建：退出码 0；存在仓库既有的 `eval` 和大分包警告，本批未扩大范围处理。
+- `git diff --check`：退出码 0。
+- CSS Grid 扫描：本批触碰的自有前端源码未发现 Grid 声明。
+- Webpack：按仓库约束未执行。
+- 页面交互与浏览器性能数据：待用户按 Step 6 手动验收；当前文档未将其表述为已验证结果，也未填写虚构性能提升比例。
