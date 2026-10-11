@@ -28,10 +28,11 @@ body {
   border: 1px solid rgb(255 255 255 / 50%);
   box-shadow: 0 8px 24px rgb(255 93 104 / 35%);
   color: #fff;
-  display: grid;
+  align-items: center;
+  display: flex;
+  justify-content: center;
   font: 700 14px/1 monospace;
   left: 0;
-  place-items: center;
   pointer-events: none;
   position: fixed;
   text-shadow: 0 1px 3px rgb(0 0 0 / 65%);
@@ -183,10 +184,15 @@ h1 span {
 
 .section-heading {
   align-items: end;
-  display: grid;
+  display: flex;
   gap: 48px;
-  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
   margin-bottom: 32px;
+}
+.section-heading > :first-child {
+  flex: 1.4 1 0;
+}
+.section-heading > :last-child {
+  flex: 0.6 1 280px;
 }
 
 .section-heading h2 {
@@ -202,12 +208,13 @@ h1 span {
 }
 
 .project-grid {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 20px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .project-card {
+  flex: 1 1 calc(33.333% - 14px);
   background: rgb(17 26 46 / 78%);
   border: 1px solid #263453;
   border-radius: 12px;
@@ -227,7 +234,6 @@ h1 span {
 
 .project-card--featured {
   background: linear-gradient(145deg, rgb(29 58 79 / 92%), rgb(17 26 46 / 82%));
-  grid-row: span 2;
   min-height: 520px;
 }
 
@@ -305,13 +311,13 @@ h1 span {
 }
 
 .playground-layout {
-  display: grid;
+  display: flex;
   gap: 36px;
-  grid-template-columns: 210px minmax(0, 1fr);
   padding-top: 28px;
 }
 
 .playground-sidebar {
+  flex: 0 0 210px;
   align-self: start;
   border-right: 1px solid #27334e;
   max-height: calc(100vh - 112px);
@@ -320,14 +326,20 @@ h1 span {
   position: sticky;
   top: 24px;
 }
+.playground-content-area {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 
 .playground-nav {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
 .playground-nav__group {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 3px;
 }
 
@@ -364,7 +376,8 @@ h1 span {
 }
 
 .playground-nav__category > span:first-child {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
 
@@ -563,9 +576,16 @@ h1 span {
 }
 
 .demo-workbench {
-  display: grid;
-  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  display: flex;
   min-height: 430px;
+}
+.demo-workbench__controls {
+  flex: 0 1 300px;
+  min-width: 220px;
+}
+.demo-workbench__result {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .demo-workbench__controls {
@@ -580,13 +600,15 @@ h1 span {
 }
 
 .demo-controls {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
 .demo-control {
   color: #8e9bb8;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   font-size: 12px;
   gap: 8px;
 }
@@ -667,16 +689,18 @@ h1 span {
 }
 
 .metrics-panel {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .metric-card {
   background: #111a2e;
   border: 1px solid #263453;
   border-radius: 8px;
-  display: grid;
+  flex: 1 1 calc(25% - 9px);
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   padding: 16px;
 }
@@ -763,15 +787,19 @@ h1 span {
 
 .source-viewer {
   background: #111a2e;
-  display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  display: flex;
   min-height: 420px;
 }
 
 .source-files {
+  flex: 0 0 230px;
   background: #111a2e;
   border-right: 1px solid #263453;
   padding: 10px;
+}
+.source-viewer > :last-child {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .source-files button {
@@ -780,7 +808,8 @@ h1 span {
   border-radius: 5px;
   color: #8e9bb8;
   cursor: pointer;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
   padding: 10px;
   text-align: left;
@@ -944,16 +973,15 @@ h1 span {
   .section-heading {
     align-items: start;
     gap: 16px;
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
-  .project-grid {
-    grid-template-columns: 1fr;
+  .project-card {
+    flex-basis: 100%;
   }
 
   .project-card,
   .project-card--featured {
-    grid-row: auto;
     min-height: 240px;
   }
 
@@ -984,10 +1012,11 @@ h1 span {
   }
 
   .playground-layout {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .playground-sidebar {
+    flex-basis: auto;
     border-bottom: 1px solid #27334e;
     border-right: 0;
     padding: 0 0 16px;
@@ -995,7 +1024,11 @@ h1 span {
   }
 
   .playground-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-flow: row wrap;
+  }
+
+  .playground-nav__group {
+    flex: 1 1 calc(50% - 7px);
   }
 
   .playground-nav__project {
@@ -1007,23 +1040,25 @@ h1 span {
   }
 
   .demo-workbench {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .demo-workbench__controls {
+    flex-basis: auto;
     border-bottom: 1px solid #263453;
     border-right: 0;
   }
 
-  .metrics-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .metric-card {
+    flex-basis: calc(50% - 6px);
   }
 
   .source-viewer {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .source-files {
+    flex-basis: auto;
     border-bottom: 1px solid #263453;
     border-right: 0;
     display: flex;

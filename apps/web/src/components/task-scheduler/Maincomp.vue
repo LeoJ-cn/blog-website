@@ -73,10 +73,13 @@ const { isReady: readyB } = useDeferRegister({
 }
 
 .main-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 20px;
   min-height: 180px;
+}
+.main-body > * {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 @media (max-width: 768px) {
@@ -87,7 +90,7 @@ const { isReady: readyB } = useDeferRegister({
   }
 
   .main-body {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 }
 </style>

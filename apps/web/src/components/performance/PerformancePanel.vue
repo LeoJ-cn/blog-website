@@ -334,7 +334,8 @@ function getFrameIntervalLevel(interval: number) {
 }
 
 .performance-panel__metrics {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 5px;
   margin: 7px 0;
 }
@@ -357,10 +358,12 @@ function getFrameIntervalLevel(interval: number) {
 }
 
 .performance-panel__animation-actions {
-  display: grid;
+  display: flex;
   gap: 6px;
-  grid-template-columns: 1fr 1fr;
   margin-bottom: 9px;
+}
+.performance-panel__animation-actions button {
+  flex: 1 1 0;
 }
 
 .performance-panel__animation-actions button {
@@ -413,10 +416,11 @@ function getFrameIntervalLevel(interval: number) {
   background: #071d14;
   border: 1px solid #174d34;
   color: #4f8768;
-  display: grid;
+  align-items: center;
+  display: flex;
+  justify-content: center;
   font-size: 10px;
   min-height: 36px;
-  place-items: center;
 }
 
 .performance-panel__history-table-wrap {
@@ -536,9 +540,12 @@ function getFrameIntervalLevel(interval: number) {
 }
 
 .performance-panel__pressure-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(38px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   margin-top: 6px;
+}
+.performance-panel__pressure-options button {
+  flex: 1 1 38px;
 }
 
 .performance-panel__pressure-options button {

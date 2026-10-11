@@ -172,9 +172,15 @@ function rerender() {
 
 <style scoped lang="scss">
 .image-loader-demo {
-  display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  display: flex;
   min-height: 500px;
+}
+.image-loader-demo__controls {
+  flex: 0 0 230px;
+}
+.image-loader-demo__stage {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .image-loader-demo__controls {
@@ -194,9 +200,11 @@ function rerender() {
   background: #111a2e;
   border: 1px solid #263453;
   border-radius: 6px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   overflow: hidden;
+}
+.image-loader-demo__segmented button {
+  flex: 1 1 0;
 }
 
 .image-loader-demo__segmented button {
@@ -242,7 +250,8 @@ function rerender() {
 
 .image-loader-demo__summary {
   border-top: 1px solid #263453;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   margin: 24px 0 0;
   padding-top: 20px;
@@ -282,13 +291,16 @@ function rerender() {
 }
 
 .image-loader-demo__gallery {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
-  grid-template-columns: repeat(auto-fill, 138px);
   justify-content: center;
   max-height: 540px;
   overflow: auto;
   padding: 2px;
+}
+.image-loader-demo__gallery article {
+  flex: 0 0 138px;
 }
 
 .image-loader-demo__gallery article {
@@ -318,7 +330,11 @@ function rerender() {
 
 @media (max-width: 760px) {
   .image-loader-demo {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .image-loader-demo__controls {
+    flex-basis: auto;
   }
 
   .image-loader-demo__controls {

@@ -403,11 +403,7 @@ const trackCoveredGridCount = computed(() =>
   Math.min(mockInspectionTrack.length, trackActiveGridSequence.value + 1),
 )
 const trackActiveGridLabel = computed(() => {
-  const row = Math.floor(trackActiveGridSequence.value / 4)
-  const routeColumn = trackActiveGridSequence.value % 4
-  // 奇数行按蛇形路线从东向西行进，转换回网格从西向东的一基列号。
-  const column = row % 2 === 0 ? routeColumn : 3 - routeColumn
-  return `GRID-${row + 1}-${column + 1}`
+  return formatTrackGridLabel(trackActiveGridSequence.value)
 })
 const trackTotalDistanceKm = computed(() => calculateTrackDistanceKm(mockInspectionTrack))
 const trackCompletedDistanceKm = computed(() => {
@@ -513,6 +509,14 @@ function formatTrackDuration(durationMs: number): string {
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function formatTrackGridLabel(sequence: number): string {
+  const row = Math.floor(sequence / 4)
+  const routeColumn = sequence % 4
+  // 奇数行按蛇形路线从东向西行进，转换回网格从西向东的一基列号。
+  const column = row % 2 === 0 ? routeColumn : 3 - routeColumn
+  return `GRID-${row + 1}-${column + 1}`
 }
 
 function formatFileSize(sizeBytes: number): string {
@@ -1034,6 +1038,13 @@ function changeTrackSpeed(speed: TrackPlaybackSpeed) {
 function seekTrack(event: Event) {
   const input = event.currentTarget as HTMLInputElement
   mapManager?.seekTrack(Number(input.value) / 100)
+}
+
+function seekTrackCheckpoint(sequence: number) {
+  const lastSequence = mockInspectionTrack.length - 1
+  if (lastSequence <= 0) return
+  // 节点序号从 0 开始，除以末节点序号得到闭区间 [0, 1] 的回放进度。
+  mapManager?.seekTrack(sequence / lastSequence)
 }
 
 onMounted(() => {
@@ -1893,16 +1904,33 @@ onBeforeUnmount(() => {
       <button @click="mapManager?.playTrack()">播放</button>
       <button @click="mapManager?.pauseTrack()">暂停</button>
       <button @click="mapManager?.resetTrack()">重置</button>
-      <input
-        class="track-progress"
-        type="range"
-        min="0"
-        max="100"
-        step="0.1"
-        :value="trackProgressPercent"
-        aria-label="巡检轨迹播放进度"
-        @input="seekTrack"
-      />
+      <div class="track-timeline">
+        <input
+          class="track-progress"
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          :value="trackProgressPercent"
+          aria-label="巡检轨迹播放进度"
+          @input="seekTrack"
+        />
+        <div class="track-checkpoints" aria-label="巡检网格节点快捷跳转">
+          <button
+            v-for="(_, sequence) in mockInspectionTrack"
+            :key="sequence"
+            type="button"
+            :class="{
+              active: sequence === trackActiveGridSequence,
+              visited: sequence < trackActiveGridSequence,
+            }"
+            :aria-label="`跳转到 ${formatTrackGridLabel(sequence)}，第 ${sequence + 1} 个节点`"
+            @click="seekTrackCheckpoint(sequence)"
+          >
+            {{ sequence + 1 }}
+          </button>
+        </div>
+      </div>
       <button :class="{ active: trackSpeed === 1 }" @click="changeTrackSpeed(1)">1x</button>
       <button :class="{ active: trackSpeed === 2 }" @click="changeTrackSpeed(2)">2x</button>
       <button :class="{ active: trackSpeed === 8 }" @click="changeTrackSpeed(8)">8x</button>
@@ -1967,8 +1995,8 @@ onBeforeUnmount(() => {
   content: '';
 }
 .operations-summary {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 12px;
   background: #07101e;
@@ -1976,8 +2004,10 @@ onBeforeUnmount(() => {
 }
 .operations-summary article,
 .operations-summary button {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  flex: 1 1 150px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 5px 10px;
   min-width: 0;
   padding: 11px 13px;
@@ -1996,15 +2026,19 @@ onBeforeUnmount(() => {
   border-color: #38bdf899;
   background: linear-gradient(135deg, #122b43, #0b1c30);
 }
-.operations-summary span,
+.operations-summary span {
+  flex: 1 1 auto;
+  color: #71809a;
+  font-size: 10px;
+}
 .operations-summary small {
+  flex: 1 1 100%;
   color: #71809a;
   font-size: 10px;
 }
 .operations-summary strong {
-  grid-row: 1 / span 2;
-  grid-column: 2;
-  align-self: center;
+  flex: 0 0 auto;
+  margin-left: auto;
   color: #e0f2fe;
   font-size: 22px;
   font-variant-numeric: tabular-nums;
@@ -2032,8 +2066,7 @@ onBeforeUnmount(() => {
   font-size: 13px;
 }
 .gis-workspace {
-  display: grid;
-  grid-template-columns: 300px minmax(420px, 1fr) 320px;
+  display: flex;
   height: 640px;
 }
 .event-list,
@@ -2042,10 +2075,15 @@ onBeforeUnmount(() => {
   overflow: auto;
 }
 .event-list {
+  flex: 0 0 300px;
   border-right: 1px solid #20314c;
 }
 .event-detail {
+  flex: 0 0 320px;
   border-left: 1px solid #20314c;
+}
+.map-panel {
+  flex: 1 1 auto;
 }
 .event-list header,
 .event-detail header {
@@ -2059,8 +2097,7 @@ onBeforeUnmount(() => {
 }
 .event-list > button {
   width: 100%;
-  display: grid;
-  grid-template-columns: 10px 1fr auto;
+  display: flex;
   gap: 10px;
   align-items: center;
   text-align: left;
@@ -2081,6 +2118,7 @@ onBeforeUnmount(() => {
   margin-top: 5px;
 }
 .event-list-main {
+  flex: 1 1 auto;
   min-width: 0;
 }
 .event-list-title {
@@ -2104,8 +2142,10 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 .event-list-side {
-  display: grid;
-  justify-items: end;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 6px;
   white-space: nowrap;
 }
@@ -2138,7 +2178,8 @@ onBeforeUnmount(() => {
   color: #7dd3fc;
 }
 .event-filters {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   padding: 12px;
   border-bottom: 1px solid #20314c;
@@ -2162,12 +2203,15 @@ onBeforeUnmount(() => {
   outline: none;
 }
 .filter-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
+.filter-grid select {
+  flex: 1 1 calc(50% - 3px);
+}
 .filter-grid select:last-child {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
 }
 .filter-actions {
   display: flex;
@@ -2188,16 +2232,19 @@ onBeforeUnmount(() => {
   background: #0c2d46;
 }
 .event-sort {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
   gap: 8px;
   align-items: center;
   padding-top: 2px;
   color: #71809a;
   font-size: 10px;
 }
+.event-sort select {
+  flex: 1 1 auto;
+}
 .event-tools {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 7px;
   padding-top: 8px;
   border-top: 1px solid #20314c;
@@ -2216,9 +2263,11 @@ onBeforeUnmount(() => {
   font-weight: 400;
 }
 .event-tools > div {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
   gap: 6px;
+}
+.event-tools > div > * {
+  flex: 1 1 0;
 }
 .event-tools button,
 .event-import {
@@ -2306,8 +2355,8 @@ onBeforeUnmount(() => {
   position: sticky;
   top: 0;
   z-index: 2;
-  display: grid;
-  grid-template-columns: 30px 30px 1fr 30px 30px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: center;
   padding: 8px 10px;
@@ -2319,7 +2368,7 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(6px);
 }
 .event-pagination-summary {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
   display: flex;
   justify-content: space-between;
   color: #71809a;
@@ -2329,6 +2378,7 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 .event-pagination button {
+  flex: 0 0 30px;
   height: 26px;
   color: #7dd3fc;
   background: #0c2d46;
@@ -2337,11 +2387,12 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .event-page-jump {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  flex: 1 1 auto;
+  display: flex;
   gap: 4px;
 }
 .event-page-jump input {
+  flex: 1 1 auto;
   box-sizing: border-box;
   min-width: 0;
   height: 26px;
@@ -2402,7 +2453,8 @@ onBeforeUnmount(() => {
   top: 12px;
   left: 12px;
   z-index: 2;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   min-width: 210px;
   padding: 10px 12px;
@@ -2419,7 +2471,8 @@ onBeforeUnmount(() => {
   top: 12px;
   left: 50%;
   z-index: 2;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 230px;
   padding: 9px 14px;
   color: #dbeafe;
@@ -2449,8 +2502,8 @@ onBeforeUnmount(() => {
   top: 12px;
   right: 12px;
   z-index: 2;
-  display: grid;
-  grid-template-columns: repeat(2, auto);
+  display: flex;
+  flex-wrap: wrap;
   gap: 7px 12px;
   padding: 10px 12px;
   color: #dbeafe;
@@ -2461,10 +2514,11 @@ onBeforeUnmount(() => {
   font-size: 11px;
 }
 .layer-panel strong {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
   font-size: 12px;
 }
 .layer-panel label {
+  flex: 1 1 calc(50% - 6px);
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -2478,7 +2532,8 @@ onBeforeUnmount(() => {
 .grid-summary {
   position: absolute;
   z-index: 2;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 7px;
   padding: 10px 12px;
   color: #dbeafe;
@@ -2588,13 +2643,15 @@ onBeforeUnmount(() => {
   background: #22d3ee;
 }
 .replay-summary dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 0;
 }
 .replay-summary dl div {
-  display: grid;
+  flex: 1 1 calc(50% - 5px);
+  display: flex;
+  flex-direction: column;
   gap: 3px;
 }
 .replay-summary dd {
@@ -2638,8 +2695,8 @@ onBeforeUnmount(() => {
   bottom: 14px;
   left: 12px;
   z-index: 3;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   width: 270px;
   padding: 10px;
@@ -2651,7 +2708,7 @@ onBeforeUnmount(() => {
   font-size: 10px;
 }
 .dispatch-roster header {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2661,6 +2718,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 .dispatch-roster button {
+  flex: 1 1 calc(50% - 3px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2683,7 +2741,7 @@ onBeforeUnmount(() => {
   border-color: #38bdf8;
 }
 .dispatch-roster button.unassigned {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
   color: #fda4af;
   background: #8813373d;
   border-color: #9f123966;
@@ -2741,7 +2799,8 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 24px #02061780;
 }
 .map-popup.visible {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
 .map-popup span {
@@ -2757,7 +2816,8 @@ onBeforeUnmount(() => {
   font-family: monospace;
 }
 .event-dispatch-summary {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 1px;
   margin: 0 16px 16px;
   overflow: hidden;
@@ -2766,11 +2826,17 @@ onBeforeUnmount(() => {
   border-radius: 8px;
 }
 .event-dispatch-summary > div {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+  display: flex;
   gap: 8px;
   padding: 9px 11px;
   background: #0f1b2e;
+}
+.event-dispatch-summary > div > span {
+  flex: 0 0 72px;
+}
+.event-dispatch-summary > div > strong {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .event-dispatch-summary span {
   color: #71809a;
@@ -2794,13 +2860,14 @@ onBeforeUnmount(() => {
   color: #86efac;
 }
 .event-dispatch-control {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   gap: 8px;
   margin: 0 16px 16px;
 }
 .event-dispatch-control label {
-  display: grid;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   gap: 5px;
   color: #71809a;
   font-size: 10px;
@@ -2879,13 +2946,13 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 .evidence-grid {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 7px;
   margin-top: 10px;
 }
 .evidence-grid article {
-  display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) 24px;
+  display: flex;
   gap: 8px;
   align-items: center;
   padding: 6px;
@@ -2900,6 +2967,7 @@ onBeforeUnmount(() => {
   border-radius: 4px;
 }
 .evidence-grid article > div {
+  flex: 1 1 auto;
   min-width: 0;
 }
 .evidence-grid article strong,
@@ -2942,10 +3010,16 @@ onBeforeUnmount(() => {
 .event-detail dl {
   margin: 0;
   padding: 0 16px;
-  display: grid;
-  grid-template-columns: 76px 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px 8px;
   font-size: 13px;
+}
+.event-detail dt {
+  flex: 0 0 76px;
+}
+.event-detail dd {
+  flex: 1 1 calc(100% - 84px);
 }
 .event-detail dt {
   color: #71809a;
@@ -2962,14 +3036,15 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .situation-overview {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   padding: 16px;
   border-bottom: 1px solid #20314c;
 }
 .overview-intro {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 3px 12px;
   align-items: end;
   padding: 13px;
@@ -2977,25 +3052,31 @@ onBeforeUnmount(() => {
   border: 1px solid #155e75;
   border-radius: 7px;
 }
-.overview-intro span,
+.overview-intro span {
+  flex: 1 1 auto;
+  color: #71809a;
+  font-size: 10px;
+}
 .overview-intro small {
+  flex: 1 1 100%;
   color: #71809a;
   font-size: 10px;
 }
 .overview-intro strong {
-  grid-row: 1 / 3;
-  grid-column: 2;
+  flex: 0 0 auto;
+  margin-left: auto;
   color: #67e8f9;
   font-size: 24px;
   font-variant-numeric: tabular-nums;
 }
 .overview-health {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
   gap: 6px;
 }
 .overview-health article {
-  display: grid;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
   gap: 5px;
   padding: 9px;
   background: #111e32;
@@ -3019,7 +3100,8 @@ onBeforeUnmount(() => {
 }
 .overview-ranking,
 .overview-levels {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 7px;
 }
 .overview-ranking header,
@@ -3032,8 +3114,7 @@ onBeforeUnmount(() => {
   font-size: 9px;
 }
 .overview-ranking button {
-  display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) auto;
+  display: flex;
   gap: 8px;
   align-items: center;
   padding: 5px 0;
@@ -3043,6 +3124,12 @@ onBeforeUnmount(() => {
   cursor: pointer;
   font-size: 10px;
   text-align: left;
+}
+.overview-ranking button > span {
+  flex: 0 0 58px;
+}
+.overview-ranking button > i {
+  flex: 1 1 auto;
 }
 .overview-ranking button:hover span {
   color: #67e8f9;
@@ -3064,13 +3151,15 @@ onBeforeUnmount(() => {
   font-variant-numeric: tabular-nums;
 }
 .overview-levels {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex-flow: row wrap;
 }
 .overview-levels header {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
 }
 .overview-levels button {
-  display: grid;
+  flex: 1 1 calc(33.333% - 5px);
+  display: flex;
+  flex-direction: column;
   gap: 4px;
   padding: 9px 7px;
   color: #fca5a5;
@@ -3111,12 +3200,14 @@ onBeforeUnmount(() => {
   line-height: 1.6;
 }
 .event-editor {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 16px;
 }
 .event-editor label {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 5px;
   color: #71809a;
   font-size: 11px;
@@ -3134,9 +3225,11 @@ onBeforeUnmount(() => {
   border-radius: 5px;
 }
 .coordinate-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
   gap: 8px;
+}
+.coordinate-fields label {
+  flex: 1 1 0;
 }
 .map-location-picker {
   padding: 9px 10px;
@@ -3192,7 +3285,8 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .delete-confirmation {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   margin: 10px 16px 0;
   padding: 10px;
@@ -3258,8 +3352,7 @@ onBeforeUnmount(() => {
 }
 .event-timeline li {
   position: relative;
-  display: grid;
-  grid-template-columns: 10px 1fr;
+  display: flex;
   gap: 8px;
   min-height: 42px;
 }
@@ -3283,8 +3376,8 @@ onBeforeUnmount(() => {
   border-radius: 50%;
 }
 .event-timeline span {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
 .event-timeline b {
@@ -3343,7 +3436,8 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 4px #22c55e1f;
 }
 .status-finished span {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 2px;
 }
 .status-finished small {
@@ -3375,8 +3469,8 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 .region-batch-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 7px;
   margin: 10px;
   padding: 10px;
@@ -3386,7 +3480,10 @@ onBeforeUnmount(() => {
 }
 .region-batch-actions strong,
 .region-batch-actions span {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
+}
+.region-batch-actions button {
+  flex: 1 1 calc(50% - 4px);
 }
 .region-batch-actions strong {
   font-size: 11px;
@@ -3410,12 +3507,18 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 .region-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 30px;
+  display: flex;
   margin: 8px 10px;
   border: 1px solid #20314c;
   border-radius: 6px;
   overflow: hidden;
+}
+.region-open {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.region-delete {
+  flex: 0 0 30px;
 }
 .region-item.active {
   border-color: #38bdf8;
@@ -3496,10 +3599,21 @@ onBeforeUnmount(() => {
   font-size: 12px;
 }
 .track-progress {
-  flex: 1 1 180px;
-  min-width: 120px;
-  margin: 0 4px;
+  width: 100%;
+  margin: 0;
   accent-color: #38bdf8;
+}
+.track-timeline {
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  padding: 4px 8px 2px;
+}
+.track-checkpoints {
+  display: flex;
+  justify-content: space-between;
 }
 .performance-metrics {
   min-height: 42px;
@@ -3544,12 +3658,34 @@ onBeforeUnmount(() => {
   color: #7dd3fc;
   background: #0c2d46;
 }
+.track-checkpoints button {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  color: #64748b;
+  background: #111827;
+  border: 1px solid #4c1d95;
+  border-radius: 50%;
+  font-size: 8px;
+  line-height: 14px;
+}
+.track-checkpoints button.visited {
+  color: #ede9fe;
+  background: #6d28d9;
+  border-color: #a78bfa;
+}
+.track-checkpoints button.active {
+  color: #1c1917;
+  background: #fbbf24;
+  border-color: #fef3c7;
+  box-shadow: 0 0 0 3px #fbbf2433;
+}
 @media (max-width: 1000px) {
-  .operations-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .operations-summary > * {
+    flex-basis: calc(33.333% - 7px);
   }
-  .gis-workspace {
-    grid-template-columns: 210px 1fr;
+  .event-list {
+    flex-basis: 210px;
   }
   .event-detail {
     display: none;
@@ -3559,14 +3695,14 @@ onBeforeUnmount(() => {
   .gis-primary-nav {
     display: none;
   }
-  .operations-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .operations-summary > * {
+    flex-basis: calc(50% - 5px);
   }
   .gis-workspace {
-    grid-template-columns: 1fr;
-    grid-template-rows: 210px 1fr;
+    flex-direction: column;
   }
   .event-list {
+    flex: 0 0 210px;
     border-right: 0;
     border-bottom: 1px solid #20314c;
   }

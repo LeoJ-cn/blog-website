@@ -111,10 +111,15 @@
 }
 
 .react-vue-migration-demo__workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
+  display: flex;
   gap: 1rem;
   margin-top: 1rem;
+}
+.react-vue-migration-demo__business {
+  flex: 1.25 1 0;
+}
+.react-vue-migration-demo__log {
+  flex: 0.75 1 18rem;
 }
 
 .react-vue-migration-demo__business,
@@ -139,15 +144,19 @@
 .react-vue-migration-demo__section-heading div,
 .react-vue-migration-demo__vue-order dl,
 .react-vue-migration-demo__legacy-order dl {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.35rem;
 }
 
 .react-vue-migration-demo__vue-order dl div,
 .react-vue-migration-demo__legacy-order dl div {
-  display: grid;
-  grid-template-columns: 7rem 1fr;
+  display: flex;
   gap: 1rem;
+}
+.react-vue-migration-demo__vue-order dt,
+.react-vue-migration-demo__legacy-order dt {
+  flex: 0 0 7rem;
 }
 
 .react-vue-migration-demo__vue-order dt,
@@ -245,7 +254,7 @@
   }
 
   .react-vue-migration-demo__workspace {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .react-vue-migration-demo__business,

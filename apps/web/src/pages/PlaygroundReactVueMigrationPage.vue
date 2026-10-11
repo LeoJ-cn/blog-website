@@ -201,7 +201,8 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
 }
 
 .migration-principle {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
@@ -220,9 +221,12 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
 }
 
 .migration-principle__flow {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.migration-principle__flow article {
+  flex: 1 1 calc(25% - 0.75rem);
 }
 
 .migration-principle__flow article {
@@ -253,9 +257,12 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
 }
 
 .migration-principle__architecture {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.migration-principle__architecture > div {
+  flex: 1 1 calc(50% - 0.5rem);
 }
 
 .migration-principle__architecture > div {
@@ -283,10 +290,15 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
 
 .migration-principle__mapping > div {
   align-items: center;
-  display: grid;
+  display: flex;
   gap: 1rem;
-  grid-template-columns: minmax(150px, 1fr) auto minmax(150px, 1fr) minmax(180px, 1.4fr);
   padding: 0.85rem 1rem;
+}
+.migration-principle__mapping > div > *:not(span) {
+  flex: 1 1 150px;
+}
+.migration-principle__mapping > div > :last-child {
+  flex-grow: 1.4;
 }
 
 .migration-principle__mapping > div + div {
@@ -310,12 +322,12 @@ const activeSource = computed(() => project.sources[activeSourceIndex.value])
 @media (max-width: 900px) {
   .migration-principle__flow,
   .migration-principle__architecture {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .migration-principle__mapping > div {
+    flex-direction: column;
     gap: 0.4rem;
-    grid-template-columns: 1fr;
   }
 
   .migration-principle__mapping > div > span {

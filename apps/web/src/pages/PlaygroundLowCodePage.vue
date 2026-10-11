@@ -371,13 +371,14 @@ onMounted(() => {
 }
 
 .low-code-results {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   margin-top: 24px;
 }
 
 .low-code-result-card {
+  flex: 1 1 calc(50% - 10px);
   min-width: 0;
   padding: 20px;
   border: 1px solid rgba(148, 163, 184, 0.28);
@@ -401,11 +402,12 @@ onMounted(() => {
 }
 
 .translation-result-card {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
 }
 
 .translation-layers {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
@@ -434,7 +436,8 @@ onMounted(() => {
 }
 
 .code-generation-diagnostics ul {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   margin: 0;
   padding-left: 20px;
@@ -447,7 +450,8 @@ onMounted(() => {
 }
 
 .method-process-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
@@ -469,7 +473,8 @@ onMounted(() => {
 }
 
 .lifecycle-bindings {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -489,7 +494,8 @@ onMounted(() => {
 }
 
 .lifecycle-binding ol {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   margin: 14px 0 0;
   padding-left: 24px;
@@ -507,8 +513,8 @@ onMounted(() => {
 }
 
 @media (max-width: 900px) {
-  .low-code-results {
-    grid-template-columns: 1fr;
+  .low-code-result-card {
+    flex-basis: 100%;
   }
 }
 </style>

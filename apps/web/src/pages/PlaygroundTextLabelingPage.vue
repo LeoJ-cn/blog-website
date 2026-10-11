@@ -373,7 +373,7 @@ onBeforeUnmount(() => {
         </div>
 
         <dl class="xpath-snapshot">
-          <div style="grid-column: 1 / -1; padding: 0">
+          <div class="xpath-snapshot__feedback">
             <p :class="['xpath-feedback', `is-${xpathFeedbackTone}`]" role="status">
               {{ xpathFeedback }}
             </p>
@@ -592,11 +592,10 @@ onBeforeUnmount(() => {
 }
 
 .annotation-records__list {
-  align-content: start;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   flex: 1;
   gap: 8px;
-  grid-auto-rows: max-content;
   list-style: none;
   margin: 0;
   min-height: 0;
@@ -611,19 +610,21 @@ onBeforeUnmount(() => {
   background: rgb(24 36 60 / 72%);
   border: 1px solid #263453;
   border-radius: 8px;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
-  grid-template-columns: 28px minmax(0, 1fr);
   padding: 12px 14px;
 }
 
 .annotation-records__index {
+  flex: 0 0 28px;
   color: #62e6b5;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
 }
 
 .annotation-records blockquote {
+  flex: 1 1 calc(100% - 42px);
   color: #dce5f7;
   font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif;
   font-size: 13px;
@@ -635,15 +636,18 @@ onBeforeUnmount(() => {
 }
 
 .annotation-records dl {
-  display: grid;
+  flex: 1 1 calc(100% - 42px);
+  display: flex;
   gap: 12px;
-  grid-column: 2;
-  grid-template-columns: auto auto minmax(80px, 1fr);
-  margin: 0;
+  margin: 0 0 0 42px;
 }
 
 .annotation-records dl div {
+  flex: 0 0 auto;
   min-width: 0;
+}
+.annotation-records dl div:last-child {
+  flex: 1 1 80px;
 }
 
 .annotation-records dt,
@@ -690,12 +694,15 @@ onBeforeUnmount(() => {
 }
 
 .labeling-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+  display: flex;
 }
 
 .labeling-main {
+  flex: 1.5 1 0;
   min-width: 0;
+}
+.annotation-records {
+  flex: 1 1 300px;
 }
 
 .labeling-hint strong {
@@ -834,8 +841,14 @@ onBeforeUnmount(() => {
 }
 
 .xpath-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  display: flex;
+}
+.xpath-document {
+  flex: 1.15 1 0;
+  min-width: 0;
+}
+.xpath-snapshot {
+  flex: 0.85 1 280px;
 }
 
 .xpath-document {
@@ -884,7 +897,8 @@ onBeforeUnmount(() => {
 
 .xpath-document ul {
   color: #aebbd0;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   font-size: 13px;
   gap: 8px;
   line-height: 1.7;
@@ -909,14 +923,15 @@ onBeforeUnmount(() => {
   align-content: start;
   background: #0b1323;
   border-left: 1px solid #263453;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0;
-  grid-template-columns: 1fr 1fr;
   margin: 0;
   padding: 18px;
 }
 
 .xpath-snapshot > div {
+  flex: 1 1 50%;
   border-bottom: 1px solid #202d47;
   min-width: 0;
   padding: 12px;
@@ -927,7 +942,11 @@ onBeforeUnmount(() => {
 }
 
 .xpath-snapshot__text {
-  grid-column: 1 / -1;
+  flex-basis: 100% !important;
+}
+.xpath-snapshot__feedback {
+  flex-basis: 100% !important;
+  padding: 0 !important;
 }
 
 @media (max-width: 720px) {
@@ -937,8 +956,12 @@ onBeforeUnmount(() => {
   }
 
   .labeling-actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .labeling-actions button {
+    flex: 1 1 calc(33.333% - 6px);
   }
 
   .labeling-actions button {
@@ -946,11 +969,12 @@ onBeforeUnmount(() => {
   }
 
   .annotation-records__heading {
-    display: grid;
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .labeling-layout {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .annotation-records {
@@ -985,7 +1009,7 @@ onBeforeUnmount(() => {
   }
 
   .xpath-layout {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .xpath-snapshot {
