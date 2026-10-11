@@ -7,7 +7,7 @@ import type { EventFeatureProperties } from '../types/event-feature'
 
 export type EventFeature = Feature<Point>
 
-function getEventFeatureProperties(event: InspectionEvent): EventFeatureProperties {
+export function getEventFeatureProperties(event: InspectionEvent): EventFeatureProperties {
   return {
     eventId: event.id,
     eventType: event.type,
