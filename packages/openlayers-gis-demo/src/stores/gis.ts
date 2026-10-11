@@ -4,6 +4,7 @@ import { mockInspectionRegions } from '../mock/regions'
 import type { EventStatus, InspectionEvent, InspectionEventFilter } from '../types/inspection-event'
 import type { EventActivity } from '../types/inspection-event'
 import type { InspectionRegion, RegionGeometry } from '../types/region'
+import { reconcileViewportEvents } from '../viewport/viewport-state'
 
 const NEXT_EVENT_STATUS = {
   PENDING: 'PROCESSING',
@@ -16,7 +17,7 @@ function createDefaultEventFilter(): InspectionEventFilter {
 }
 
 export const useGisStore = defineStore('openlayers-gis', () => {
-  // 十万条 Mock 事件只会整体替换，不需要为每个对象建立深层响应式代理。
+  // Store 只持有当前视口事件，不为服务内部 1k～100k 完整数据集创建响应式代理。
   const events = shallowRef<InspectionEvent[]>([])
   const eventFilter = ref<InspectionEventFilter>(createDefaultEventFilter())
   // 仅保存本次会话发生的增量操作，避免为十万条只读 Mock 事件预建日志对象。
@@ -76,6 +77,24 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     ) {
       selectedEventId.value = null
     }
+  }
+
+  /**
+   * 替换当前视口事件，同时清理离开视口的选择和区域结果；不会重置会话内处置记录。
+   */
+  function replaceViewportEvents(nextEvents: readonly InspectionEvent[]) {
+    const reconciled = reconcileViewportEvents(
+      {
+        events: events.value,
+        selectedEventId: selectedEventId.value,
+        regionEventIds: regionEventIds.value,
+        page: 1,
+      },
+      nextEvents,
+    )
+    events.value = [...reconciled.events]
+    selectedEventId.value = reconciled.selectedEventId
+    regionEventIds.value = reconciled.regionEventIds ? [...reconciled.regionEventIds] : null
   }
 
   function selectEvent(eventId: string | null) {
@@ -282,6 +301,7 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     selectedEventAssignee,
     regionEventIds,
     setEvents,
+    replaceViewportEvents,
     selectEvent,
     getEventAssignee,
     selectRegionEvents,

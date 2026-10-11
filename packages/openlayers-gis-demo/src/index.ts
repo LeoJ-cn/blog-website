@@ -5,6 +5,7 @@ export { useGisStore } from './stores/gis'
 export { generateInspectionEvents } from './mock/generate-events'
 export { createMockViewportEventService } from './viewport/mock-viewport-event-service'
 export { ViewportQueryController } from './viewport/viewport-query-controller'
+export { mergeViewportQueryState, resetViewportDatasetState } from './viewport/viewport-state'
 export { calculateWgs84ViewportBbox } from './map/viewport-bbox'
 export { mockInspectionRegions } from './mock/regions'
 export {
@@ -43,3 +44,4 @@ export type {
 } from './viewport/types'
 export type { MockViewportEventServiceOptions } from './viewport/mock-viewport-event-service'
 export type { ViewportQueryControllerOptions } from './viewport/viewport-query-controller'
+export type { ViewportBusinessState } from './viewport/viewport-state'

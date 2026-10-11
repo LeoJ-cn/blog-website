@@ -9,7 +9,6 @@ import {
   EVENT_SELECTION_COLOR,
   EVENT_STATUS_VISUALS,
 } from '../map/styles/event-visual'
-import { generateInspectionEvents } from '../mock/generate-events'
 import { mockInspectionTrack } from '../mock/tracks'
 import {
   parseInspectionEventsGeoJson,
@@ -24,6 +23,15 @@ import type {
 } from '../types/inspection-event'
 import type { Wgs84Coordinate } from '../types/region'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
+import { createMockViewportEventService } from '../viewport/mock-viewport-event-service'
+import { ViewportQueryController } from '../viewport/viewport-query-controller'
+import { mergeViewportQueryState, resetViewportDatasetState } from '../viewport/viewport-state'
+import type {
+  ViewportDatasetBuildStats,
+  ViewportEventService,
+  ViewportQueryState,
+  Wgs84Bbox,
+} from '../viewport/types'
 
 const TYPE_LABELS = {
   ROAD_DAMAGE: '道路破损',
@@ -229,7 +237,7 @@ const sortedScopedEvents = computed(() => {
   })
   return events
 })
-// 地图和导出使用完整结果；列表只渲染当前页，兼顾全量可访问性与 DOM 上限。
+// 地图和导出使用当前视口结果；列表只渲染当前页，继续限制 DOM 节点数量。
 const visibleEvents = computed(() => {
   const start = (eventListPage.value - 1) * EVENT_LIST_PAGE_SIZE
   return sortedScopedEvents.value.slice(start, start + EVENT_LIST_PAGE_SIZE)
@@ -354,14 +362,22 @@ const stats = ref<MapStats>({
   featureConversionMs: 0,
   sourceUpdateMs: 0,
   renderCompleteMs: null,
+  eventSourceDiff: null,
 })
 const pointerCoordinate = ref<Wgs84Coordinate | null>(null)
 const formattedPointerCoordinate = computed(() => {
   const coordinate = pointerCoordinate.value
   return coordinate ? `${coordinate[0].toFixed(6)}, ${coordinate[1].toFixed(6)}` : '—'
 })
-/** 最近一次生成 mock 业务事件的同步耗时，单位为毫秒。 */
-const dataGenerationMs = ref(0)
+const datasetBuildStats = ref<ViewportDatasetBuildStats | null>(null)
+const viewportQueryState = ref<ViewportQueryState>({
+  status: 'idle',
+  result: null,
+  errorMessage: null,
+  requestId: 0,
+})
+/** 最近一次由地图产生的真实 WGS84 BBOX；null 表示地图尚未形成有效尺寸。 */
+const currentViewportBbox = ref<Wgs84Bbox | null>(null)
 const mapMode = ref<MapMode>('select')
 const drawType = ref<DrawGeometryType>('Polygon')
 const trackSpeed = ref<TrackPlaybackSpeed>(1)
@@ -429,6 +445,8 @@ const trackCompletedDistanceKm = computed(() => {
   return completedKilometers
 })
 let mapManager: MapManager | null = null
+let viewportService: ViewportEventService | null = null
+let viewportQueryController: ViewportQueryController | null = null
 
 watch([trackActiveGridSequence, workspaceScene], ([activeSequence, scene]) => {
   mapManager?.updateResponsibilityGridProgress(scene === 'replay' ? activeSequence : null)
@@ -595,17 +613,52 @@ function applyAssigneeQuickFilter(assignee: string) {
   syncVisibleEvents()
 }
 
-function generateEvents(count: number) {
-  const startedAt = performance.now()
-  const events = generateInspectionEvents(count)
-  dataGenerationMs.value = performance.now() - startedAt
-  return events
+function handleViewportQueryState(nextState: Readonly<ViewportQueryState>) {
+  viewportQueryState.value = nextState
+  if (
+    (nextState.status !== 'success' && nextState.status !== 'empty') ||
+    !nextState.result
+  ) {
+    return
+  }
+
+  const merged = mergeViewportQueryState(
+    {
+      events: store.events,
+      selectedEventId: store.selectedEventId,
+      regionEventIds: store.regionEventIds,
+      page: eventListPage.value,
+    },
+    nextState,
+  )
+  store.replaceViewportEvents(merged.events)
+  eventListPage.value = merged.page
+  mapManager?.syncEvents(operationalFilteredEvents.value)
+  // 当前区域几何保留在地图中；新视口事件提交后重新计算区域与视口结果的交集。
+  mapManager?.reevaluateCurrentRegion()
+  if (mapManager) stats.value = mapManager.getStats()
+}
+
+function queryViewport(bbox: Wgs84Bbox) {
+  currentViewportBbox.value = bbox
+  const expectedDatasetVersion = datasetBuildStats.value?.datasetVersion
+  if (!viewportQueryController || expectedDatasetVersion === undefined) return
+  void viewportQueryController.query({
+    bbox,
+    filter: store.eventFilter,
+    expectedDatasetVersion,
+  })
+}
+
+function retryViewportQuery() {
+  void viewportQueryController?.retry()
 }
 
 function syncVisibleEvents() {
-  mapManager?.setEvents(operationalFilteredEvents.value)
+  mapManager?.syncEvents(operationalFilteredEvents.value)
   // 当前区域保留在 RegionSource 中；事件集合变化后必须重新计算包含关系和数量。
   mapManager?.reevaluateCurrentRegion()
+  if (mapManager) stats.value = mapManager.getStats()
 }
 
 function selectFromList(eventId: string) {
@@ -808,15 +861,17 @@ function releaseAllEventEvidence() {
 }
 
 function changeDataCount(count: number) {
-  // 数据生成与 Feature 替换由用户主动触发，避免响应式深层监听反复重建地图对象。
+  if (!viewportService) return
   releaseAllEventEvidence()
   dataCount.value = count
-  const events = generateEvents(count)
-  store.setEvents(events)
-  store.selectEvent(null)
-  store.selectRegionEvents(null)
-  eventListPage.value = 1
-  syncVisibleEvents()
+  viewportQueryController?.cancel()
+  datasetBuildStats.value = viewportService.setDatasetSize(count)
+  const reset = resetViewportDatasetState()
+  store.setEvents(reset.events)
+  eventListPage.value = reset.page
+  mapManager?.setEvents([])
+  if (mapManager) stats.value = mapManager.getStats()
+  if (currentViewportBbox.value) queryViewport(currentViewportBbox.value)
 }
 
 function applyEventFilter() {
@@ -827,11 +882,8 @@ function applyEventFilter() {
     status: filterDraft.status || null,
     level: filterDraft.level || null,
   })
-  // 筛选后旧选择和空间范围结果可能已不可见，统一清除以避免详情与地图状态不一致。
-  store.selectEvent(null)
-  store.selectRegionEvents(null)
   eventListPage.value = 1
-  syncVisibleEvents()
+  if (currentViewportBbox.value) queryViewport(currentViewportBbox.value)
 }
 
 function resetEventFilter() {
@@ -841,10 +893,8 @@ function resetEventFilter() {
   filterDraft.status = ''
   filterDraft.level = ''
   store.resetEventFilter()
-  store.selectEvent(null)
-  store.selectRegionEvents(null)
   eventListPage.value = 1
-  syncVisibleEvents()
+  if (currentViewportBbox.value) queryViewport(currentViewportBbox.value)
 }
 
 function applyStatusQuickFilter(status: EventStatus | null, overdueOnly = false) {
@@ -854,10 +904,8 @@ function applyStatusQuickFilter(status: EventStatus | null, overdueOnly = false)
     ...store.eventFilter,
     status,
   })
-  store.selectEvent(null)
-  store.selectRegionEvents(null)
   eventListPage.value = 1
-  syncVisibleEvents()
+  if (currentViewportBbox.value) queryViewport(currentViewportBbox.value)
 }
 
 function applyOverviewTypeFilter(type: EventType) {
@@ -900,7 +948,7 @@ function exportCurrentEvents() {
   const downloadUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = downloadUrl
-  link.download = `inspection-events-${new Date().toISOString().slice(0, 10)}.geojson`
+  link.download = `inspection-viewport-events-${new Date().toISOString().slice(0, 10)}.geojson`
   document.body.append(link)
   link.click()
   link.remove()
@@ -1048,13 +1096,18 @@ function seekTrackCheckpoint(sequence: number) {
 }
 
 onMounted(() => {
-  const events = generateEvents(dataCount.value)
-  store.setEvents(events)
-  // 页面重新挂载时沿用 Pinia 中的筛选条件，避免列表和地图展示范围不一致。
-  const initialEvents = operationalFilteredEvents.value
+  viewportService = createMockViewportEventService(0)
+  datasetBuildStats.value = viewportService.setDatasetSize(dataCount.value)
+  viewportQueryController = new ViewportQueryController({
+    service: viewportService,
+    onStateChange: handleViewportQueryState,
+  })
+  store.setEvents([])
   mapManager = new MapManager({
-    events: initialEvents,
+    events: [],
     onEventSelect: store.selectEvent,
+    onEventSelectInvalidated: () => store.selectEvent(null),
+    onViewportChange: queryViewport,
     onStatsChange: (nextStats) => {
       stats.value = nextStats
     },
@@ -1081,6 +1134,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   releaseAllEventEvidence()
+  viewportQueryController?.destroy()
+  viewportQueryController = null
+  viewportService?.destroy()
+  viewportService = null
   mapManager?.destroy()
   mapManager = null
 })
@@ -1234,7 +1291,7 @@ onBeforeUnmount(() => {
                 class="event-fit"
                 type="button"
                 :disabled="scopedEvents.length === 0"
-                aria-label="在地图中定位当前筛选结果"
+                aria-label="在地图中定位当前视口筛选结果"
                 @click="fitCurrentEvents"
               >
                 <i aria-hidden="true">⌖</i><span>定位</span>
@@ -1243,10 +1300,10 @@ onBeforeUnmount(() => {
                 class="event-export"
                 type="button"
                 :disabled="scopedEvents.length === 0"
-                aria-label="将当前筛选结果导出为 GeoJSON"
+                aria-label="将当前视口结果导出为 GeoJSON"
                 @click="exportCurrentEvents"
               >
-                <i aria-hidden="true">↓</i><span>导出</span>
+                <i aria-hidden="true">↓</i><span>导出当前视口</span>
               </button>
               <label class="event-import">
                 <i aria-hidden="true">↑</i><span>导入</span>
@@ -1877,18 +1934,45 @@ onBeforeUnmount(() => {
       </button>
     </div>
     <div class="performance-metrics" aria-label="最近一次数据更新性能指标">
-      <strong>最近一次更新</strong>
+      <strong>视口加载</strong>
+      <span>
+        状态
+        <b>{{ viewportQueryState.status }}</b>
+      </span>
+      <span>
+        完整数据集
+        <b>{{ (datasetBuildStats?.datasetSize ?? 0).toLocaleString() }}</b>
+      </span>
       <span>
         数据生成
-        <b>{{ formatDuration(dataGenerationMs) }}</b>
+        <b>{{ formatDuration(datasetBuildStats?.generationDurationMs ?? 0) }}</b>
       </span>
       <span>
-        Feature 转换
-        <b>{{ formatDuration(stats.featureConversionMs) }}</b>
+        索引构建
+        <b>{{ formatDuration(datasetBuildStats?.indexBuildDurationMs ?? 0) }}</b>
       </span>
       <span>
-        Source 更新
-        <b>{{ formatDuration(stats.sourceUpdateMs) }}</b>
+        候选/命中
+        <b>
+          {{ (viewportQueryState.result?.candidateCount ?? 0).toLocaleString() }} /
+          {{ (viewportQueryState.result?.matchedCount ?? 0).toLocaleString() }}
+        </b>
+      </span>
+      <span>
+        缓存
+        <b>{{ viewportQueryState.result?.cacheHit ? '命中' : '未命中' }}</b>
+      </span>
+      <span>
+        BBOX 查询
+        <b>{{ formatDuration(viewportQueryState.result?.queryDurationMs ?? 0) }}</b>
+      </span>
+      <span>
+        Feature Diff
+        <b>
+          +{{ stats.eventSourceDiff?.added ?? 0 }} / ~{{ stats.eventSourceDiff?.updated ?? 0 }} /
+          -{{ stats.eventSourceDiff?.removed ?? 0 }} ·
+          {{ formatDuration(stats.eventSourceDiff?.durationMs ?? 0) }}
+        </b>
       </span>
       <span>
         渲染完成
@@ -1898,6 +1982,16 @@ onBeforeUnmount(() => {
           }}
         </b>
       </span>
+      <button
+        v-if="viewportQueryState.status === 'error'"
+        class="viewport-retry"
+        type="button"
+        @click="retryViewportQuery"
+      >
+        {{ viewportQueryState.errorMessage }}，重试
+      </button>
+      <span v-else-if="viewportQueryState.status === 'empty'">当前视口没有匹配事件</span>
+      <span v-else-if="viewportQueryState.status === 'loading'">正在加载，地图保留上一结果</span>
     </div>
     <div class="track-controls">
       <strong>轨迹回放</strong>
@@ -3637,6 +3731,14 @@ onBeforeUnmount(() => {
 .performance-metrics b {
   color: #67e8f9;
   font-variant-numeric: tabular-nums;
+}
+.viewport-retry {
+  padding: 4px 8px;
+  border: 1px solid #f87171;
+  border-radius: 4px;
+  background: #451a1a;
+  color: #fecaca;
+  cursor: pointer;
 }
 .performance-controls span,
 .track-controls span {
