@@ -52,6 +52,31 @@ export interface ViewportEventService {
   destroy(): void
 }
 
+export type ViewportQueryStatus =
+  | 'idle' // 尚未发起视口查询。
+  | 'loading' // 正在查询；若已有成功结果则继续保留旧结果。
+  | 'success' // 查询成功且至少返回一条事件。
+  | 'empty' // 查询成功但当前视口没有匹配事件。
+  | 'error' // 非取消错误；旧成功结果仍可继续展示。
+
+export interface ViewportQueryParams {
+  /** 本次查询使用的真实 WGS84 BBOX，边界包含。 */
+  bbox: Wgs84Bbox
+  filter: InspectionEventFilter
+  /** 发起查询时调用方持有的数据集版本；只有同版本结果可以提交。 */
+  expectedDatasetVersion: number
+}
+
+export interface ViewportQueryState {
+  status: ViewportQueryStatus
+  /** 最近一次成功或空查询结果；首次查询前为 null。 */
+  result: ViewportEventQueryResult | null
+  /** 面向用户的安全错误文案；没有普通错误时为 null。 */
+  errorMessage: string | null
+  /** Controller 内单调递增的请求序号；0 表示尚未查询。 */
+  requestId: number
+}
+
 export function validateWgs84Bbox(_bbox: Wgs84Bbox): void {
   const [minLongitude, minLatitude, maxLongitude, maxLatitude] = _bbox
 
