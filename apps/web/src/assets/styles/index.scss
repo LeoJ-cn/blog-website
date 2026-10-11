@@ -75,6 +75,7 @@ a {
 }
 
 .app-nav {
+  align-items: center;
   display: flex;
   gap: 26px;
   color: #8e9bb8;
@@ -83,6 +84,30 @@ a {
 
 .app-nav a.router-link-active {
   color: #f4f7ff;
+}
+
+.app-nav__fullscreen-exit,
+.playground-fullscreen-button {
+  background: rgb(98 230 181 / 12%);
+  border: 1px solid rgb(98 230 181 / 38%);
+  border-radius: 7px;
+  color: #8bf0ca;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 9px 13px;
+}
+
+.app-nav__fullscreen-exit:hover,
+.playground-fullscreen-button:hover {
+  background: rgb(98 230 181 / 18%);
+  border-color: rgb(98 230 181 / 58%);
+}
+
+.app-nav__fullscreen-exit:focus-visible,
+.playground-fullscreen-button:focus-visible {
+  outline: 2px solid #62e6b5;
+  outline-offset: 3px;
 }
 
 .app-main {
@@ -261,6 +286,24 @@ h1 span {
   max-width: 480px;
 }
 
+.playground-toolbar__actions {
+  align-items: flex-end;
+  display: flex;
+  gap: 20px;
+}
+
+.playground-toolbar__actions > p {
+  color: #8e9bb8;
+  line-height: 1.6;
+  margin: 0 0 3px;
+  max-width: 480px;
+}
+
+.playground-fullscreen-button {
+  flex: 0 0 auto;
+  margin-bottom: 3px;
+}
+
 .playground-layout {
   display: grid;
   gap: 36px;
@@ -406,6 +449,40 @@ h1 span {
 .playground-content-area {
   min-height: 620px;
   min-width: 0;
+}
+
+.app-shell--playground-fullscreen .app-header {
+  max-width: none;
+  min-height: 72px;
+  padding: 16px 24px;
+}
+
+.app-main--playground-fullscreen {
+  margin: 0;
+  max-width: none;
+  min-height: calc(100vh - 72px);
+  padding: 0;
+}
+
+.playground-page--fullscreen .playground-toolbar,
+.playground-page--fullscreen .playground-sidebar {
+  display: none;
+}
+
+.playground-page--fullscreen .playground-layout {
+  display: block;
+  padding: 0;
+}
+
+.playground-page--fullscreen .playground-content-area {
+  min-height: calc(100vh - 72px);
+}
+
+.playground-page--fullscreen .playground-content > .eyebrow,
+.playground-page--fullscreen .playground-content > h2,
+.playground-page--fullscreen .playground-content > .playground-description,
+.playground-page--fullscreen .playground-content > .project-meta {
+  display: none;
 }
 
 .playground-content h2 {
@@ -888,6 +965,22 @@ h1 span {
 
   .playground-toolbar > p {
     margin-left: 0;
+  }
+
+  .playground-toolbar__actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .app-shell--playground-fullscreen .app-header {
+    align-items: center;
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .app-shell--playground-fullscreen .app-nav > a {
+    display: none;
   }
 
   .playground-layout {
