@@ -1,4 +1,5 @@
 import type Feature from 'ol/Feature.js'
+import type LineString from 'ol/geom/LineString.js'
 import type Point from 'ol/geom/Point.js'
 import type { ProjectedTrackPoint } from '../map/layers/create-track-layer'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus } from '../types/track'
@@ -6,6 +7,8 @@ import type { TrackPlaybackSpeed, TrackPlaybackStatus } from '../types/track'
 interface Options {
   /** 动画过程中持续复用的人员位置 Feature。 */
   personFeature: Feature<Point>
+  /** 已巡路段 Feature；坐标会随人员位置逐帧增长，不会修改完整路线。 */
+  completedLineFeature: Feature<LineString>
   /** 已投影轨迹点，按 timestamp 严格升序排列。 */
   points: readonly ProjectedTrackPoint[]
   /** 每帧返回插值后的巡检时间，单位为 Unix 毫秒时间戳。 */
@@ -51,7 +54,10 @@ export class TrackPlaybackController {
     this.segmentIndex = 0
     this.status = 'idle'
     const first = this.options.points[0]
-    if (first) this.options.personFeature.getGeometry()?.setCoordinates(first.coordinate)
+    if (first) {
+      this.options.personFeature.getGeometry()?.setCoordinates(first.coordinate)
+      this.options.completedLineFeature.getGeometry()?.setCoordinates([first.coordinate])
+    }
     this.emitTime()
   }
 
@@ -122,6 +128,13 @@ export class TrackPlaybackController {
       start.coordinate[1] + (end.coordinate[1] - start.coordinate[1]) * ratio,
     ]
     this.options.personFeature.getGeometry()?.setCoordinates(coordinate)
+    // 已巡线包含所有完成节点和当前插值坐标；最多 12 个点，逐帧复制不会形成海量数据压力。
+    this.options.completedLineFeature
+      .getGeometry()
+      ?.setCoordinates([
+        ...points.slice(0, this.segmentIndex + 1).map((point) => point.coordinate),
+        coordinate,
+      ])
     this.options.onTimeChange?.(targetTimestamp, this.status)
   }
 

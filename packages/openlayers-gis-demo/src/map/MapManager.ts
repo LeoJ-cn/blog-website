@@ -91,10 +91,17 @@ export class MapManager {
   private readonly clusterLayer: ReturnType<typeof createClusterLayer>['layer']
   private readonly clusterSource: ReturnType<typeof createClusterLayer>['source']
   private readonly regionSource: ReturnType<typeof createRegionLayer>['source']
+  private readonly trackSource: ReturnType<typeof createTrackLayer>['source']
   private readonly selectionFeature: ReturnType<typeof createSelectionLayer>['selectedFeature']
   private readonly eventDraftFeature: ReturnType<typeof createEventDraftLayer>['draftFeature']
   private readonly startEventDraftPulse: ReturnType<typeof createEventDraftLayer>['startPulse']
   private readonly stopEventDraftPulse: ReturnType<typeof createEventDraftLayer>['stopPulse']
+  private readonly setResponsibilityGridProgress: ReturnType<
+    typeof createResponsibilityGridLayer
+  >['setCoverageProgress']
+  private readonly setTrackCheckpointProgress: ReturnType<
+    typeof createTrackLayer
+  >['setCheckpointProgress']
   private readonly interactionManager: SpatialInteractionManager
   private readonly trackPlayback: TrackPlaybackController
   private readonly listenerKeys: EventsKey[]
@@ -130,15 +137,19 @@ export class MapManager {
     const cluster = createClusterLayer(this.eventSource)
     const region = createRegionLayer()
     const track = createTrackLayer(options.trackPoints ?? [])
+    const responsibilityGrid = createResponsibilityGridLayer()
     const selection = createSelectionLayer()
     const eventDraft = createEventDraftLayer()
     this.clusterLayer = cluster.layer
     this.clusterSource = cluster.source
     this.regionSource = region.source
+    this.trackSource = track.source
     this.selectionFeature = selection.selectedFeature
     this.eventDraftFeature = eventDraft.draftFeature
     this.startEventDraftPulse = eventDraft.startPulse
     this.stopEventDraftPulse = eventDraft.stopPulse
+    this.setResponsibilityGridProgress = responsibilityGrid.setCoverageProgress
+    this.setTrackCheckpointProgress = track.setCheckpointProgress
     this.map = new OlMap({
       controls: defaultControls({ rotate: false }).extend([
         // 比例尺由 View 分辨率自动换算，使用 metric 输出米或千米。
@@ -153,7 +164,7 @@ export class MapManager {
     })
     this.layerManager = new LayerManager(this.map)
     this.layerManager.addLayer('base', baseLayer)
-    this.layerManager.addLayer('responsibilityGrid', createResponsibilityGridLayer())
+    this.layerManager.addLayer('responsibilityGrid', responsibilityGrid.layer)
     this.layerManager.addLayer('heatmap', createHeatmapLayer(this.eventSource))
     this.layerManager.addLayer('event', this.eventLayer)
     this.layerManager.addLayer('cluster', this.clusterLayer)
@@ -178,6 +189,7 @@ export class MapManager {
     })
     this.trackPlayback = new TrackPlaybackController({
       personFeature: track.personFeature,
+      completedLineFeature: track.completedLineFeature,
       points: track.projectedPoints,
       onTimeChange: options.onTrackTimeChange,
     })
@@ -456,6 +468,23 @@ export class MapManager {
   /** 跳转到轨迹总时长的指定比例；progressRatio 的合法范围为闭区间 [0, 1]。 */
   seekTrack(progressRatio: number): void {
     this.trackPlayback.seek(progressRatio)
+  }
+
+  /** 同步责任网格与轨迹节点状态；null 表示退出复盘并恢复普通地图语义。 */
+  updateResponsibilityGridProgress(activeSequence: number | null): void {
+    this.setResponsibilityGridProgress(activeSequence)
+    this.setTrackCheckpointProgress(activeSequence)
+  }
+
+  /** 将完整巡检路线适配到视口；padding 按 [上, 右, 下, 左] 排列，单位为 CSS 像素。 */
+  fitTrack(): void {
+    const extent = this.trackSource.getExtent()
+    if (!extent || !Number.isFinite(extent[0])) return
+    this.map.getView().fit(extent, {
+      padding: [72, 72, 72, 72],
+      duration: 350,
+      maxZoom: 14,
+    })
   }
 
   /** 返回内部 Layer 供诊断和高级编排使用，调用方不得把实例写入 Pinia。 */

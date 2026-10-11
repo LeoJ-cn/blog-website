@@ -390,6 +390,25 @@ const trackElapsedMs = computed(() => {
   const start = mockInspectionTrack[0]?.timestamp ?? 0
   return Math.min(trackTotalDurationMs.value, Math.max(0, trackTime.value - start))
 })
+const trackActiveGridSequence = computed(() => {
+  let activeSequence = 0
+  for (let index = 0; index < mockInspectionTrack.length; index += 1) {
+    if (trackTime.value < mockInspectionTrack[index]!.timestamp) break
+    activeSequence = index
+  }
+  // 零基序号对应蛇形轨迹采样点，也对应责任网格的 gridSequence。
+  return activeSequence
+})
+const trackCoveredGridCount = computed(() =>
+  Math.min(mockInspectionTrack.length, trackActiveGridSequence.value + 1),
+)
+const trackActiveGridLabel = computed(() => {
+  const row = Math.floor(trackActiveGridSequence.value / 4)
+  const routeColumn = trackActiveGridSequence.value % 4
+  // 奇数行按蛇形路线从东向西行进，转换回网格从西向东的一基列号。
+  const column = row % 2 === 0 ? routeColumn : 3 - routeColumn
+  return `GRID-${row + 1}-${column + 1}`
+})
 const trackTotalDistanceKm = computed(() => calculateTrackDistanceKm(mockInspectionTrack))
 const trackCompletedDistanceKm = computed(() => {
   if (mockInspectionTrack.length < 2) return 0
@@ -414,6 +433,10 @@ const trackCompletedDistanceKm = computed(() => {
   return completedKilometers
 })
 let mapManager: MapManager | null = null
+
+watch([trackActiveGridSequence, workspaceScene], ([activeSequence, scene]) => {
+  mapManager?.updateResponsibilityGridProgress(scene === 'replay' ? activeSequence : null)
+})
 
 watch(
   () => store.selectedEventId,
@@ -550,6 +573,7 @@ function changeWorkspaceScene(scene: WorkspaceScene) {
     changeMapMode('select')
   } else {
     mapManager?.resetTrack()
+    mapManager?.fitTrack()
   }
   if (restoresAllAssignees) {
     store.selectEvent(null)
@@ -1040,6 +1064,7 @@ onMounted(() => {
     },
   })
   mapManager.setRenderMode(renderMode.value)
+  mapManager.updateResponsibilityGridProgress(null)
   if (mapTarget.value) mapManager.mount(mapTarget.value, popupElement.value ?? undefined)
 })
 
@@ -1188,34 +1213,45 @@ onBeforeUnmount(() => {
               </option>
             </select>
           </label>
-          <button
-            class="event-fit"
-            type="button"
-            :disabled="scopedEvents.length === 0"
-            @click="fitCurrentEvents"
-          >
-            定位当前结果（{{ scopedEvents.length.toLocaleString() }}）
-          </button>
-          <button
-            class="event-export"
-            type="button"
-            :disabled="scopedEvents.length === 0"
-            @click="exportCurrentEvents"
-          >
-            导出当前结果 GeoJSON（{{ scopedEvents.length.toLocaleString() }}）
-          </button>
-          <label class="event-import">
-            导入事件 GeoJSON
-            <input
-              type="file"
-              accept=".geojson,application/geo+json,application/json"
-              @change="importGeoJson"
-            />
-          </label>
+          <section class="event-tools" aria-label="当前结果数据操作">
+            <header>
+              <strong>结果工具</strong>
+              <small>{{ scopedEvents.length.toLocaleString() }} 条</small>
+            </header>
+            <div>
+              <button
+                class="event-fit"
+                type="button"
+                :disabled="scopedEvents.length === 0"
+                aria-label="在地图中定位当前筛选结果"
+                @click="fitCurrentEvents"
+              >
+                <i aria-hidden="true">⌖</i><span>定位</span>
+              </button>
+              <button
+                class="event-export"
+                type="button"
+                :disabled="scopedEvents.length === 0"
+                aria-label="将当前筛选结果导出为 GeoJSON"
+                @click="exportCurrentEvents"
+              >
+                <i aria-hidden="true">↓</i><span>导出</span>
+              </button>
+              <label class="event-import">
+                <i aria-hidden="true">↑</i><span>导入</span>
+                <input
+                  type="file"
+                  accept=".geojson,application/geo+json,application/json"
+                  aria-label="导入事件 GeoJSON"
+                  @change="importGeoJson"
+                />
+              </label>
+            </div>
+          </section>
           <p v-if="importFeedback" class="import-feedback" :class="{ error: importFeedback.error }">
             {{ importFeedback.message }}
           </p>
-          <div class="status-summary" aria-label="事件状态统计">
+          <div class="status-summary" aria-label="全部事件状态统计">
             <span v-for="status in EVENT_STATUSES" :key="status">
               <i :style="{ backgroundColor: EVENT_STATUS_VISUALS[status].color }"></i>
               {{ EVENT_STATUS_VISUALS[status].label }} {{ statusCounts[status].toLocaleString() }}
@@ -1226,8 +1262,8 @@ onBeforeUnmount(() => {
         <nav v-else class="event-pagination" aria-label="事件列表分页">
           <span class="event-pagination-summary">
             {{ eventListRange.start.toLocaleString() }}–{{ eventListRange.end.toLocaleString() }} /
-            {{ scopedEvents.length.toLocaleString() }} · 第 {{ eventListPage }} /
-            {{ eventListPageCount }} 页
+            {{ scopedEvents.length.toLocaleString() }}
+            <b>{{ eventListPage }} / {{ eventListPageCount }} 页</b>
           </span>
           <button
             type="button"
@@ -1255,7 +1291,7 @@ onBeforeUnmount(() => {
               step="1"
               aria-label="目标页码"
             />
-            <button type="submit">跳转</button>
+            <button type="submit" aria-label="跳转到输入页码">GO</button>
           </form>
           <button
             type="button"
@@ -1352,6 +1388,14 @@ onBeforeUnmount(() => {
         >
           <strong>责任网格</strong>
           <span><b>12</b> 个网格单元</span>
+          <span v-if="workspaceScene === 'replay'">
+            <b>{{ trackCoveredGridCount }}/12</b> 已覆盖
+          </span>
+          <div v-if="workspaceScene === 'replay'" class="coverage-legend" aria-label="巡检覆盖图例">
+            <span><i class="current"></i>当前</span>
+            <span><i class="visited"></i>已巡</span>
+            <span><i></i>未巡</span>
+          </div>
           <span><b>{{ scopedEvents.length.toLocaleString() }}</b> 个当前事件</span>
           <span v-if="store.regionEventIds !== null">
             <b>{{ store.regionEventIds.length.toLocaleString() }}</b> 个区域命中
@@ -1386,7 +1430,19 @@ onBeforeUnmount(() => {
               <dt>总时长</dt>
               <dd>{{ formatTrackDuration(trackTotalDurationMs) }}</dd>
             </div>
+            <div>
+              <dt>覆盖网格</dt>
+              <dd>{{ trackCoveredGridCount }} / 12</dd>
+            </div>
+            <div>
+              <dt>当前网格</dt>
+              <dd>{{ trackActiveGridLabel }}</dd>
+            </div>
           </dl>
+          <div class="route-progress-legend" aria-label="巡检路线进度图例">
+            <span><i class="completed"></i>实线 已巡</span>
+            <span><i></i>虚线 未巡</span>
+          </div>
           <footer>
             <span>{{ trackSpeed }}x</span>
             <span>{{ trackStatus }}</span>
@@ -2136,41 +2192,73 @@ onBeforeUnmount(() => {
   grid-template-columns: auto 1fr;
   gap: 8px;
   align-items: center;
+  padding-top: 2px;
   color: #71809a;
   font-size: 10px;
 }
-.event-export {
-  padding: 7px 8px;
-  color: #a7f3d0;
-  background: #064e3b66;
-  border: 1px solid #10b981;
+.event-tools {
+  display: grid;
+  gap: 7px;
+  padding-top: 8px;
+  border-top: 1px solid #20314c;
+}
+.event-tools > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  color: #94a3b8;
+  border: 0;
+  font-size: 10px;
+}
+.event-tools > header small {
+  color: #64748b;
+  font-weight: 400;
+}
+.event-tools > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.event-tools button,
+.event-import {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 32px;
+  padding: 0 7px;
+  color: #94a3b8;
+  background: #111e32;
+  border: 1px solid #2a3d5c;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 10px;
 }
-.event-fit {
-  padding: 7px 8px;
-  color: #fde68a;
-  background: #78350f66;
-  border: 1px solid #f59e0b;
-  border-radius: 5px;
-  cursor: pointer;
+.event-tools button:hover,
+.event-import:hover {
+  color: #e0f2fe;
+  background: #13243d;
+  border-color: #38bdf8;
 }
-.event-export:disabled,
-.event-fit:disabled {
+.event-tools i {
+  color: #67e8f9;
+  font-size: 15px;
+  font-style: normal;
+  line-height: 1;
+}
+.event-tools button:disabled {
   color: #475569;
   background: #111827;
-  border-color: #334155;
+  border-color: #263449;
   cursor: not-allowed;
+}
+.event-tools button:disabled i {
+  color: #475569;
 }
 .event-import {
   position: relative;
-  padding: 7px 8px;
-  color: #bae6fd;
-  background: #0c4a6e66;
-  border: 1px solid #0ea5e9;
-  border-radius: 5px;
-  text-align: center;
-  cursor: pointer;
 }
 .event-import input {
   position: absolute;
@@ -2191,7 +2279,10 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 5px 8px;
+  padding: 7px 8px;
   color: #71809a;
+  background: #11182780;
+  border-radius: 5px;
   font-size: 10px;
 }
 .status-summary span {
@@ -2229,6 +2320,13 @@ onBeforeUnmount(() => {
 }
 .event-pagination-summary {
   grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  color: #71809a;
+}
+.event-pagination-summary b {
+  color: #94a3b8;
+  font-weight: 500;
 }
 .event-pagination button {
   height: 26px;
@@ -2422,6 +2520,31 @@ onBeforeUnmount(() => {
   color: #67e8f9;
   font-variant-numeric: tabular-nums;
 }
+.coverage-legend {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid #20314c;
+  border-bottom: 1px solid #20314c;
+}
+.coverage-legend span {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 9px;
+}
+.coverage-legend i {
+  width: 6px;
+  height: 6px;
+  background: #a78bfa;
+  border-radius: 50%;
+}
+.coverage-legend i.current {
+  background: #fbbf24;
+}
+.coverage-legend i.visited {
+  background: #4ade80;
+}
 .replay-summary {
   position: absolute;
   bottom: 14px;
@@ -2487,6 +2610,28 @@ onBeforeUnmount(() => {
 }
 .replay-summary footer span:first-child {
   color: #67e8f9;
+}
+.route-progress-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 11px;
+  padding-top: 9px;
+  color: #94a3b8;
+  border-top: 1px solid #20314c;
+}
+.route-progress-legend span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.route-progress-legend i {
+  width: 28px;
+  height: 0;
+  border-top: 3px dashed #c4b5fd;
+}
+.route-progress-legend i.completed {
+  border-top: 4px solid #8b5cf6;
+  box-shadow: 0 -1px 0 #2e1065, 0 1px 0 #2e1065;
 }
 .dispatch-roster {
   position: absolute;
