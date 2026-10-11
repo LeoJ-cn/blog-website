@@ -11,6 +11,7 @@ import type BaseLayer from 'ol/layer/Base.js'
 import { unByKey } from 'ol/Observable.js'
 import { fromLonLat, toLonLat } from 'ol/proj.js'
 import type { InspectionEvent } from '../types/inspection-event'
+import type { Wgs84Bbox } from '../viewport/types'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
 import { TrackPlaybackController } from '../services/TrackPlaybackController'
 import { createBaseLayer } from './layers/create-base-layer'
@@ -34,6 +35,8 @@ import {
   type EventFeature,
   updateEventFeature,
 } from './sources/create-event-source'
+import { syncEventSource, type EventSourceDiffStats } from './sources/sync-event-source'
+import { calculateWgs84ViewportBbox } from './viewport-bbox'
 
 export type RenderMode =
   | 'point' // 逐个渲染原始事件 Feature，适合小数据量和精确选择。
@@ -51,6 +54,8 @@ export interface MapStats {
   sourceUpdateMs: number
   /** 从最近一次批量替换开始到地图 rendercomplete 的耗时；null 表示仍在等待完成。 */
   renderCompleteMs: number | null
+  /** 最近一次按事件 ID 增量同步的计数与耗时；尚未执行 Diff 时为 null。 */
+  eventSourceDiff: EventSourceDiffStats | null
 }
 export interface MapManagerOptions {
   /** 初始中心点，按 [WGS84 经度, WGS84 纬度] 排列。 */
@@ -61,6 +66,10 @@ export interface MapManagerOptions {
   events?: readonly InspectionEvent[]
   /** Select 结果，仅向 Vue 层传递业务 ID，不泄漏 Feature 实例。 */
   onEventSelect?: (eventId: string | null) => void
+  /** 地图绑定或 moveend 后返回当前 WGS84 BBOX；四条边均包含。 */
+  onViewportChange?: (bbox: Wgs84Bbox) => void
+  /** 当前选中事件因视口 Diff 被删除时通知 Vue 清理业务选择。 */
+  onEventSelectInvalidated?: (eventId: string) => void
   /** 地图移动或渲染完成后的性能指标回调。 */
   onStatsChange?: (stats: MapStats) => void
   /** 指针所在位置，按 [WGS84 经度, WGS84 纬度] 排列；离开地图时返回 null。 */
@@ -104,6 +113,8 @@ export class MapManager {
   >['setCheckpointProgress']
   private readonly interactionManager: SpatialInteractionManager
   private readonly trackPlayback: TrackPlaybackController
+  private readonly onViewportChange?: (bbox: Wgs84Bbox) => void
+  private readonly onEventSelectInvalidated?: (eventId: string) => void
   private readonly listenerKeys: EventsKey[]
   private readonly handlePointerLeave: () => void
   /** offset 按 [水平像素, 垂直像素] 排列，负值让 Popup 位于点位图标上方。 */
@@ -116,6 +127,9 @@ export class MapManager {
   private featureConversionMs = 0
   private sourceUpdateMs = 0
   private renderCompleteMs: number | null = null
+  private eventSourceDiff: EventSourceDiffStats | null = null
+  private selectedEventId: string | null = null
+  private lastViewportBbox: Wgs84Bbox | null = null
   /** 最近一次坐标回调的 performance.now() 时间戳，单位为毫秒。 */
   private lastPointerCoordinateEmittedAt = 0
   /** performance.now() 时间戳，单位为毫秒；仅在等待本次批量更新完成渲染时存在。 */
@@ -124,6 +138,8 @@ export class MapManager {
   private destroyed = false
 
   constructor(options: MapManagerOptions = {}) {
+    this.onViewportChange = options.onViewportChange
+    this.onEventSelectInvalidated = options.onEventSelectInvalidated
     const baseLayer = createBaseLayer()
     const conversionStartedAt = performance.now()
     const initialFeatures = (options.events ?? []).map(createEventFeature)
@@ -181,6 +197,7 @@ export class MapManager {
       regionSource: region.source,
       onEventSelect: (eventId) => {
         const feature = eventId ? this.eventSource.getFeatureById(eventId) : null
+        this.selectedEventId = eventId
         this.updateSelection(feature)
         this.popupOverlay.setPosition(feature?.getGeometry()?.getCoordinates())
         options.onEventSelect?.(eventId)
@@ -194,6 +211,12 @@ export class MapManager {
       onTimeChange: options.onTrackTimeChange,
     })
     const emitStats = () => options.onStatsChange?.(this.getStats())
+    const emitViewportChange = () => {
+      const bbox = this.getViewportBbox()
+      if (!bbox || this.isSameBbox(bbox, this.lastViewportBbox)) return
+      this.lastViewportBbox = bbox
+      this.onViewportChange?.(bbox)
+    }
     this.handlePointerLeave = () => options.onPointerCoordinate?.(null)
     const emitRenderStats = () => {
       if (this.pendingRenderStartedAt !== null) {
@@ -203,7 +226,10 @@ export class MapManager {
       emitStats()
     }
     this.listenerKeys = [
-      this.map.on('moveend', emitStats),
+      this.map.on('moveend', () => {
+        emitViewportChange()
+        emitStats()
+      }),
       this.map.on('rendercomplete', emitRenderStats),
       this.map.on('pointermove', (event) => {
         if (event.dragging) return
@@ -226,6 +252,14 @@ export class MapManager {
     this.popupOverlay.setElement(popupElement)
     this.mounted = true
     this.map.updateSize()
+    // updateSize 同步更新视口尺寸；微任务让 View 完成本轮状态归并后再计算首个 BBOX。
+    queueMicrotask(() => {
+      if (!this.mounted || this.destroyed) return
+      const bbox = this.getViewportBbox()
+      if (!bbox || this.isSameBbox(bbox, this.lastViewportBbox)) return
+      this.lastViewportBbox = bbox
+      this.onViewportChange?.(bbox)
+    })
   }
 
   /** 定位并高亮业务事件；Cluster 模式会切换为普通点位以保证目标可见。 */
@@ -234,6 +268,7 @@ export class MapManager {
     const coordinates = feature?.getGeometry()?.getCoordinates()
     if (!feature || !coordinates) return
     if (this.renderMode !== 'point') this.setRenderMode('point')
+    this.selectedEventId = eventId
     this.updateSelection(feature)
     this.popupOverlay.setPosition(coordinates)
     const view = this.map.getView()
@@ -296,6 +331,7 @@ export class MapManager {
     this.featureConversionMs = performance.now() - conversionStartedAt
     // Source 清空前解除旧选中 Feature 和 Popup 引用，避免大批数据切换后保留失效对象。
     this.updateSelection(null)
+    this.selectedEventId = null
     this.popupOverlay.setPosition(undefined)
     const sourceUpdateStartedAt = performance.now()
     this.eventSource.clear(true)
@@ -304,6 +340,27 @@ export class MapManager {
     // rendercomplete 是异步信号，因此先保留批次起点，完成前向面板暴露 null。
     this.renderCompleteMs = null
     this.pendingRenderStartedAt = batchStartedAt
+    this.eventSourceDiff = null
+  }
+
+  /**
+   * 按业务事件 ID 增量同步当前视口数据；未变化和更新项均保留原 Feature 身份。
+   */
+  syncEvents(events: readonly InspectionEvent[]): EventSourceDiffStats {
+    const batchStartedAt = performance.now()
+    const diffStats = syncEventSource(this.eventSource, events, this.selectedEventId)
+    this.eventSourceDiff = diffStats
+    this.renderCompleteMs = null
+    this.pendingRenderStartedAt = batchStartedAt
+
+    if (diffStats.removedSelectedEventId) {
+      this.selectedEventId = null
+      this.updateSelection(null)
+      this.popupOverlay.setPosition(undefined)
+      this.onEventSelectInvalidated?.(diffStats.removedSelectedEventId)
+    }
+
+    return diffStats
   }
 
   /** 向当前可见 Source 增量加入事件；ID 已存在时返回 false，避免覆盖既有 Feature。 */
@@ -442,7 +499,21 @@ export class MapManager {
       featureConversionMs: this.featureConversionMs,
       sourceUpdateMs: this.sourceUpdateMs,
       renderCompleteMs: this.renderCompleteMs,
+      eventSourceDiff: this.eventSourceDiff,
     }
+  }
+
+  /** 返回当前地图视口的 WGS84 BBOX；未挂载或尺寸无效时返回 null。 */
+  getViewportBbox(): Wgs84Bbox | null {
+    if (!this.mounted || this.destroyed) return null
+    const size = this.map.getSize()
+    if (!size || size[0] <= 0 || size[1] <= 0) return null
+
+    const view = this.map.getView()
+    return calculateWgs84ViewportBbox(
+      view.calculateExtent(size),
+      view.getProjection().getCode(),
+    )
   }
 
   /** 从当前位置开始或继续轨迹播放。 */
@@ -518,6 +589,10 @@ export class MapManager {
     this.selectionFeature.setGeometry(feature?.getGeometry()?.clone())
   }
 
+  private isSameBbox(next: Wgs84Bbox, previous: Wgs84Bbox | null): boolean {
+    return previous !== null && next.every((coordinate, index) => coordinate === previous[index])
+  }
+
   private restoreInteractionAfterLocationPick(): void {
     const targetElement = this.map.getTargetElement()
     if (targetElement) targetElement.style.cursor = ''
@@ -539,6 +614,8 @@ export class MapManager {
     this.popupOverlay.setElement(undefined)
     this.map.removeOverlay(this.popupOverlay)
     this.updateSelection(null)
+    this.selectedEventId = null
+    this.lastViewportBbox = null
     this.setEventDraftLocation(null)
     this.eventSource.clear(true)
     // 主动解除 ClusterSource 对事件 Source 的引用，便于大数据集合及时回收。
