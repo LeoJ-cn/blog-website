@@ -115,9 +115,11 @@
   gap: 1rem;
   margin-top: 1rem;
 }
+
 .react-vue-migration-demo__business {
   flex: 1.25 1 0;
 }
+
 .react-vue-migration-demo__log {
   flex: 0.75 1 18rem;
 }
@@ -154,13 +156,10 @@
   display: flex;
   gap: 1rem;
 }
-.react-vue-migration-demo__vue-order dt,
-.react-vue-migration-demo__legacy-order dt {
-  flex: 0 0 7rem;
-}
 
 .react-vue-migration-demo__vue-order dt,
 .react-vue-migration-demo__legacy-order dt {
+  flex: 0 0 7rem;
   color: var(--migration-muted);
 }
 

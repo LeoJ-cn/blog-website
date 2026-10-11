@@ -592,13 +592,13 @@ export function renderPerformanceReport(result) {
   container.appendChild(barWrap)
 
   // =========================
-  // 性能参数网格
+  // 性能参数列表
   // =========================
   const perfGrid = document.createElement('div')
 
   perfGrid.style.cssText = `
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 12px;
   `
@@ -619,6 +619,8 @@ export function renderPerformanceReport(result) {
     const cell = document.createElement('div')
 
     cell.style.cssText = `
+      flex: 1 1 140px;
+      min-width: 0;
       background: #22252f;
       border-radius: 8px;
       padding: 10px;
