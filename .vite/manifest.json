@@ -89,7 +89,7 @@
     "name": "projects"
   },
   "index-legacy.html": {
-    "file": "assets/entry-index-legacy-C6oKz0RX.js",
+    "file": "assets/entry-index-legacy-BlSEUMld.js",
     "name": "index",
     "src": "index-legacy.html",
     "isEntry": true,
@@ -110,7 +110,7 @@
     ]
   },
   "index.html": {
-    "file": "assets/entry-index-HJXZPMC3.js",
+    "file": "assets/entry-index-DembVQFG.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -246,7 +246,7 @@
     ]
   },
   "src/pages/PlaygroundGisPage-legacy.vue": {
-    "file": "assets/chunk-legacy-yA_1EapH.js",
+    "file": "assets/chunk-legacy-CDUNgYuc.js",
     "name": "PlaygroundGisPage",
     "src": "src/pages/PlaygroundGisPage-legacy.vue",
     "isDynamicEntry": true,
@@ -256,7 +256,7 @@
     ]
   },
   "src/pages/PlaygroundGisPage.vue": {
-    "file": "assets/chunk-Bl8hpIFq.js",
+    "file": "assets/chunk-BwBsB_eK.js",
     "name": "PlaygroundGisPage",
     "src": "src/pages/PlaygroundGisPage.vue",
     "isDynamicEntry": true,
@@ -265,7 +265,7 @@
       "_chunk-DlAUqK2U.js"
     ],
     "css": [
-      "assets/PlaygroundGisPage-LL4cGl4m.css"
+      "assets/PlaygroundGisPage-CrUPhAJi.css"
     ]
   },
   "src/pages/PlaygroundLowCodePage-legacy.vue": {
@@ -411,13 +411,13 @@
     ]
   },
   "vite/legacy-polyfills": {
-    "file": "assets/entry-polyfills-BtyZni8d.js",
+    "file": "assets/entry-polyfills-Dv8j-Ang.js",
     "name": "polyfills",
     "src": "vite/legacy-polyfills",
     "isEntry": true
   },
   "vite/legacy-polyfills-legacy": {
-    "file": "assets/entry-polyfills-legacy-Cxjb5a1m.js",
+    "file": "assets/entry-polyfills-legacy-dvCyiWuM.js",
     "name": "polyfills",
     "src": "vite/legacy-polyfills-legacy",
     "isEntry": true
