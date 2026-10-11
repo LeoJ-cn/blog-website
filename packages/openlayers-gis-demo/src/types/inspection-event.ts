@@ -42,6 +42,7 @@ export interface InspectionEventFilter {
 export type EventActivityType =
   | 'CREATED' // 事件首次上报；由事件 createdAt 派生，不为海量 Mock 数据额外存储日志。
   | 'EDITED' // 事件类型、等级、位置描述或坐标被编辑。
+  | 'ASSIGNED' // 事件被分派或转派给巡检人员，描述中记录目标人员名称。
   | 'STATUS_CHANGED' // 事件按处置状态机进入下一状态。
 
 export interface EventActivity {

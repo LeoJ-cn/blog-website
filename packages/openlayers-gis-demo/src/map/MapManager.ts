@@ -16,6 +16,8 @@ import { TrackPlaybackController } from '../services/TrackPlaybackController'
 import { createBaseLayer } from './layers/create-base-layer'
 import { createClusterLayer } from './layers/create-cluster-layer'
 import { createEventLayer } from './layers/create-event-layer'
+import { createHeatmapLayer } from './layers/create-heatmap-layer'
+import { createResponsibilityGridLayer } from './layers/create-responsibility-grid-layer'
 import { createEventDraftLayer } from './layers/create-event-draft-layer'
 import { createRegionLayer } from './layers/create-region-layer'
 import { createSelectionLayer } from './layers/create-selection-layer'
@@ -151,6 +153,8 @@ export class MapManager {
     })
     this.layerManager = new LayerManager(this.map)
     this.layerManager.addLayer('base', baseLayer)
+    this.layerManager.addLayer('responsibilityGrid', createResponsibilityGridLayer())
+    this.layerManager.addLayer('heatmap', createHeatmapLayer(this.eventSource))
     this.layerManager.addLayer('event', this.eventLayer)
     this.layerManager.addLayer('cluster', this.clusterLayer)
     this.layerManager.addLayer('region', region.layer)
@@ -449,6 +453,11 @@ export class MapManager {
     this.trackPlayback.setSpeed(speed)
   }
 
+  /** 跳转到轨迹总时长的指定比例；progressRatio 的合法范围为闭区间 [0, 1]。 */
+  seekTrack(progressRatio: number): void {
+    this.trackPlayback.seek(progressRatio)
+  }
+
   /** 返回内部 Layer 供诊断和高级编排使用，调用方不得把实例写入 Pinia。 */
   getLayer(layerId: CoreLayerId): BaseLayer | undefined {
     return this.layerManager.getLayer(layerId)
@@ -456,10 +465,13 @@ export class MapManager {
   /** 显示指定核心图层；普通点位与 Cluster 的业务互斥仍应通过 setRenderMode 控制。 */
   showLayer(layerId: CoreLayerId): void {
     this.layerManager.showLayer(layerId)
+    // 场景切换会在同一任务内连续修改多个图层，显式请求渲染确保恢复后的轨迹立即出现。
+    this.map.render()
   }
   /** 隐藏指定核心图层，不会清空对应 Source。 */
   hideLayer(layerId: CoreLayerId): void {
     this.layerManager.hideLayer(layerId)
+    this.map.render()
   }
 
   /** 注册并挂载扩展核心图层；重复 ID 会由 LayerManager 拒绝。 */

@@ -21,6 +21,8 @@ export const useGisStore = defineStore('openlayers-gis', () => {
   const eventFilter = ref<InspectionEventFilter>(createDefaultEventFilter())
   // 仅保存本次会话发生的增量操作，避免为十万条只读 Mock 事件预建日志对象。
   const eventActivities = ref<Record<string, EventActivity[]>>({})
+  // 仅为发生过分派的事件保存人员名称，避免为十万条 Mock 数据预建重复字段。
+  const eventAssignees = ref<Record<string, string>>({})
   const regions = ref<InspectionRegion[]>([...mockInspectionRegions])
   const activeRegionId = ref<string | null>(null)
   const selectedEventId = ref<string | null>(null)
@@ -42,6 +44,10 @@ export const useGisStore = defineStore('openlayers-gis', () => {
       ...(eventActivities.value[event.id] ?? []),
     ]
   })
+  const selectedEventAssignee = computed(() => {
+    const eventId = selectedEventId.value
+    return eventId ? (eventAssignees.value[eventId] ?? null) : null
+  })
   const filteredEvents = computed(() => {
     const filter = eventFilter.value
     const keyword = filter.keyword.trim().toLocaleLowerCase()
@@ -60,6 +66,7 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     // Pinia 只保存可序列化业务对象；OpenLayers Feature 始终留在 MapManager 内部。
     events.value = [...nextEvents]
     eventActivities.value = {}
+    eventAssignees.value = {}
     // 切换事件数据集后原区域数量已经失效，保留区域定义但等待重新载入计算。
     regions.value = regions.value.map((region) => ({ ...region, eventIds: null }))
     activeRegionId.value = null
@@ -73,6 +80,11 @@ export const useGisStore = defineStore('openlayers-gis', () => {
 
   function selectEvent(eventId: string | null) {
     selectedEventId.value = eventId
+  }
+
+  /** 查询事件当前责任人；null 表示尚未分派或事件没有分派记录。 */
+  function getEventAssignee(eventId: string): string | null {
+    return eventAssignees.value[eventId] ?? null
   }
 
   function selectRegionEvents(eventIds: string[] | null) {
@@ -153,12 +165,28 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     const nextActivities = { ...eventActivities.value }
     delete nextActivities[eventId]
     eventActivities.value = nextActivities
+    const nextAssignees = { ...eventAssignees.value }
+    delete nextAssignees[eventId]
+    eventAssignees.value = nextAssignees
     return true
   }
 
   function setEventFilter(nextFilter: InspectionEventFilter) {
     // 整体替换筛选协议，确保一次“应用”只触发一次十万条数据的派生计算。
     eventFilter.value = { ...nextFilter, keyword: nextFilter.keyword.trim() }
+  }
+
+  /** 分派或转派事件；事件不存在或人员名称为空时拒绝写入。 */
+  function assignEvent(eventId: string, assignee: string): boolean {
+    if (!events.value.some((event) => event.id === eventId)) return false
+    const normalizedAssignee = assignee.trim()
+    if (!normalizedAssignee) return false
+    eventAssignees.value = { ...eventAssignees.value, [eventId]: normalizedAssignee }
+    appendEventActivity(eventId, {
+      type: 'ASSIGNED',
+      description: `任务已分派给 ${normalizedAssignee}`,
+    })
+    return true
   }
 
   function resetEventFilter() {
@@ -251,9 +279,11 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     selectedEventId,
     selectedEvent,
     selectedEventActivities,
+    selectedEventAssignee,
     regionEventIds,
     setEvents,
     selectEvent,
+    getEventAssignee,
     selectRegionEvents,
     addEvent,
     addEvents,
@@ -261,6 +291,7 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     removeEvent,
     setEventFilter,
     resetEventFilter,
+    assignEvent,
     advanceEventStatus,
     advanceEventStatuses,
     saveRegion,

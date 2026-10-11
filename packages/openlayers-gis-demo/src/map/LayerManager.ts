@@ -5,6 +5,8 @@ export type CoreLayerId =
   | 'base' // 在线瓦片底图。
   | 'event' // 普通事件点图层。
   | 'cluster' // 事件聚合图层，与普通事件图层互斥显示。
+  | 'heatmap' // 复用事件 Source 的风险热力分析图层，默认关闭。
+  | 'responsibilityGrid' // 静态责任网格边界，不参与用户区域筛选。
   | 'region' // 用户绘制和修改的空间范围图层。
   | 'track' // 完整巡检轨迹和人员当前位置图层。
   | 'selection' // 当前选中事件的独立高亮图层，不修改原始事件 Feature。

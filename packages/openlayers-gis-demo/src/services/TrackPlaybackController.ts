@@ -64,6 +64,21 @@ export class TrackPlaybackController {
     this.speed = speed
   }
 
+  /** 跳转到总时长比例；输入会限制在闭区间 [0, 1]，播放中拖动后继续播放。 */
+  seek(progressRatio: number): void {
+    const wasPlaying = this.status === 'playing'
+    const normalizedRatio = Math.min(1, Math.max(0, progressRatio))
+    this.cancelFrame()
+    this.elapsed = this.getDuration() * normalizedRatio
+    this.segmentIndex = 0
+    this.status = normalizedRatio >= 1 ? 'finished' : wasPlaying ? 'playing' : 'paused'
+    this.updatePosition(this.elapsed)
+    if (this.status === 'playing') {
+      this.frameStartedAt = performance.now()
+      this.frameId = requestAnimationFrame(this.tick)
+    }
+  }
+
   destroy(): void {
     this.cancelFrame()
   }
