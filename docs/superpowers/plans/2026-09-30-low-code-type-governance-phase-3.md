@@ -1,5 +1,7 @@
 # Low-code 类型治理第三阶段实施计划
 
+**状态：** 代码实施已完成；页面人工回归结果未在本文确认。
+
 **目标：** 在不改变逻辑编辑器运行时行为和持久化格式的前提下，按目录消除阶段二剩余的 903 条局部 TypeScript 诊断。
 
 **基线：** `packages/low-code/src` 共 903 条诊断、74 个文件；第三方源码诊断为 0。详细分布见 `packages/low-code/TYPECHECK_BASELINE.md`。

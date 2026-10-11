@@ -1,6 +1,6 @@
 # React → Vue 渐进迁移演示 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行方式：** 按 Task 顺序逐项实施并记录完成状态。若当前运行环境支持计划执行或子 Agent 能力，可以使用，但这些能力不是执行本计划的前置条件。
 
 **Goal:** 在 Vue Blog 的 Engineering Playground 中交付一个独立 Package，以真实 React Shell 加载 Vue 订单组件并演示完整的渐进迁移通信与回滚闭环。
 

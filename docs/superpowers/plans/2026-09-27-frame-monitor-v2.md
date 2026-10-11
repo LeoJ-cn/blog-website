@@ -1,6 +1,6 @@
 # Frame Monitor V2 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行方式：** 按 Task 顺序逐项实施并记录完成状态。若当前运行环境支持计划执行或子 Agent 能力，可以使用，但这些能力不是执行本计划的前置条件。
 
 **Goal:** 将 `@blog/monitoring` 的帧监控升级为支持高刷新率、确定性测试、显式目标预算和 Long Animation Frame 渐进增强的可靠监控内核。
 

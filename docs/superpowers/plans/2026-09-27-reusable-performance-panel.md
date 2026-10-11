@@ -1,6 +1,6 @@
 # Reusable Performance Panel Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行方式：** 按 Task 顺序逐项实施并记录完成状态。若当前运行环境支持计划执行或子 Agent 能力，可以使用，但这些能力不是执行本计划的前置条件。
 
 **Goal:** 将 Moving Box 性能采集拆成通用帧监控能力和可供 `apps/web` 内多个 Demo 复用的 Vue 性能面板。
 

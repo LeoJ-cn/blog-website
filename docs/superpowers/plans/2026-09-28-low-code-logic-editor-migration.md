@@ -1,6 +1,6 @@
 # Low Code 逻辑编辑器等价迁移 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行方式：** 按 Task 顺序逐项实施并记录完成状态。若当前运行环境支持计划执行或子 Agent 能力，可以使用，但这些能力不是执行本计划的前置条件。
 
 **Goal:** 在 `packages/low-code` 中等价迁移旧仓库的完整逻辑编辑器，并在 Vue 3 应用中接通开始、结束、变量、赋值、判断和计算节点的编辑、保存、恢复及 `SimpleProcessData[]/blockData` 生成闭环。
 

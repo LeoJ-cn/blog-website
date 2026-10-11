@@ -1,5 +1,7 @@
 # 低代码逻辑编辑器稳定性修复实施计划
 
+**状态：** 已完成，保留为历史实施记录。
+
 > 对应设计：`docs/superpowers/specs/2026-09-28-low-code-logic-editor-migration-design.md`
 >
 > 行为基线：`docs/references/logic-editor-original-implementation.md`

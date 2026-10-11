@@ -1,6 +1,6 @@
 # Low-code 类型治理第二阶段实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **执行方式：** 按 Task 顺序逐项实施并记录完成状态。若当前运行环境支持计划执行或子 Agent 能力，可以使用，但这些能力不是执行本计划的前置条件。
 
 **Goal:** 修复 low-code 的第三方类型导入边界、节点核心协议和 G6 shape 回调协议，优先消除跨目录级联诊断。
 
