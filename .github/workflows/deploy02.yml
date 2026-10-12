@@ -40,6 +40,8 @@ jobs:
       #   run: pnpm typecheck
 
       - name: Build Vite production bundle
+        env:
+          VITE_TIANDITU_TOKEN: ${{ secrets.VITE_TIANDITU_TOKEN }}
         run: pnpm build:vite
 
       - name: Deploy Vite bundle

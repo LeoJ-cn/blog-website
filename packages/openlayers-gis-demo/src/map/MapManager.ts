@@ -58,6 +58,10 @@ export interface MapStats {
   eventSourceDiff: EventSourceDiffStats | null
 }
 export interface MapManagerOptions {
+  /** 天地图浏览器端 Token；空值时保留业务图层，但不创建在线底图 Source。 */
+  tiandituToken?: string
+  /** 天地图底图或中文注记瓦片加载失败时通知宿主展示非敏感提示。 */
+  onBaseMapError?: () => void
   /** 初始中心点，按 [WGS84 经度, WGS84 纬度] 排列。 */
   center?: readonly [number, number]
   /** 初始缩放级别；默认 12。 */
@@ -87,6 +91,8 @@ const DEFAULT_CENTER: readonly [number, number] = [121.4737, 31.2304]
 const EVENT_FOCUS_ZOOM = 17.5
 /** 多结果定位时的最大缩放级别，避免相邻点位被放大到建筑细节层级。 */
 const EVENT_RESULTS_MAX_ZOOM = 17
+/** 达到该缩放级别后强制展示原始点位，保证街区级视角可以选择每个巡检事件。 */
+const CLUSTER_BREAK_ZOOM = 16
 /** View.fit 的 padding 按 [上, 右, 下, 左] 排列，单位为 CSS 像素。 */
 const EVENT_RESULTS_PADDING: [number, number, number, number] = [64, 64, 64, 64]
 /** 鼠标坐标通知的最小间隔，单位为毫秒；约 12 Hz 足以读取且避免高频触发 Vue 渲染。 */
@@ -140,7 +146,10 @@ export class MapManager {
   constructor(options: MapManagerOptions = {}) {
     this.onViewportChange = options.onViewportChange
     this.onEventSelectInvalidated = options.onEventSelectInvalidated
-    const baseLayer = createBaseLayer()
+    const baseLayer = createBaseLayer({
+      token: options.tiandituToken ?? '',
+      onLoadError: options.onBaseMapError,
+    })
     const conversionStartedAt = performance.now()
     const initialFeatures = (options.events ?? []).map(createEventFeature)
     this.featureConversionMs = performance.now() - conversionStartedAt
@@ -169,7 +178,12 @@ export class MapManager {
     this.map = new OlMap({
       controls: defaultControls({ rotate: false }).extend([
         // 比例尺由 View 分辨率自动换算，使用 metric 输出米或千米。
-        new ScaleLine({ units: 'metric' }),
+        new ScaleLine({
+          units: 'metric',
+          // OpenLayers 10 默认不限制最大宽度；显式约束避免比例尺在宽地图上占据过多空间。
+          minWidth: 64,
+          maxWidth: 120,
+        }),
       ]),
       view: new View({
         center: fromLonLat([...(options.center ?? DEFAULT_CENTER)]),
@@ -226,6 +240,10 @@ export class MapManager {
       emitStats()
     }
     this.listenerKeys = [
+      this.map.getView().on('change:resolution', () => {
+        // 缩放过程中只切换图层显隐，不改写用户选择的渲染偏好；缩回阈值以下可恢复 Cluster。
+        this.syncEventLayerVisibility()
+      }),
       this.map.on('moveend', () => {
         emitViewportChange()
         emitStats()
@@ -390,10 +408,9 @@ export class MapManager {
 
   /** 切换互斥渲染图层；独立 SelectionLayer 会跨渲染模式保留当前选中态。 */
   setRenderMode(mode: RenderMode): void {
-    // 两套业务图层互斥显示，但底层事件 Source 始终保持同一份数据。
+    // renderMode 保存用户偏好；实际显示还受高倍数强制展开规则控制。
     this.renderMode = mode
-    this.eventLayer.setVisible(this.eventLayersVisible && mode === 'point')
-    this.clusterLayer.setVisible(this.eventLayersVisible && mode === 'cluster')
+    this.syncEventLayerVisibility()
     // Select 同时支持普通点和聚合点，仅由当前交互模式决定是否启用。
     this.interactionManager.setSelectActive(this.mapMode === 'select')
     this.map.render()
@@ -402,8 +419,7 @@ export class MapManager {
   /** 统一控制普通点和 Cluster 显隐，并继续保持当前渲染模式的互斥关系。 */
   setEventLayersVisible(visible: boolean): void {
     this.eventLayersVisible = visible
-    this.eventLayer.setVisible(visible && this.renderMode === 'point')
-    this.clusterLayer.setVisible(visible && this.renderMode === 'cluster')
+    this.syncEventLayerVisibility()
     this.map.render()
   }
 
@@ -489,13 +505,14 @@ export class MapManager {
 
   /** 返回当前 View 与可见业务 Source 的快照，不包含不可见图层数量。 */
   getStats(): MapStats {
+    const effectiveRenderMode = this.getEffectiveRenderMode()
     return {
       zoom: Number((this.map.getView().getZoom() ?? 0).toFixed(1)),
       featureCount:
-        this.renderMode === 'cluster'
+        effectiveRenderMode === 'cluster'
           ? this.clusterSource.getFeatures().length
           : this.eventSource.getFeatures().length,
-      renderMode: this.renderMode,
+      renderMode: effectiveRenderMode,
       featureConversionMs: this.featureConversionMs,
       sourceUpdateMs: this.sourceUpdateMs,
       renderCompleteMs: this.renderCompleteMs,
@@ -510,10 +527,7 @@ export class MapManager {
     if (!size || size[0] <= 0 || size[1] <= 0) return null
 
     const view = this.map.getView()
-    return calculateWgs84ViewportBbox(
-      view.calculateExtent(size),
-      view.getProjection().getCode(),
-    )
+    return calculateWgs84ViewportBbox(view.calculateExtent(size), view.getProjection().getCode())
   }
 
   /** 从当前位置开始或继续轨迹播放。 */
@@ -591,6 +605,17 @@ export class MapManager {
 
   private isSameBbox(next: Wgs84Bbox, previous: Wgs84Bbox | null): boolean {
     return previous !== null && next.every((coordinate, index) => coordinate === previous[index])
+  }
+
+  private getEffectiveRenderMode(): RenderMode {
+    const zoom = this.map.getView().getZoom() ?? 0
+    return this.renderMode === 'cluster' && zoom < CLUSTER_BREAK_ZOOM ? 'cluster' : 'point'
+  }
+
+  private syncEventLayerVisibility(): void {
+    const effectiveRenderMode = this.getEffectiveRenderMode()
+    this.eventLayer.setVisible(this.eventLayersVisible && effectiveRenderMode === 'point')
+    this.clusterLayer.setVisible(this.eventLayersVisible && effectiveRenderMode === 'cluster')
   }
 
   private restoreInteractionAfterLocationPick(): void {

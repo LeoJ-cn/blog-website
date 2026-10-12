@@ -79,13 +79,14 @@ export function createResponsibilityGridLayer() {
           }),
           text: new Text({
             text: `${isVisited ? '✓ ' : isCurrent ? '● ' : ''}${gridId}`,
-            font: '600 12px sans-serif',
+            font: '600 11px sans-serif',
             fill: new Fill({ color: isCurrent ? '#fef3c7' : isVisited ? '#dcfce7' : '#e0f2fe' }),
             backgroundFill: new Fill({
               color: isCurrent ? '#78350fe6' : isVisited ? '#14532de6' : '#082f49e6',
             }),
-            padding: [4, 7, 4, 7],
-            overflow: true,
+            padding: [3, 5, 3, 5],
+            // 标签必须完整容纳在对应网格内，避免相邻单元文字连成一条横幅。
+            overflow: false,
           }),
         }),
       ]

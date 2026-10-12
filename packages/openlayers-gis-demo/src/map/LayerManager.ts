@@ -2,7 +2,7 @@ import type OlMap from 'ol/Map.js'
 import type BaseLayer from 'ol/layer/Base.js'
 
 export type CoreLayerId =
-  | 'base' // 在线瓦片底图。
+  | 'base' // 天地图矢量底图与中文注记组成的在线瓦片图层组。
   | 'event' // 普通事件点图层。
   | 'cluster' // 事件聚合图层，与普通事件图层互斥显示。
   | 'heatmap' // 复用事件 Source 的风险热力分析图层，默认关闭。

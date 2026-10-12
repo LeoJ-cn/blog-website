@@ -33,6 +33,13 @@ import type {
   Wgs84Bbox,
 } from '../viewport/types'
 
+interface Props {
+  /** 由宿主配置层注入的天地图浏览器端 Token；组件不会记录或展示其内容。 */
+  tiandituToken?: string
+}
+
+const props = withDefaults(defineProps<Props>(), { tiandituToken: '' })
+
 const TYPE_LABELS = {
   ROAD_DAMAGE: '道路破损',
   LIGHT_FAILURE: '路灯故障',
@@ -96,6 +103,21 @@ const LAYER_CONTROLS: readonly { id: LayerControlId; label: string }[] = [
 ]
 const statusLegend = Object.values(EVENT_STATUS_VISUALS)
 const selectionLegendStyle = { '--legend-color': EVENT_SELECTION_COLOR }
+
+type BaseMapStatus =
+  | 'ready' // 已配置 Token，底图请求尚未发现失败。
+  | 'missing-token' // 宿主未配置 Token；业务图层仍可独立运行。
+  | 'load-error' // 天地图拒绝请求或瓦片网络加载失败。
+const baseMapStatus = ref<BaseMapStatus>(props.tiandituToken.trim() ? 'ready' : 'missing-token')
+const baseMapStatusMessage = computed(() => {
+  if (baseMapStatus.value === 'missing-token') {
+    return '天地图 Token 未配置，当前仅显示业务图层'
+  }
+  if (baseMapStatus.value === 'load-error') {
+    return '天地图底图加载失败，请检查 Token、域名白名单或网络'
+  }
+  return ''
+})
 
 const mapTarget = ref<HTMLElement | null>(null)
 const popupElement = ref<HTMLElement | null>(null)
@@ -383,6 +405,8 @@ const drawType = ref<DrawGeometryType>('Polygon')
 const trackSpeed = ref<TrackPlaybackSpeed>(1)
 const trackStatus = ref<TrackPlaybackStatus>('idle')
 const trackTime = ref(mockInspectionTrack[0]?.timestamp ?? 0)
+let pendingTrackSeekRatio: number | null = null
+let trackSeekFrameId: number | null = null
 const formattedTrackTime = computed(() =>
   new Intl.DateTimeFormat('zh-CN', {
     hour: '2-digit',
@@ -869,6 +893,8 @@ function changeDataCount(count: number) {
   const reset = resetViewportDatasetState()
   store.setEvents(reset.events)
   eventListPage.value = reset.page
+  // 数据源切换后旧区域几何及其命中结果都不再属于当前数据集，必须整体释放。
+  mapManager?.clearRegion()
   mapManager?.setEvents([])
   if (mapManager) stats.value = mapManager.getStats()
   if (currentViewportBbox.value) queryViewport(currentViewportBbox.value)
@@ -1085,7 +1111,16 @@ function changeTrackSpeed(speed: TrackPlaybackSpeed) {
 
 function seekTrack(event: Event) {
   const input = event.currentTarget as HTMLInputElement
-  mapManager?.seekTrack(Number(input.value) / 100)
+  pendingTrackSeekRatio = Number(input.value) / 100
+  if (trackSeekFrameId !== null) return
+
+  // range input 可能在同一绘制帧内连续触发；只提交最新进度，避免地图和 Vue 重复刷新造成闪动。
+  trackSeekFrameId = requestAnimationFrame(() => {
+    trackSeekFrameId = null
+    const progressRatio = pendingTrackSeekRatio
+    pendingTrackSeekRatio = null
+    if (progressRatio !== null) mapManager?.seekTrack(progressRatio)
+  })
 }
 
 function seekTrackCheckpoint(sequence: number) {
@@ -1104,6 +1139,10 @@ onMounted(() => {
   })
   store.setEvents([])
   mapManager = new MapManager({
+    tiandituToken: props.tiandituToken,
+    onBaseMapError: () => {
+      baseMapStatus.value = 'load-error'
+    },
     events: [],
     onEventSelect: store.selectEvent,
     onEventSelectInvalidated: () => store.selectEvent(null),
@@ -1133,6 +1172,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (trackSeekFrameId !== null) cancelAnimationFrame(trackSeekFrameId)
+  trackSeekFrameId = null
+  pendingTrackSeekRatio = null
   releaseAllEventEvidence()
   viewportQueryController?.destroy()
   viewportQueryController = null
@@ -1410,6 +1452,12 @@ onBeforeUnmount(() => {
       </aside>
       <main class="map-panel">
         <div ref="mapTarget" class="map-canvas"></div>
+        <output class="map-zoom-indicator" aria-label="当前地图缩放级别">
+          Zoom {{ stats.zoom.toFixed(1) }}x
+        </output>
+        <p v-if="baseMapStatusMessage" class="base-map-notice" role="status">
+          {{ baseMapStatusMessage }}
+        </p>
         <section class="map-scene-indicator" aria-live="polite">
           <span>当前场景</span>
           <strong>{{ activeSceneMeta.label }}</strong>
@@ -2028,13 +2076,15 @@ onBeforeUnmount(() => {
       <button :class="{ active: trackSpeed === 1 }" @click="changeTrackSpeed(1)">1x</button>
       <button :class="{ active: trackSpeed === 2 }" @click="changeTrackSpeed(2)">2x</button>
       <button :class="{ active: trackSpeed === 8 }" @click="changeTrackSpeed(8)">8x</button>
-      <span>当前巡检时间：{{ formattedTrackTime }}</span>
-      <span>状态：{{ trackStatus }}</span>
+      <div class="track-playback-meta" aria-live="off">
+        <span>当前巡检时间：<b>{{ formattedTrackTime }}</b></span>
+        <span>状态：<b>{{ trackStatus }}</b></span>
+      </div>
     </div>
     <footer class="gis-status">
       <span>数据量：{{ store.events.length.toLocaleString() }}</span>
       <span>筛选结果：{{ scopedEvents.length.toLocaleString() }}</span>
-      <span>渲染模式：{{ renderMode === 'cluster' ? 'Cluster' : '普通点位' }}</span>
+      <span>渲染模式：{{ stats.renderMode === 'cluster' ? 'Cluster' : '普通点位' }}</span>
       <span>Zoom：{{ stats.zoom }}</span>
       <span>经纬度：{{ formattedPointerCoordinate }}</span>
       <span>当前 Feature：{{ stats.featureCount.toLocaleString() }}</span>
@@ -2523,9 +2573,22 @@ onBeforeUnmount(() => {
   height: 100%;
   background: #dbe4ec;
 }
-.map-canvas :deep(.gis-dark-base-layer) {
-  /* 保留 OSM 原始道路与地名配色，仅轻微压暗，避免分析图层开启后底图过度抢眼。 */
-  filter: brightness(0.86) saturate(0.9) contrast(1.05);
+.base-map-notice {
+  position: absolute;
+  z-index: 40;
+  top: 12px;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 8px 12px;
+  transform: translateX(-50%);
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  color: #fef3c7;
+  background: #78350fe6;
+  box-shadow: 0 4px 18px #02061766;
+  font-size: 12px;
+  text-align: center;
 }
 .map-canvas :deep(.ol-scale-line) {
   right: 10px;
@@ -2541,6 +2604,23 @@ onBeforeUnmount(() => {
   border-color: #dbeafe;
   border-top: 0;
   font-size: 10px;
+}
+.map-zoom-indicator {
+  position: absolute;
+  right: 10px;
+  bottom: 44px;
+  z-index: 2;
+  min-width: 78px;
+  padding: 5px 8px;
+  color: #dbeafe;
+  background: #08101fe6;
+  border: 1px solid #334155;
+  border-radius: 5px;
+  box-shadow: 0 4px 12px #0206174d;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  pointer-events: none;
 }
 .map-legend {
   position: absolute;
@@ -2599,6 +2679,9 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 7px 12px;
+  box-sizing: border-box;
+  width: 250px;
+  max-width: calc(100% - 24px);
   padding: 10px 12px;
   color: #dbeafe;
   background: #08101fe6;
@@ -2616,6 +2699,8 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  min-width: 0;
+  white-space: nowrap;
   cursor: pointer;
 }
 .layer-panel input {
@@ -3704,6 +3789,28 @@ onBeforeUnmount(() => {
   gap: 2px;
   min-width: 220px;
   padding: 4px 8px 2px;
+}
+.track-playback-meta {
+  flex: 0 0 250px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 18px;
+  min-width: 0;
+  color: #71809a;
+  white-space: nowrap;
+}
+.track-controls .track-playback-meta span {
+  margin-left: 0;
+}
+.track-playback-meta b {
+  display: inline-block;
+  min-width: 54px;
+  color: #94a3b8;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.track-playback-meta span:last-child b {
+  min-width: 48px;
 }
 .track-checkpoints {
   display: flex;

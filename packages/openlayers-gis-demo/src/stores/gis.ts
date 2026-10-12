@@ -71,6 +71,8 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     // 切换事件数据集后原区域数量已经失效，保留区域定义但等待重新载入计算。
     regions.value = regions.value.map((region) => ({ ...region, eventIds: null }))
     activeRegionId.value = null
+    // 区域命中 ID 属于旧数据源；必须恢复为“未执行区域筛选”，否则新数据会被空数组全部排除。
+    regionEventIds.value = null
     if (
       selectedEventId.value &&
       !events.value.some((event) => event.id === selectedEventId.value)

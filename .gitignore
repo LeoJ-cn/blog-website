@@ -3,3 +3,9 @@ dist
 dist-vite
 dist-webpack
 待加入项目的代码.zip
+
+# 浏览器端服务 Key 只保存在本地或 CI Secret 中，禁止提交真实值。
+.env
+.env.local
+.env.*.local
+!.env.example

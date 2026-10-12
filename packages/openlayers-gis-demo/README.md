@@ -42,7 +42,8 @@
 - 热力分析与责任网格作为独立图层按需开启；热力图复用事件 Source，不复制海量 Feature；责任网格使用双层描边、交替填充和中心编号保证复杂底图下的辨识度。
 - 数据量、渲染模式、Zoom 和当前 Feature 数量展示。
 - 地图状态栏实时显示鼠标所在位置的 WGS84 经纬度，地图画布提供米制动态比例尺。
-- OSM 底图保留原始配色并轻微压暗；场景提示、热力强度图例和责任网格摘要随图层状态显示。
+- 天地图墨卡托矢量底图与中文注记组合展示；Token 缺失或瓦片失败时保留业务图层并显示明确提示。
+- 场景提示、热力强度图例和责任网格摘要随图层状态显示。
 - `Select`、Point/Polygon/Circle `Draw` 和 `Modify`。
 - Polygon/Circle 区域内事件筛选及修改后重新计算。
 - Polygon/Circle 区域保存、预设区域载入、定位、修改、删除及事件数量同步。
@@ -123,15 +124,15 @@ OpenLayers 是有状态的命令式对象系统，Vue 是声明式响应式系�
 
 ## Layer 架构
 
-| Layer ID     | 实现                         | 职责                         |
-| ------------ | ---------------------------- | ---------------------------- |
-| `base`       | `TileLayer<OSM>`             | 在线基础底图                 |
-| `event`      | `VectorLayer`                | 普通事件点位和精确选择       |
-| `cluster`    | `VectorLayer<ClusterSource>` | 海量点位聚合展示             |
-| `region`     | `VectorLayer`                | Draw/Modify 空间范围         |
-| `track`      | `VectorLayer`                | 完整轨迹和人员当前位置       |
-| `selection`  | `VectorLayer`                | 当前选中事件的独立高亮       |
-| `eventDraft` | `VectorLayer`                | 新建或编辑事件的临时选点标记 |
+| Layer ID     | 实现                          | 职责                         |
+| ------------ | ----------------------------- | ---------------------------- |
+| `base`       | `LayerGroup<TileLayer<WMTS>>` | 天地图矢量底图与中文注记     |
+| `event`      | `VectorLayer`                 | 普通事件点位和精确选择       |
+| `cluster`    | `VectorLayer<ClusterSource>`  | 海量点位聚合展示             |
+| `region`     | `VectorLayer`                 | Draw/Modify 空间范围         |
+| `track`      | `VectorLayer`                 | 完整轨迹和人员当前位置       |
+| `selection`  | `VectorLayer`                 | 当前选中事件的独立高亮       |
+| `eventDraft` | `VectorLayer`                 | 新建或编辑事件的临时选点标记 |
 
 `LayerManager` 维护 Layer ID 到实例的唯一映射，统一提供 `addLayer`、`removeLayer`、`getLayer`、`showLayer`、`hideLayer` 和 `destroy`。普通点位、Cluster 与 Heatmap 共享同一个当前视口事件 `VectorSource`，避免按渲染方式复制 Feature。SelectionLayer 复用一个只保存坐标的 Feature，不修改原始事件 Feature，并在普通点与 Cluster 模式之间保留一致的选中效果。点位颜色只表达处置状态，避免与事件等级产生重复语义。
 
@@ -139,7 +140,7 @@ OpenLayers 是有状态的命令式对象系统，Vue 是声明式响应式系�
 
 ### 1. Cluster 降低同屏绘制压力
 
-Cluster 按当前分辨率合并邻近点位，低 Zoom 下只绘制聚合结果。它不会减少原始业务数据，而是减少同一帧需要绘制和参与命中的图形数量。
+Cluster 按当前分辨率合并邻近点位，Zoom 小于 16 时只绘制聚合结果；达到 16 后自动展示原始点位，缩回阈值以下时恢复用户原先选择的 Cluster 模式。它不会减少原始业务数据，而是减少同一帧需要绘制和参与命中的图形数量。
 
 ### 2. Style 缓存
 
@@ -251,6 +252,18 @@ Map、Layer、Source、Feature、Geometry、Interaction、Overlay 都由普通 T
 - 解除 ClusterSource 对事件 Source 的引用。
 
 ## 本地运行与验证
+
+先复制并填写应用环境变量，真实 Token 只保存在被 Git 忽略的 `.env.local`：
+
+```bash
+cp apps/web/.env.example apps/web/.env.local
+```
+
+```dotenv
+VITE_TIANDITU_TOKEN=替换为天地图浏览器端应用Token
+```
+
+GitHub Pages 部署使用仓库 Actions Secret `VITE_TIANDITU_TOKEN`。浏览器端 Token 会出现在瓦片请求中，安全边界依赖天地图控制台的域名白名单和调用配额，不能把它当作服务端秘密。
 
 ```bash
 pnpm dev:vite

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { env } from '@blog/config'
 import { GisManagementDemo } from '@blog/openlayers-gis-demo'
 </script>
 
@@ -9,6 +10,6 @@ import { GisManagementDemo } from '@blog/openlayers-gis-demo'
     <p class="playground-description">
       基于 OpenLayers 的地图生命周期、业务图层与 Vue 状态联动实践。
     </p>
-    <GisManagementDemo />
+    <GisManagementDemo :tianditu-token="env.tiandituToken" />
   </article>
 </template>

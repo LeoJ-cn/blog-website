@@ -3,6 +3,8 @@ import type { BuildInfo } from '@blog/types'
 export interface RuntimeConfig {
   apiBaseUrl: string
   wsUrl: string
+  /** 天地图浏览器端 Token；空字符串表示宿主尚未配置在线底图。 */
+  tiandituToken: string
   appEnv: 'development' | 'test' | 'staging' | 'production'
   buildTool: 'vite' | 'webpack'
   version: string
@@ -16,6 +18,7 @@ const mode = (import.meta.env?.MODE ?? 'development') as RuntimeConfig['appEnv']
 export const env: RuntimeConfig = {
   apiBaseUrl: import.meta.env?.VITE_API_BASE_URL ?? 'http://localhost:3000',
   wsUrl: import.meta.env?.VITE_WS_URL ?? 'ws://localhost:3000',
+  tiandituToken: import.meta.env?.VITE_TIANDITU_TOKEN?.trim() ?? '',
   appEnv: mode,
   buildTool: 'vite',
   version: import.meta.env?.VITE_APP_VERSION ?? '2.0.0',
