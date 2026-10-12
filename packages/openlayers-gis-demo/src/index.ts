@@ -1,3 +1,4 @@
+// 运行时入口：地图编排、Vue 演示组件、业务 Store、Mock 服务与纯函数工具。
 export { MapManager } from './map/MapManager'
 export { LayerManager } from './map/LayerManager'
 export { default as GisManagementDemo } from './components/GisManagementDemo.vue'
@@ -12,10 +13,12 @@ export {
   parseInspectionEventsGeoJson,
   serializeInspectionEventsToGeoJson,
 } from './services/export-events'
+// 地图层公开协议：宿主只依赖稳定选项、统计、模式和业务 Layer ID。
 export type { MapManagerOptions, MapStats, RenderMode } from './map/MapManager'
 export type { EventSourceDiffStats } from './map/sources/sync-event-source'
 export type { CoreLayerId } from './map/LayerManager'
 export type { DrawGeometryType, MapMode } from './map/interactions/SpatialInteractionManager'
+// 业务领域协议：事件、轨迹和可序列化区域均不暴露 OpenLayers 运行时对象。
 export type {
   EventLevel,
   EventActivity,
@@ -32,6 +35,7 @@ export type {
   InspectionEventGeoJsonFeature,
   InspectionEventGeoJsonImportResult,
 } from './services/export-events'
+// 视口查询协议：允许 Mock Service 被保持同一接口的远程 Adapter 替换。
 export type {
   ViewportDatasetBuildStats,
   ViewportEventQuery,

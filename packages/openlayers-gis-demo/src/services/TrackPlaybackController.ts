@@ -15,6 +15,7 @@ interface Options {
   onTimeChange?: (timestamp: number, status: TrackPlaybackStatus) => void
 }
 
+/** 使用 requestAnimationFrame 按轨迹时间戳插值人员位置，并维护已巡 LineString。 */
 export class TrackPlaybackController {
   private frameId: number | null = null
   private status: TrackPlaybackStatus = 'idle'

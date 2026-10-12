@@ -1,22 +1,28 @@
 import type { EventLevel, EventStatus, EventType, InspectionEvent } from '../types/inspection-event'
 
+/** 导入白名单必须与公开业务联合类型同步，拒绝未知枚举值进入 Store。 */
 const EVENT_TYPES: readonly EventType[] = ['ROAD_DAMAGE', 'LIGHT_FAILURE', 'GARBAGE', 'MANHOLE']
 const EVENT_STATUSES: readonly EventStatus[] = ['PENDING', 'PROCESSING', 'DONE']
 const EVENT_LEVELS: readonly EventLevel[] = ['HIGH', 'MEDIUM', 'LOW']
 
 export interface InspectionEventGeoJsonFeature {
+  /** GeoJSON 要素固定标识。 */
   type: 'Feature'
+  /** 与 properties.id 保持一致的业务事件主键。 */
   id: string
   geometry: {
     type: 'Point'
     /** GeoJSON 坐标固定按 [WGS84 经度, WGS84 纬度] 排列。 */
     coordinates: readonly [number, number]
   }
+  /** 除空间坐标外的完整事件属性；经纬度只保存在 geometry.coordinates。 */
   properties: Omit<InspectionEvent, 'lng' | 'lat'>
 }
 
 export interface InspectionEventGeoJson {
+  /** GeoJSON 集合固定标识。 */
   type: 'FeatureCollection'
+  /** 仅允许本模块定义的 WGS84 Point Feature。 */
   features: InspectionEventGeoJsonFeature[]
 }
 
@@ -26,6 +32,7 @@ export interface InspectionEventGeoJsonImportResult {
   rejectedCount: number
 }
 
+/** 将不可信 JSON 缩窄为普通非数组对象，供后续逐字段校验。 */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

@@ -98,6 +98,7 @@ const EVENT_RESULTS_PADDING: [number, number, number, number] = [64, 64, 64, 64]
 /** 鼠标坐标通知的最小间隔，单位为毫秒；约 12 Hz 足以读取且避免高频触发 Vue 渲染。 */
 const POINTER_COORDINATE_INTERVAL_MS = 80
 
+/** Vue 与 OpenLayers 之间的命令式边界，统一拥有地图对象、图层、交互、Overlay 和销毁流程。 */
 export class MapManager {
   private readonly map: OlMap
   private readonly layerManager: LayerManager

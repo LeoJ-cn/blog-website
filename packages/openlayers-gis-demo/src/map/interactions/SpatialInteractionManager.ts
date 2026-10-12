@@ -38,6 +38,7 @@ interface Options {
   onRegionSelect?: (eventIds: string[] | null) => void
 }
 
+/** 统一编排 Select、Draw、Modify 的互斥激活、空间筛选和监听生命周期。 */
 export class SpatialInteractionManager {
   private readonly select: Select
   private readonly modify: Modify

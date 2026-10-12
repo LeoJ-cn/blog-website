@@ -6,10 +6,13 @@ import type {
 } from './types'
 
 export interface ViewportQueryControllerOptions {
+  /** 实际数据服务，可注入内存 Mock 或保持相同协议的 HTTP Adapter。 */
   service: ViewportEventService
+  /** 每次状态转换后同步调用；参数是冻结的只读浅快照。 */
   onStateChange: (state: Readonly<ViewportQueryState>) => void
 }
 
+/** 负责请求取消、序号竞态保护、数据版本校验、重试和 UI 查询状态转换。 */
 export class ViewportQueryController {
   readonly #service: ViewportEventService
   readonly #onStateChange: (state: Readonly<ViewportQueryState>) => void
@@ -24,11 +27,13 @@ export class ViewportQueryController {
   #nextRequestId = 0
   #destroyed = false
 
+  /** 保存服务与状态回调；构造过程不会自动发起查询。 */
   constructor(options: ViewportQueryControllerOptions) {
     this.#service = options.service
     this.#onStateChange = options.onStateChange
   }
 
+  /** 发起最新视口查询并取消前一请求；仅最新序号且数据版本一致的结果可以提交。 */
   async query(params: ViewportQueryParams): Promise<void> {
     if (this.#destroyed) return
 
@@ -74,11 +79,13 @@ export class ViewportQueryController {
     }
   }
 
+  /** 使用最近一次查询参数重试；没有历史参数或已销毁时为空操作。 */
   async retry(): Promise<void> {
     if (!this.#lastParams || this.#destroyed) return
     await this.query(this.#lastParams)
   }
 
+  /** 取消当前请求并恢复最近稳定状态；不会清除上一次成功结果。 */
   cancel(): void {
     if (this.#destroyed || !this.#activeAbortController) return
 
@@ -95,6 +102,7 @@ export class ViewportQueryController {
     })
   }
 
+  /** 幂等终止请求并禁止后续状态提交，同时释放最近参数引用。 */
   destroy(): void {
     if (this.#destroyed) return
     this.#destroyed = true

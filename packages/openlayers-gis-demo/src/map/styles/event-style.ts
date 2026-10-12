@@ -8,6 +8,7 @@ import { EVENT_SELECTION_COLOR, EVENT_STATUS_VISUALS } from './event-visual'
 // Style 函数会在渲染循环中高频调用，按处置状态复用实例以避免产生短生命周期对象。
 const EVENT_STYLE_CACHE = new Map<EventStatus, Style>()
 
+/** 独立 SelectionLayer 使用的高层级光圈样式。 */
 export const selectedEventStyle = new Style({
   // image 指定点要素的图像符号；CircleStyle.radius 单位为屏幕像素，不随地图缩放改变。
   image: new CircleStyle({
@@ -19,6 +20,7 @@ export const selectedEventStyle = new Style({
   zIndex: 100,
 })
 
+/** 按处置状态返回缓存 Style，避免渲染循环重复分配对象。 */
 export function getEventStyle(status: EventStatus): Style {
   const cachedStyle = EVENT_STYLE_CACHE.get(status)
   if (cachedStyle) return cachedStyle

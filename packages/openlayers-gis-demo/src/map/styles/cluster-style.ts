@@ -7,6 +7,7 @@ import Text from 'ol/style/Text.js' // OpenLayers 文本样式，用于显示聚
 const CACHE = new Map<number, Style>()
 const MAX_CACHE_SIZE = 2048
 
+/** 按聚合成员数量返回有界缓存样式；size 应为正整数，异常值按 1 计算半径。 */
 export function getClusterStyle(size: number): Style {
   // Style 函数会随地图重绘高频执行，按聚合数量复用实例以降低 GC 压力。
   const cached = CACHE.get(size)

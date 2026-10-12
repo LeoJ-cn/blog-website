@@ -4,6 +4,7 @@ import Fill from 'ol/style/Fill.js' // OpenLayers 填充样式，控制区域内
 import Stroke from 'ol/style/Stroke.js' // OpenLayers 描边样式，控制区域边界颜色与宽度。
 import Style from 'ol/style/Style.js' // OpenLayers 要素样式容器，组合区域填充与边界样式。
 
+/** 创建供 Draw/Modify 共用的区域 Source 与虚线面图层。 */
 export function createRegionLayer() {
   // wrapX=false 禁止用户绘制区域在世界地图横向副本中重复出现。
   const source = new VectorSource({ wrapX: false })

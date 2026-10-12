@@ -5,8 +5,10 @@ import VectorSource from 'ol/source/Vector.js' // OpenLayers 矢量数据源，�
 import type { InspectionEvent } from '../../types/inspection-event'
 import type { EventFeatureProperties } from '../types/event-feature'
 
+/** 事件在 OpenLayers 中的运行时表示；业务真值仍由 InspectionEvent 维护。 */
 export type EventFeature = Feature<Point>
 
+/** 提取地图渲染与交互所需的最小属性集合。 */
 export function getEventFeatureProperties(event: InspectionEvent): EventFeatureProperties {
   return {
     eventId: event.id,
@@ -16,6 +18,7 @@ export function getEventFeatureProperties(event: InspectionEvent): EventFeatureP
   }
 }
 
+/** 把 WGS84 业务事件转换为带稳定 ID 的 Web Mercator Point Feature。 */
 export function createEventFeature(event: InspectionEvent): EventFeature {
   // 业务坐标统一以 WGS84 保存，进入地图时才转换为默认的 Web Mercator 投影。
   // Feature 的 geometry 参数决定空间位置；Point 接收 [x, y] 投影坐标，fromLonLat 接收 [经度, 纬度]。
@@ -36,6 +39,7 @@ export function updateEventFeature(feature: EventFeature, event: InspectionEvent
   feature.getGeometry()?.setCoordinates(fromLonLat([event.lng, event.lat]))
 }
 
+/** 创建禁止横向世界复制的事件 VectorSource，并可批量写入初始事件。 */
 export function createEventSource(events: readonly InspectionEvent[] = []) {
   // features 是初始要素集合；wrapX=false 禁止要素跨世界副本重复显示。
   return new VectorSource<EventFeature>({

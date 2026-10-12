@@ -19,8 +19,10 @@ const ROUTE: readonly (readonly [number, number])[] = [
   [121.5125, 31.256667],
 ]
 
+/** 轨迹起点的 Unix 毫秒时间戳，显式使用东八区避免运行环境时区影响。 */
 const TRACK_START_TIME = Date.parse('2026-10-08T08:30:00+08:00')
 
+/** 可复现巡检轨迹；点顺序与 timestamp 同时严格递增。 */
 export const mockInspectionTrack: readonly TrackPoint[] = ROUTE.map(([lng, lat], index) => ({
   lng,
   lat,

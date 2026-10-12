@@ -12,12 +12,14 @@ export interface EventStatusVisual {
   color: string
 }
 
+/** 等级只提供文案，避免和处置状态重复使用颜色编码。 */
 export const EVENT_LEVEL_VISUALS: Record<EventLevel, EventLevelVisual> = {
   HIGH: { label: '高等级' },
   MEDIUM: { label: '中等级' },
   LOW: { label: '低等级' },
 }
 
+/** 状态视觉是地图点位、列表标签和图例的共享单一来源。 */
 export const EVENT_STATUS_VISUALS: Record<EventStatus, EventStatusVisual> = {
   PENDING: { label: '待处理', color: '#ef4444' },
   PROCESSING: { label: '处理中', color: '#f59e0b' },

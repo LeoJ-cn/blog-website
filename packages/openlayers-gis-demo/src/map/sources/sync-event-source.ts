@@ -23,6 +23,7 @@ export interface EventSourceDiffStats {
   removedSelectedEventId: string | null
 }
 
+/** 比较 Feature 的业务属性与投影坐标，判断是否需要就地更新。 */
 export function hasEventFeatureChanged(feature: EventFeature, event: InspectionEvent): boolean {
   const expectedProperties = getEventFeatureProperties(event)
   if (
@@ -46,6 +47,7 @@ export function hasEventFeatureChanged(feature: EventFeature, event: InspectionE
   )
 }
 
+/** 按稳定事件 ID 对 Source 执行增删改 Diff，并保留未变化及更新 Feature 的对象身份。 */
 export function syncEventSource(
   source: VectorSource<EventFeature>,
   events: readonly InspectionEvent[],

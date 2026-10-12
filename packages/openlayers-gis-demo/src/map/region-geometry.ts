@@ -10,6 +10,7 @@ function toWgs84Coordinate(coordinate: number[]): Wgs84Coordinate {
   return [lonLat[0]!, lonLat[1]!]
 }
 
+/** 将 OpenLayers Polygon/Circle 转为可持久化 WGS84 协议；其他几何返回 null。 */
 export function serializeRegionGeometry(geometry: Geometry): RegionGeometry | null {
   if (geometry instanceof Polygon) {
     // getCoordinates() 返回 Polygon 的坐标环数组；每个环均逐点转换为可持久化的 WGS84 经纬度。
@@ -34,6 +35,7 @@ export function serializeRegionGeometry(geometry: Geometry): RegionGeometry | nu
   return null
 }
 
+/** 将可序列化 WGS84 区域恢复为默认 Web Mercator 下的 OpenLayers Geometry。 */
 export function deserializeRegionGeometry(regionGeometry: RegionGeometry): Polygon | Circle {
   if (regionGeometry.type === 'Polygon') {
     // Polygon(coordinates) 接收“坐标环 → 坐标点”的嵌套数组；fromLonLat 将每点投影到 EPSG:3857。

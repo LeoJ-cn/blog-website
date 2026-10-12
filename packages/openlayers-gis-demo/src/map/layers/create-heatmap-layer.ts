@@ -10,6 +10,7 @@ const LEVEL_WEIGHT: Record<EventFeatureProperties['level'], number> = {
 }
 
 /** 复用事件 Source 创建分析图层，权重同时体现调度等级和未闭环风险。 */
+/** 复用事件 Source 创建默认隐藏的风险热力层，权重范围为 0～1。 */
 export function createHeatmapLayer(source: VectorSource<EventFeature>) {
   // HeatmapLayer 将 source 中的点要素按 weight 合成为像素密度图。
   return new HeatmapLayer({

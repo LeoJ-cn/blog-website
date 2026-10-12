@@ -70,6 +70,7 @@ function getCheckpointStyle(state: CheckpointState, label: string): Style | unde
   return style
 }
 
+/** 将升序 WGS84 轨迹投影为路线、检查点和人员 Feature，并提供进度更新协议。 */
 export function createTrackLayer(points: readonly TrackPoint[]) {
   // fromLonLat 接收 [经度, 纬度]，返回默认 EPSG:3857 的 [x, y] 米制投影坐标。
   const projectedPoints: ProjectedTrackPoint[] = points.map((point) => ({

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+// OpenLayers 基础样式负责地图画布、控件与 Overlay 的必要布局；业务视觉仍由组件样式控制。
 import 'ol/ol.css'
 import { MapManager } from '../map/MapManager'
 import type { MapStats, RenderMode } from '../map/MapManager'
@@ -15,12 +16,7 @@ import {
   serializeInspectionEventsToGeoJson,
 } from '../services/export-events'
 import { useGisStore } from '../stores/gis'
-import type {
-  EventLevel,
-  EventStatus,
-  EventType,
-  InspectionEvent,
-} from '../types/inspection-event'
+import type { EventLevel, EventStatus, EventType, InspectionEvent } from '../types/inspection-event'
 import type { Wgs84Coordinate } from '../types/region'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
 import { createMockViewportEventService } from '../viewport/mock-viewport-event-service'
@@ -40,13 +36,16 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), { tiandituToken: '' })
 
+/** 事件类型协议到中文展示名的唯一映射，筛选项、列表和详情共用。 */
 const TYPE_LABELS = {
   ROAD_DAMAGE: '道路破损',
   LIGHT_FAILURE: '路灯故障',
   GARBAGE: '垃圾堆积',
   MANHOLE: '井盖异常',
 } as const
+/** 调度等级协议到中文展示名的映射，不承担颜色语义。 */
 const LEVEL_LABELS = { HIGH: '高等级', MEDIUM: '中等级', LOW: '低等级' } as const
+// 以下选项数组由协议映射派生，避免 UI 选项与联合类型分别维护后发生漂移。
 const EVENT_TYPES = Object.keys(TYPE_LABELS) as EventType[]
 const EVENT_STATUSES = Object.keys(EVENT_STATUS_VISUALS) as EventStatus[]
 const EVENT_LEVELS = Object.keys(LEVEL_LABELS) as EventLevel[]
@@ -63,10 +62,13 @@ const EVENT_LIST_SORT_OPTIONS: readonly { value: EventListSort; label: string }[
   { value: 'LEVEL_DESC', label: '紧急程度：高优先' },
   { value: 'STATUS_PENDING_FIRST', label: '处理状态：待处理优先' },
 ]
+/** 数值越小排序优先级越高，用于等级降序列表。 */
 const EVENT_LEVEL_PRIORITY: Record<EventLevel, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 }
+/** 数值越小越靠前，保证未闭环任务优先展示。 */
 const EVENT_STATUS_PRIORITY: Record<EventStatus, number> = { PENDING: 0, PROCESSING: 1, DONE: 2 }
 /** 不同调度等级的处置时限，单位为小时；截止时刻按事件上报时间向后累加。 */
 const EVENT_SLA_HOURS: Record<EventLevel, number> = { HIGH: 2, MEDIUM: 4, LOW: 8 }
+/** 演示环境可分派人员白名单；姓名同时作为下拉值和工作量统计键。 */
 const INSPECTOR_NAMES = ['张建国', '李敏', '王磊', '陈静', '赵强', '周宁'] as const
 type WorkspaceScene =
   | 'realtime' // 日常监控事件、轨迹和处置状态。
@@ -77,6 +79,7 @@ const WORKSPACE_SCENE_META: Record<WorkspaceScene, { label: string; description:
   dispatch: { label: '任务调度', description: '责任网格、精确点位与人员分派' },
   replay: { label: '巡检复盘', description: '巡检路线、时间定位与覆盖核查' },
 }
+/** 事件时间统一按中文两位月日和 24 小时制展示，输入为 ISO 时间或时间戳。 */
 const EVENT_CREATED_AT_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
   month: '2-digit',
   day: '2-digit',
@@ -92,6 +95,7 @@ type LayerControlId =
   | 'track'
   | 'region'
   | 'selection'
+/** 图层控制器只暴露业务级开关；events 在内部同时控制 EventLayer 与 ClusterLayer。 */
 const LAYER_CONTROLS: readonly { id: LayerControlId; label: string }[] = [
   { id: 'base', label: '底图' },
   { id: 'events', label: '事件' },
@@ -102,6 +106,7 @@ const LAYER_CONTROLS: readonly { id: LayerControlId; label: string }[] = [
   { id: 'selection', label: '选中高亮' },
 ]
 const statusLegend = Object.values(EVENT_STATUS_VISUALS)
+/** CSS 自定义属性供模板图例色块读取，不直接修改全局样式。 */
 const selectionLegendStyle = { '--legend-color': EVENT_SELECTION_COLOR }
 
 type BaseMapStatus =
@@ -119,8 +124,11 @@ const baseMapStatusMessage = computed(() => {
   return ''
 })
 
+/** 地图渲染容器引用；onMounted 时交给 MapManager.setTarget。 */
 const mapTarget = ref<HTMLElement | null>(null)
+/** Popup DOM 引用；由 OpenLayers Overlay 定位，但内容仍由 Vue 渲染。 */
 const popupElement = ref<HTMLElement | null>(null)
+/** 事件列表滚动容器，用于选中跨页事件后滚动到可见位置。 */
 const eventListElement = ref<HTMLElement | null>(null)
 const store = useGisStore()
 const selectedEvent = computed(() => store.selectedEvent)
@@ -145,6 +153,7 @@ interface EventEvidenceAttachment {
   addedAt: string
 }
 
+/** 新建事件表单默认值；中心点使用上海 WGS84 [经度, 纬度]。 */
 const createDefaultEventDraft = (): EventFormDraft => ({
   type: 'ROAD_DAMAGE',
   level: 'MEDIUM',
@@ -152,18 +161,25 @@ const createDefaultEventDraft = (): EventFormDraft => ({
   lng: 121.4737,
   lat: 31.2304,
 })
+/** true 表示事件新增/编辑抽屉已打开。 */
 const eventFormOpen = ref(false)
 /** null 表示创建事件，否则为正在编辑且保持不变的业务 ID。 */
 const editingEventId = ref<string | null>(null)
 const eventForm = reactive<EventFormDraft>(createDefaultEventDraft())
+/** 空字符串表示表单校验通过或尚未校验。 */
 const eventFormError = ref('')
+/** 地图是否正在独占下一次 singleclick 作为事件坐标。 */
 const isPickingEventLocation = ref(false)
 /** 保存进入二次确认时的事件 ID，避免选择变化后误删另一条事件。 */
 const deleteCandidateId = ref<string | null>(null)
+/** 详情面板中的待提交责任人；空字符串表示尚未选择。 */
 const dispatchAssignee = ref('')
+/** 默认进入实时态势场景，场景会联动图层显隐和交互模式。 */
 const workspaceScene = ref<WorkspaceScene>('realtime')
 const activeSceneMeta = computed(() => WORKSPACE_SCENE_META[workspaceScene.value])
+/** GeoJSON 导入结果；null 表示无需展示反馈。 */
 const importFeedback = ref<{ message: string; error: boolean } | null>(null)
+/** 现场凭证仅保存在浏览器内存，按事件 ID 分组，不进入业务 Store。 */
 const evidenceByEventId = reactive<Record<string, EventEvidenceAttachment[]>>({})
 const evidenceFeedback = ref<{ message: string; error: boolean } | null>(null)
 const selectedEventEvidence = computed(() => {
@@ -209,7 +225,10 @@ const operationalFilteredEvents = computed(() =>
   }),
 )
 const assigneeWorkloads = computed(() => {
-  const counts = Object.fromEntries(INSPECTOR_NAMES.map((name) => [name, 0])) as Record<string, number>
+  const counts = Object.fromEntries(INSPECTOR_NAMES.map((name) => [name, 0])) as Record<
+    string,
+    number
+  >
   let unassigned = 0
   let total = 0
   for (const event of store.events) {
@@ -279,9 +298,8 @@ const demoClock = computed(() => {
 })
 const overdueCount = computed(
   () =>
-    store.events.filter(
-      (event) => event.status !== 'DONE' && getEventSlaRemainingMs(event) < 0,
-    ).length,
+    store.events.filter((event) => event.status !== 'DONE' && getEventSlaRemainingMs(event) < 0)
+      .length,
 )
 const todayNewCount = computed(() => {
   const latestDate = new Date(demoClock.value).toISOString().slice(0, 10)
@@ -361,51 +379,75 @@ const situationOverview = computed(() => {
 })
 // 空字符串是原生 select 的“全部”值，应用时转换为业务筛选协议中的 null。
 const filterDraft = reactive({
+  // keyword 为空表示不按 ID、地址或类型名称搜索。
   keyword: store.eventFilter.keyword,
+  // 原生 select 用空字符串表达“全部”，提交查询时再转换为 null。
   type: (store.eventFilter.type ?? '') as EventType | '',
   status: (store.eventFilter.status ?? '') as EventStatus | '',
   level: (store.eventFilter.level ?? '') as EventLevel | '',
 })
 const layerVisibility = reactive<Record<LayerControlId, boolean>>({
+  // 在线底图默认显示；Token 缺失时 LayerGroup 保持为空但开关语义不变。
   base: true,
+  // 普通点与聚合点作为同一个业务图层开关控制。
   events: true,
+  // 分析型图层默认关闭，避免遮挡常规事件状态表达。
   heatmap: false,
   responsibilityGrid: false,
+  // 实时场景默认展示完整轨迹，区域和选中高亮保持可见。
   track: true,
   region: true,
   selection: true,
 })
+/** Mock 数据集默认生成 10,000 条；调整后会重建索引并重新查询当前视口。 */
 const dataCount = ref(10_000)
+/** 海量点默认使用 Cluster；高缩放级别由 MapManager 自动展开为原始点。 */
 const renderMode = ref<RenderMode>('cluster')
+/** 地图性能面板初始快照；耗时单位均为毫秒，null 表示仍等待 rendercomplete。 */
 const stats = ref<MapStats>({
+  // 与 MapManager 默认 View.zoom 保持一致。
   zoom: 12,
+  // 地图尚未收到首次视口数据，因此初始 Feature 数为 0。
   featureCount: 0,
   renderMode: 'cluster',
+  // 三项耗时均以毫秒计；首次批处理前为 0，渲染完成前 renderCompleteMs 为 null。
   featureConversionMs: 0,
   sourceUpdateMs: 0,
   renderCompleteMs: null,
   eventSourceDiff: null,
 })
+/** 指针位置使用 [WGS84 经度, WGS84 纬度]；null 表示指针已离开地图。 */
 const pointerCoordinate = ref<Wgs84Coordinate | null>(null)
 const formattedPointerCoordinate = computed(() => {
   const coordinate = pointerCoordinate.value
   return coordinate ? `${coordinate[0].toFixed(6)}, ${coordinate[1].toFixed(6)}` : '—'
 })
+/** Mock 数据集构建与索引统计；null 表示 Service 尚未初始化。 */
 const datasetBuildStats = ref<ViewportDatasetBuildStats | null>(null)
+/** Controller 查询状态；requestId 单调递增，用于阻止旧请求覆盖新结果。 */
 const viewportQueryState = ref<ViewportQueryState>({
+  // idle 表示 Controller 尚未发起查询；result/errorMessage 均为空。
   status: 'idle',
   result: null,
   errorMessage: null,
+  // requestId 从 0 起，由 Controller 在每次查询、取消时递增。
   requestId: 0,
 })
 /** 最近一次由地图产生的真实 WGS84 BBOX；null 表示地图尚未形成有效尺寸。 */
 const currentViewportBbox = ref<Wgs84Bbox | null>(null)
+/** 默认选择模式允许命中事件；draw/modify 分别创建和编辑区域。 */
 const mapMode = ref<MapMode>('select')
+/** Draw 默认创建 Polygon，可切换为 Point 或 Circle。 */
 const drawType = ref<DrawGeometryType>('Polygon')
+/** 轨迹倍速是相对原始时间轴的倍率，允许值由 TrackPlaybackSpeed 协议限定。 */
 const trackSpeed = ref<TrackPlaybackSpeed>(1)
+/** idle、playing、paused、finished 由 TrackPlaybackController 回调维护。 */
 const trackStatus = ref<TrackPlaybackStatus>('idle')
+/** 当前轨迹时间是 Unix 毫秒时间戳，默认定位到首个采样点。 */
 const trackTime = ref(mockInspectionTrack[0]?.timestamp ?? 0)
+/** range input 最新待提交进度，闭区间为 [0, 1]；null 表示没有待处理输入。 */
 let pendingTrackSeekRatio: number | null = null
+/** 合并同一绘制帧内连续 seek 的 requestAnimationFrame 句柄。 */
 let trackSeekFrameId: number | null = null
 const formattedTrackTime = computed(() =>
   new Intl.DateTimeFormat('zh-CN', {
@@ -472,11 +514,13 @@ let mapManager: MapManager | null = null
 let viewportService: ViewportEventService | null = null
 let viewportQueryController: ViewportQueryController | null = null
 
+// 回放场景用零基轨迹节点驱动责任网格；其他场景传 null 恢复普通网格状态。
 watch([trackActiveGridSequence, workspaceScene], ([activeSequence, scene]) => {
   mapManager?.updateResponsibilityGridProgress(scene === 'replay' ? activeSequence : null)
 })
 
 watch(
+  // 监听稳定业务 ID，不直接监听 OpenLayers Feature，保持 Vue 与地图对象解耦。
   () => store.selectedEventId,
   async (eventId) => {
     deleteCandidateId.value = null
@@ -601,9 +645,13 @@ function changeWorkspaceScene(scene: WorkspaceScene) {
   const restoresAllAssignees = scene !== 'dispatch' && assigneeFilter.value !== 'ALL'
   if (restoresAllAssignees) assigneeFilter.value = 'ALL'
   workspaceScene.value = scene
+  // 每个场景只声明需要覆盖的图层，其余图层沿用用户当前开关状态。
   const visibilityByScene: Record<WorkspaceScene, Partial<Record<LayerControlId, boolean>>> = {
+    // 实时态势展示事件与轨迹，关闭分析覆盖层。
     realtime: { events: true, heatmap: false, responsibilityGrid: false, track: true },
+    // 调度场景显示事件和责任网格，隐藏轨迹以减少视觉干扰。
     dispatch: { events: true, heatmap: false, responsibilityGrid: true, track: false },
+    // 复盘场景隐藏事件点，只保留责任网格与巡检轨迹。
     replay: { events: false, heatmap: false, responsibilityGrid: true, track: true },
   }
   for (const [layerId, visible] of Object.entries(visibilityByScene[scene])) {
@@ -639,20 +687,19 @@ function applyAssigneeQuickFilter(assignee: string) {
 
 function handleViewportQueryState(nextState: Readonly<ViewportQueryState>) {
   viewportQueryState.value = nextState
-  if (
-    (nextState.status !== 'success' && nextState.status !== 'empty') ||
-    !nextState.result
-  ) {
+  if ((nextState.status !== 'success' && nextState.status !== 'empty') || !nextState.result) {
     return
   }
 
   const merged = mergeViewportQueryState(
+    // 第一参数是提交前的业务快照，用于保留仍有效的选择、区域结果和分页位置。
     {
       events: store.events,
       selectedEventId: store.selectedEventId,
       regionEventIds: store.regionEventIds,
       page: eventListPage.value,
     },
+    // 第二参数是 Controller 已完成竞态和版本校验后的查询状态。
     nextState,
   )
   store.replaceViewportEvents(merged.events)
@@ -668,8 +715,11 @@ function queryViewport(bbox: Wgs84Bbox) {
   const expectedDatasetVersion = datasetBuildStats.value?.datasetVersion
   if (!viewportQueryController || expectedDatasetVersion === undefined) return
   void viewportQueryController.query({
+    // bbox 按 [西, 南, 东, 北] 排列，单位为 WGS84 经纬度，边界包含。
     bbox,
+    // filter 是当前业务筛选快照；Controller 会克隆参数，避免后续响应式变更污染在途请求。
     filter: store.eventFilter,
+    // 仅允许相同数据集版本的响应提交，重建 Mock 数据时自动丢弃旧结果。
     expectedDatasetVersion,
   })
 }
@@ -830,6 +880,7 @@ function addEventEvidence(event: Event) {
   if (!eventId || files.length === 0) return
 
   const currentAttachments = evidenceByEventId[eventId] ?? []
+  // 每个事件最多保留 3 张图片；availableSlots 是本次仍可接收的数量。
   const availableSlots = Math.max(0, 3 - currentAttachments.length)
   if (availableSlots === 0) {
     evidenceFeedback.value = { message: '每个事件最多保留 3 张现场图片', error: true }
@@ -839,6 +890,7 @@ function addEventEvidence(event: Event) {
   const acceptedAttachments: EventEvidenceAttachment[] = []
   let rejectedCount = 0
   for (const file of files.slice(0, availableSlots)) {
+    // 只接受浏览器识别的图片 MIME，单文件上限为 5 MiB。
     if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
       rejectedCount += 1
       continue
@@ -846,6 +898,7 @@ function addEventEvidence(event: Event) {
     acceptedAttachments.push({
       id: `${eventId}-evidence-${Date.now()}-${acceptedAttachments.length}`,
       name: file.name,
+      // createObjectURL 创建仅当前页面可用的 Blob URL，移除附件和卸载组件时必须 revoke。
       objectUrl: URL.createObjectURL(file),
       sizeBytes: file.size,
       addedAt: new Date().toISOString(),
@@ -867,9 +920,7 @@ function removeEventEvidence(eventId: string, attachmentId: string) {
   const target = attachments.find((attachment) => attachment.id === attachmentId)
   if (!target) return
   URL.revokeObjectURL(target.objectUrl)
-  evidenceByEventId[eventId] = attachments.filter(
-    (attachment) => attachment.id !== attachmentId,
-  )
+  evidenceByEventId[eventId] = attachments.filter((attachment) => attachment.id !== attachmentId)
   evidenceFeedback.value = null
 }
 
@@ -889,6 +940,7 @@ function changeDataCount(count: number) {
   releaseAllEventEvidence()
   dataCount.value = count
   viewportQueryController?.cancel()
+  // setDatasetSize 同步重建完整 Mock 数据集、经纬度桶索引并递增 datasetVersion。
   datasetBuildStats.value = viewportService.setDatasetSize(count)
   const reset = resetViewportDatasetState()
   store.setEvents(reset.events)
@@ -968,9 +1020,11 @@ function changeEventListSort() {
 function exportCurrentEvents() {
   if (scopedEvents.value.length === 0) return
   const geoJson = serializeInspectionEventsToGeoJson(scopedEvents.value)
+  // Blob 使用 GeoJSON MIME 和 UTF-8；JSON 缩进 2 个空格便于导出文件人工阅读。
   const blob = new Blob([JSON.stringify(geoJson, null, 2)], {
     type: 'application/geo+json;charset=utf-8',
   })
+  // 临时 Blob URL 只用于触发浏览器下载，完成后必须释放。
   const downloadUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = downloadUrl
@@ -1131,28 +1185,41 @@ function seekTrackCheckpoint(sequence: number) {
 }
 
 onMounted(() => {
+  // initialCount=0 避免构造后立即生成默认数据；下一行再按 dataCount 统一建立数据集和索引。
   viewportService = createMockViewportEventService(0)
+  // 返回值包含数据集版本、数量和构建耗时，供查询版本保护与性能面板展示。
   datasetBuildStats.value = viewportService.setDatasetSize(dataCount.value)
   viewportQueryController = new ViewportQueryController({
+    // service 通过 ViewportEventService 接口注入，后续可替换为 HTTP 实现。
     service: viewportService,
+    // onStateChange 接收 idle/loading/success/empty/error 状态和已校验结果。
     onStateChange: handleViewportQueryState,
   })
   store.setEvents([])
   mapManager = new MapManager({
+    // 浏览器端 Token 仅传给 WMTS Source；组件不记录、不展示 Token。
     tiandituToken: props.tiandituToken,
+    // 任一底图瓦片失败后切换非敏感提示，不暴露请求 URL 或 Token。
     onBaseMapError: () => {
       baseMapStatus.value = 'load-error'
     },
+    // 事件由首次有效视口查询提供，因此 Map 初始化时使用空 Source。
     events: [],
+    // 地图只回传业务 ID，Pinia 不持有 OpenLayers Feature。
     onEventSelect: store.selectEvent,
+    // 视口 Diff 删除当前选中事件时同步清理 Store 选择。
     onEventSelectInvalidated: () => store.selectEvent(null),
+    // 首次挂载和每次 moveend 产生 WGS84 BBOX，并触发可取消的视口查询。
     onViewportChange: queryViewport,
+    // 性能统计包含 zoom、Feature 数量、转换/Source/渲染耗时和 Diff 结果。
     onStatsChange: (nextStats) => {
       stats.value = nextStats
     },
+    // 指针坐标按 [WGS84 经度, WGS84 纬度] 返回；移出地图时为 null。
     onPointerCoordinate: (coordinate) => {
       pointerCoordinate.value = coordinate
     },
+    // Draw/Modify 返回当前区域命中的事件 ID；null 表示几何不具备区域语义。
     onRegionSelect: (eventIds) => {
       store.selectRegionEvents(eventIds)
       eventListPage.value = 1
@@ -1160,18 +1227,23 @@ onMounted(() => {
       const geometry = mapManager?.getCurrentRegionGeometry()
       if (regionId && geometry && eventIds) store.updateRegion(regionId, geometry, eventIds)
     },
+    // 轨迹点按 timestamp 升序，坐标字段是 WGS84 经纬度。
     trackPoints: mockInspectionTrack,
+    // timestamp 为 Unix 毫秒；status 由轨迹控制器的播放状态机产生。
     onTrackTimeChange: (timestamp, status) => {
       trackTime.value = timestamp
       trackStatus.value = status
     },
   })
   mapManager.setRenderMode(renderMode.value)
+  // null 表示未进入复盘，责任网格与检查点恢复默认状态。
   mapManager.updateResponsibilityGridProgress(null)
+  // 第二参数是 Popup DOM；缺失时地图仍可正常挂载和渲染。
   if (mapTarget.value) mapManager.mount(mapTarget.value, popupElement.value ?? undefined)
 })
 
 onBeforeUnmount(() => {
+  // 依次释放帧回调、Blob URL、请求控制器、完整 Mock 数据集和 OpenLayers 实例。
   if (trackSeekFrameId !== null) cancelAnimationFrame(trackSeekFrameId)
   trackSeekFrameId = null
   pendingTrackSeekRatio = null
@@ -1336,7 +1408,8 @@ onBeforeUnmount(() => {
                 aria-label="在地图中定位当前视口筛选结果"
                 @click="fitCurrentEvents"
               >
-                <i aria-hidden="true">⌖</i><span>定位</span>
+                <i aria-hidden="true">⌖</i>
+                <span>定位</span>
               </button>
               <button
                 class="event-export"
@@ -1345,10 +1418,12 @@ onBeforeUnmount(() => {
                 aria-label="将当前视口结果导出为 GeoJSON"
                 @click="exportCurrentEvents"
               >
-                <i aria-hidden="true">↓</i><span>导出当前视口</span>
+                <i aria-hidden="true">↓</i>
+                <span>导出当前视口</span>
               </button>
               <label class="event-import">
-                <i aria-hidden="true">↑</i><span>导入</span>
+                <i aria-hidden="true">↑</i>
+                <span>导入</span>
                 <input
                   type="file"
                   accept=".geojson,application/geo+json,application/json"
@@ -1494,7 +1569,10 @@ onBeforeUnmount(() => {
         <section v-if="layerVisibility.heatmap" class="heatmap-legend" aria-label="热力强度图例">
           <strong>事件风险热力</strong>
           <div class="heatmap-gradient" aria-hidden="true"></div>
-          <span><small>低</small><small>高</small></span>
+          <span>
+            <small>低</small>
+            <small>高</small>
+          </span>
           <p>高等级、未闭环事件权重更高</p>
         </section>
         <section
@@ -1503,18 +1581,35 @@ onBeforeUnmount(() => {
           aria-label="责任网格摘要"
         >
           <strong>责任网格</strong>
-          <span><b>12</b> 个网格单元</span>
+          <span>
+            <b>12</b>
+            个网格单元
+          </span>
           <span v-if="workspaceScene === 'replay'">
-            <b>{{ trackCoveredGridCount }}/12</b> 已覆盖
+            <b>{{ trackCoveredGridCount }}/12</b>
+            已覆盖
           </span>
           <div v-if="workspaceScene === 'replay'" class="coverage-legend" aria-label="巡检覆盖图例">
-            <span><i class="current"></i>当前</span>
-            <span><i class="visited"></i>已巡</span>
-            <span><i></i>未巡</span>
+            <span>
+              <i class="current"></i>
+              当前
+            </span>
+            <span>
+              <i class="visited"></i>
+              已巡
+            </span>
+            <span>
+              <i></i>
+              未巡
+            </span>
           </div>
-          <span><b>{{ scopedEvents.length.toLocaleString() }}</b> 个当前事件</span>
+          <span>
+            <b>{{ scopedEvents.length.toLocaleString() }}</b>
+            个当前事件
+          </span>
           <span v-if="store.regionEventIds !== null">
-            <b>{{ store.regionEventIds.length.toLocaleString() }}</b> 个区域命中
+            <b>{{ store.regionEventIds.length.toLocaleString() }}</b>
+            个区域命中
           </span>
         </section>
         <section
@@ -1556,8 +1651,14 @@ onBeforeUnmount(() => {
             </div>
           </dl>
           <div class="route-progress-legend" aria-label="巡检路线进度图例">
-            <span><i class="completed"></i>实线 已巡</span>
-            <span><i></i>虚线 未巡</span>
+            <span>
+              <i class="completed"></i>
+              实线 已巡
+            </span>
+            <span>
+              <i></i>
+              虚线 未巡
+            </span>
           </div>
           <footer>
             <span>{{ trackSpeed }}x</span>
@@ -1817,7 +1918,9 @@ onBeforeUnmount(() => {
             <ol class="disposition-stages">
               <li v-for="stage in dispositionStages" :key="stage.label" :class="stage.state">
                 <i aria-hidden="true"></i>
-                <span><b>{{ stage.label }}</b></span>
+                <span>
+                  <b>{{ stage.label }}</b>
+                </span>
               </li>
             </ol>
             <strong class="activity-heading">操作记录</strong>
@@ -2077,8 +2180,14 @@ onBeforeUnmount(() => {
       <button :class="{ active: trackSpeed === 2 }" @click="changeTrackSpeed(2)">2x</button>
       <button :class="{ active: trackSpeed === 8 }" @click="changeTrackSpeed(8)">8x</button>
       <div class="track-playback-meta" aria-live="off">
-        <span>当前巡检时间：<b>{{ formattedTrackTime }}</b></span>
-        <span>状态：<b>{{ trackStatus }}</b></span>
+        <span>
+          当前巡检时间：
+          <b>{{ formattedTrackTime }}</b>
+        </span>
+        <span>
+          状态：
+          <b>{{ trackStatus }}</b>
+        </span>
       </div>
     </div>
     <footer class="gis-status">
@@ -2867,7 +2976,9 @@ onBeforeUnmount(() => {
 }
 .route-progress-legend i.completed {
   border-top: 4px solid #8b5cf6;
-  box-shadow: 0 -1px 0 #2e1065, 0 1px 0 #2e1065;
+  box-shadow:
+    0 -1px 0 #2e1065,
+    0 1px 0 #2e1065;
 }
 .dispatch-roster {
   position: absolute;

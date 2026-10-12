@@ -1,10 +1,12 @@
 import type { EventLevel, EventStatus, EventType, InspectionEvent } from '../types/inspection-event'
 
+/** 以下枚举池按索引或固定种子抽样，必须覆盖公开业务协议的全部成员。 */
 const TYPES: readonly EventType[] = ['ROAD_DAMAGE', 'LIGHT_FAILURE', 'GARBAGE', 'MANHOLE']
 const STATUSES: readonly EventStatus[] = ['PENDING', 'PROCESSING', 'DONE']
 const LEVELS: readonly EventLevel[] = ['HIGH', 'MEDIUM', 'LOW']
 const DISTRICTS = ['黄浦区', '静安区', '徐汇区', '虹口区', '浦东新区'] as const
 
+/** 创建闭区间下界、开区间上界为 [0, 1) 的确定性伪随机函数。 */
 function createSeededRandom(seed: number) {
   let state = seed >>> 0
   return () => {
@@ -14,7 +16,7 @@ function createSeededRandom(seed: number) {
   }
 }
 
-/** 相同 count 始终生成相同数据，便于复现性能对比和交互问题。 */
+/** 相同 count 始终生成相同数据；count 向下取整并限制为非负数。 */
 export function generateInspectionEvents(count: number): InspectionEvent[] {
   const normalizedCount = Math.max(0, Math.floor(count))
   const random = createSeededRandom(20261008 + normalizedCount)

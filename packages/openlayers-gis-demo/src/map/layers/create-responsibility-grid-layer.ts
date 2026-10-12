@@ -17,6 +17,7 @@ const GRID_WGS84_EXTENT: readonly [number, number, number, number] = [
 type GridCoverageState = 'pending' | 'current' | 'visited'
 
 /** 创建演示责任网格；每个网格只表达空间责任范围，不参与用户绘制区域筛选。 */
+/** 创建固定 4×3 WGS84 责任网格和基于零基轨迹序号的覆盖进度控制器。 */
 export function createResponsibilityGridLayer() {
   const [minLng, minLat, maxLng, maxLat] = GRID_WGS84_EXTENT
   const lngStep = (maxLng - minLng) / GRID_COLUMNS

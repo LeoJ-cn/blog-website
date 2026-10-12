@@ -4,6 +4,7 @@ import type { EventFeature } from '../sources/create-event-source'
 import { getEventStyle } from '../styles/event-style'
 import type { EventFeatureProperties } from '../types/event-feature'
 
+/** 使用状态样式回调创建普通事件点图层；调用方保留 Source 所有权。 */
 export function createEventLayer(source: VectorSource<EventFeature>) {
   // VectorLayer 负责把 source 中的 Point Feature 交给 Canvas 渲染器绘制。
   return new VectorLayer<VectorSource<EventFeature>>({

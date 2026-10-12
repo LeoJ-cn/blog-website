@@ -6,6 +6,7 @@ import { getClusterStyle } from '../styles/cluster-style'
 import { getEventStyle } from '../styles/event-style'
 import type { EventFeatureProperties } from '../types/event-feature'
 
+/** 用像素距离聚合现有事件 Source，并返回聚合图层和包装 Source。 */
 export function createClusterLayer(eventSource: VectorSource<EventFeature>) {
   // ClusterSource 只包装业务 Source，两种渲染模式共享同一批 Feature，避免维护重复数据。
   // distance 与 minDistance 的单位均为屏幕像素：前者控制聚合半径，后者避免聚合图标完全重叠。

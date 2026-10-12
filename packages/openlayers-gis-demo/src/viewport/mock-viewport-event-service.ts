@@ -11,7 +11,9 @@ import {
   type Wgs84Bbox,
 } from './types'
 
+/** 默认模拟网络等待时间，单位为毫秒，不计入 queryDurationMs。 */
 const DEFAULT_LATENCY_MS = 80
+/** 默认 LRU 条目上限；Key 同时包含数据版本、量化 BBOX 和筛选条件。 */
 const DEFAULT_CACHE_CAPACITY = 20
 
 interface CachedQueryCandidates {
@@ -32,6 +34,7 @@ export interface MockViewportEventServiceOptions {
   datasetFactory?: (count: number) => InspectionEvent[]
 }
 
+/** 在内存数据集上实现可取消视口查询、固定网格索引和有界 LRU 缓存。 */
 class MockViewportEventService implements ViewportEventService {
   readonly #latencyMs: number
   readonly #cacheCapacity: number
@@ -62,6 +65,7 @@ class MockViewportEventService implements ViewportEventService {
     this.setDatasetSize(initialCount)
   }
 
+  /** 重建确定性 Mock 数据与索引，递增版本并清空引用旧事件的全部缓存。 */
   setDatasetSize(count: number): ViewportDatasetBuildStats {
     this.#assertActive()
     const normalizedCount = Math.max(0, Math.floor(count))
@@ -88,6 +92,7 @@ class MockViewportEventService implements ViewportEventService {
     }
   }
 
+  /** 查询量化范围缓存，再按真实 BBOX 精筛；模拟延迟结束后才开始统计纯查询耗时。 */
   async query(query: ViewportEventQuery): Promise<ViewportEventQueryResult> {
     this.#assertActive()
     this.#throwIfAborted(query.signal)
@@ -130,10 +135,12 @@ class MockViewportEventService implements ViewportEventService {
     }
   }
 
+  /** 清空 LRU 查询结果但不影响数据集版本或空间索引。 */
   clearCache(): void {
     this.#cache.clear()
   }
 
+  /** 幂等释放事件、索引和缓存；销毁后继续查询或重建数据会抛错。 */
   destroy(): void {
     this.#destroyed = true
     this.clearCache()
@@ -254,6 +261,7 @@ class MockViewportEventService implements ViewportEventService {
   }
 }
 
+/** 创建 ViewportEventService 抽象，调用方不依赖 Mock 实现类。 */
 export function createMockViewportEventService(
   initialCount: number,
   options: MockViewportEventServiceOptions = {},

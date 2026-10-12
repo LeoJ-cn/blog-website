@@ -9,7 +9,9 @@ export type Wgs84Bbox = readonly [
 ]
 
 export interface ViewportEventQuery {
+  /** 真实视口范围，按 [西, 南, 东, 北] 排列，单位为 WGS84 角度。 */
   bbox: Wgs84Bbox
+  /** 与空间范围共同生效的业务筛选快照；Service 不应持有调用方对象引用。 */
   filter: InspectionEventFilter
   /** 可选取消信号；取消必须以 name 为 AbortError 的错误结束。 */
   signal?: AbortSignal
@@ -46,9 +48,13 @@ export interface ViewportEventQueryResult {
 }
 
 export interface ViewportEventService {
+  /** 重建完整数据集与空间索引；count 会向下取整并限制为非负数。 */
   setDatasetSize(count: number): ViewportDatasetBuildStats
+  /** 异步查询真实视口事件；实现必须响应可选 AbortSignal。 */
   query(query: ViewportEventQuery): Promise<ViewportEventQueryResult>
+  /** 清空查询缓存，但保留完整数据集与空间索引。 */
   clearCache(): void
+  /** 释放缓存、数据集与索引；销毁后其他方法不得继续使用。 */
   destroy(): void
 }
 
@@ -62,6 +68,7 @@ export type ViewportQueryStatus =
 export interface ViewportQueryParams {
   /** 本次查询使用的真实 WGS84 BBOX，边界包含。 */
   bbox: Wgs84Bbox
+  /** 发起查询时的筛选快照，Controller 会复制后再交给 Service。 */
   filter: InspectionEventFilter
   /** 发起查询时调用方持有的数据集版本；只有同版本结果可以提交。 */
   expectedDatasetVersion: number
@@ -77,6 +84,7 @@ export interface ViewportQueryState {
   requestId: number
 }
 
+/** 校验 WGS84 BBOX 的有限性、全球范围和最小/最大边顺序；失败时抛出类型或范围错误。 */
 export function validateWgs84Bbox(_bbox: Wgs84Bbox): void {
   const [minLongitude, minLatitude, maxLongitude, maxLatitude] = _bbox
 
@@ -94,6 +102,7 @@ export function validateWgs84Bbox(_bbox: Wgs84Bbox): void {
   }
 }
 
+/** 判断事件坐标是否位于 BBOX 闭区间内；落在任一边界上的事件同样视为命中。 */
 export function isEventInsideBbox(_event: InspectionEvent, _bbox: Wgs84Bbox): boolean {
   validateWgs84Bbox(_bbox)
   const [minLongitude, minLatitude, maxLongitude, maxLatitude] = _bbox

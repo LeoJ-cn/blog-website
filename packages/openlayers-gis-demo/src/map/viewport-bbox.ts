@@ -2,6 +2,7 @@ import type { Extent } from 'ol/extent.js' // OpenLayers 范围元组类型，�
 import { transformExtent } from 'ol/proj.js' // 在不同坐标参考系之间转换完整范围。
 import { validateWgs84Bbox, type Wgs84Bbox } from '../viewport/types'
 
+/** 将 View 投影范围转换并裁剪为合法 WGS84 BBOX；输入顺序为 [minX, minY, maxX, maxY]。 */
 export function calculateWgs84ViewportBbox(
   projectedExtent: Extent,
   projectionCode: string,

@@ -18,7 +18,9 @@ export type RegionGeometry =
 export interface InspectionRegion {
   /** 区域业务唯一键，不使用 OpenLayers Feature ID 作为持久化协议。 */
   id: string
+  /** 面向业务用户的区域名称。 */
   name: string
+  /** 与 OpenLayers 对象解耦的可序列化 WGS84 几何。 */
   geometry: RegionGeometry
   /** null 表示尚未针对当前事件集合计算；空数组表示区域内没有事件。 */
   eventIds: string[] | null

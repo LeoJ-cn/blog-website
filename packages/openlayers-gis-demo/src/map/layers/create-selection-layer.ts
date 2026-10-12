@@ -4,6 +4,7 @@ import VectorLayer from 'ol/layer/Vector.js' // OpenLayers 矢量图层，将选
 import VectorSource from 'ol/source/Vector.js' // OpenLayers 矢量数据源，仅保存可复用的选中要素。
 import { selectedEventStyle } from '../styles/event-style'
 
+/** 创建复用单个空 Point Feature 的选择高亮层，并返回图层、Source 与 Feature。 */
 export function createSelectionLayer() {
   // 选中标记始终复用同一个 Feature；没有 Geometry 时不会参与渲染和命中检测。
   const selectedFeature = new Feature<Point>()

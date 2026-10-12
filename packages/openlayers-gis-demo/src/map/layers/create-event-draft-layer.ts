@@ -7,6 +7,7 @@ import RegularShape from 'ol/style/RegularShape.js' // OpenLayers 规则形状�
 import Stroke from 'ol/style/Stroke.js' // OpenLayers 描边样式，控制草稿标记边线和脉冲轮廓。
 import Style from 'ol/style/Style.js' // OpenLayers 要素样式容器，组合草稿标记的图形样式。
 
+/** 创建单要素草稿图层及呼吸动画控制器；调用方销毁前必须 stopPulse。 */
 export function createEventDraftLayer() {
   // Fill.color 与 Stroke.color 接收 CSS 颜色；Stroke.width 单位为屏幕像素。
   const outerFill = new Fill({ color: 'rgba(250, 204, 21, 0.45)' })
