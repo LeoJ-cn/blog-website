@@ -1,5 +1,5 @@
-import type OlMap from 'ol/Map.js'
-import type BaseLayer from 'ol/layer/Base.js'
+import type OlMap from 'ol/Map.js' // OpenLayers 地图实例类型，负责统一挂载和移除图层。
+import type BaseLayer from 'ol/layer/Base.js' // OpenLayers 所有图层实现共享的基础类型。
 
 export type CoreLayerId =
   | 'base' // 天地图矢量底图与中文注记组成的在线瓦片图层组。
@@ -24,6 +24,7 @@ export class LayerManager {
   /** 注册并挂载图层；重复 ID 会抛错，防止同一业务图层被静默覆盖而无法释放。 */
   addLayer(layerId: CoreLayerId, layer: BaseLayer): void {
     if (this.layers.has(layerId)) throw new Error(`Layer 已存在：${layerId}`)
+    // BaseLayer.set(key, value) 写入可观察属性；Map.addLayer 按当前 zIndex 将图层加入渲染集合。
     layer.set('layerId', layerId)
     this.layers.set(layerId, layer)
     this.map.addLayer(layer)
@@ -33,6 +34,7 @@ export class LayerManager {
   removeLayer(layerId: CoreLayerId): boolean {
     const layer = this.layers.get(layerId)
     if (!layer) return false
+    // removeLayer 解除 Map 对 Layer 的持有，但不会自动销毁 Layer 内部 Source。
     this.map.removeLayer(layer)
     this.layers.delete(layerId)
     return true
@@ -45,16 +47,19 @@ export class LayerManager {
 
   /** 修改可见性但保留 Source 数据和 Layer 注册关系。 */
   showLayer(layerId: CoreLayerId): void {
+    // setVisible(true) 恢复渲染，Layer 与 Source 实例及缓存保持不变。
     this.layers.get(layerId)?.setVisible(true)
   }
 
   /** 隐藏图层但不移除，便于渲染模式无损切换。 */
   hideLayer(layerId: CoreLayerId): void {
+    // setVisible(false) 仅跳过渲染，不会从 Map 移除图层或清空 Source。
     this.layers.get(layerId)?.setVisible(false)
   }
 
   /** 按注册关系逐一从地图移除全部图层，确保 Map 不再持有业务 Source。 */
   destroy(): void {
+    // Map.removeLayer(layer) 逐个解除地图持有关系，参数是此前注册的 BaseLayer 实例。
     for (const layer of this.layers.values()) this.map.removeLayer(layer)
     this.layers.clear()
   }

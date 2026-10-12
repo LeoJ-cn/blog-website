@@ -1,6 +1,6 @@
-import type Feature from 'ol/Feature.js'
-import type LineString from 'ol/geom/LineString.js'
-import type Point from 'ol/geom/Point.js'
+import type Feature from 'ol/Feature.js' // OpenLayers 要素类型，用于更新轨迹线与当前位置标记。
+import type LineString from 'ol/geom/LineString.js' // OpenLayers 线几何类型，承载已播放的轨迹坐标。
+import type Point from 'ol/geom/Point.js' // OpenLayers 点几何类型，承载当前人员位置。
 import type { ProjectedTrackPoint } from '../map/layers/create-track-layer'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus } from '../types/track'
 
@@ -55,6 +55,7 @@ export class TrackPlaybackController {
     this.status = 'idle'
     const first = this.options.points[0]
     if (first) {
+      // Feature.getGeometry() 取得 Point/LineString；setCoordinates 原地更新几何并触发关联图层重绘。
       this.options.personFeature.getGeometry()?.setCoordinates(first.coordinate)
       this.options.completedLineFeature.getGeometry()?.setCoordinates([first.coordinate])
     }
@@ -127,8 +128,10 @@ export class TrackPlaybackController {
       start.coordinate[0] + (end.coordinate[0] - start.coordinate[0]) * ratio,
       start.coordinate[1] + (end.coordinate[1] - start.coordinate[1]) * ratio,
     ]
+    // Point.setCoordinates([x, y]) 将人员标记移动到当前插值后的 Web Mercator 坐标。
     this.options.personFeature.getGeometry()?.setCoordinates(coordinate)
     // 已巡线包含所有完成节点和当前插值坐标；最多 12 个点，逐帧复制不会形成海量数据压力。
+    // LineString.setCoordinates(coordinates) 替换已巡路线；参数按巡检顺序排列，每项为 [x, y]。
     this.options.completedLineFeature
       .getGeometry()
       ?.setCoordinates([

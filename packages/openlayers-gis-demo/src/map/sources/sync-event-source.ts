@@ -1,5 +1,5 @@
-import type VectorSource from 'ol/source/Vector.js'
-import { fromLonLat } from 'ol/proj.js'
+import type VectorSource from 'ol/source/Vector.js' // OpenLayers 矢量数据源类型，用于增量同步事件要素。
+import { fromLonLat } from 'ol/proj.js' // 将业务经纬度转换为数据源内几何使用的投影坐标。
 import type { InspectionEvent } from '../../types/inspection-event'
 import {
   createEventFeature,
@@ -26,6 +26,7 @@ export interface EventSourceDiffStats {
 export function hasEventFeatureChanged(feature: EventFeature, event: InspectionEvent): boolean {
   const expectedProperties = getEventFeatureProperties(event)
   if (
+    // get(key) 读取 Feature 自定义属性，用于判断是否需要触发一次就地更新。
     feature.get('eventId') !== expectedProperties.eventId ||
     feature.get('eventType') !== expectedProperties.eventType ||
     feature.get('status') !== expectedProperties.status ||
@@ -34,7 +35,9 @@ export function hasEventFeatureChanged(feature: EventFeature, event: InspectionE
     return true
   }
 
+  // getGeometry 获取 Point，getCoordinates 返回当前投影坐标 [x, y]。
   const currentCoordinates = feature.getGeometry()?.getCoordinates()
+  // fromLonLat 接收 [经度, 纬度]，返回默认 EPSG:3857 坐标用于精确比较。
   const expectedCoordinates = fromLonLat([event.lng, event.lat])
   return (
     !currentCoordinates ||
@@ -62,7 +65,9 @@ export function syncEventSource(
   let unchanged = 0
   let removedSelectedEventId: string | null = null
 
+  // getFeatures() 返回 Source 当前要素数组的快照，遍历时可安全收集待删除项。
   for (const feature of source.getFeatures()) {
+    // getId() 读取由 setId 写入的稳定业务主键，不依赖可变属性对象。
     const featureId = feature.getId()
     if (typeof featureId !== 'string') {
       featuresToRemove.push(feature)
@@ -86,10 +91,12 @@ export function syncEventSource(
   }
 
   if (featuresToRemove.length > 0) {
+    // removeFeatures 批量移除并同步更新 Source 的空间索引与渲染状态。
     source.removeFeatures(featuresToRemove)
   }
   const featuresToAdd = [...nextEventsById.values()].map(createEventFeature)
   if (featuresToAdd.length > 0) {
+    // addFeatures 批量加入新要素，避免逐条调用导致重复刷新。
     source.addFeatures(featuresToAdd)
   }
 

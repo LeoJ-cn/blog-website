@@ -1,5 +1,5 @@
-import type { Extent } from 'ol/extent.js'
-import { transformExtent } from 'ol/proj.js'
+import type { Extent } from 'ol/extent.js' // OpenLayers 范围元组类型，顺序为 [minX, minY, maxX, maxY]。
+import { transformExtent } from 'ol/proj.js' // 在不同坐标参考系之间转换完整范围。
 import { validateWgs84Bbox, type Wgs84Bbox } from '../viewport/types'
 
 export function calculateWgs84ViewportBbox(
@@ -14,6 +14,8 @@ export function calculateWgs84ViewportBbox(
     throw new RangeError('地图视口 extent 的最小坐标不能大于最大坐标')
   }
 
+  // transformExtent(extent, source, destination) 会转换范围四角并返回目标投影下的包围盒；
+  // projectedExtent 使用当前 View 投影，projectionCode 是源 EPSG 编码，EPSG:4326 是目标经纬度坐标系。
   const transformed = transformExtent(projectedExtent, projectionCode, 'EPSG:4326')
   const bbox: Wgs84Bbox = [
     Math.max(-180, transformed[0]!),

@@ -1,15 +1,15 @@
-import OlMap from 'ol/Map.js'
-import Feature from 'ol/Feature.js'
-import Point from 'ol/geom/Point.js'
-import Overlay from 'ol/Overlay.js'
-import View from 'ol/View.js'
-import { defaults as defaultControls } from 'ol/control/defaults.js'
-import ScaleLine from 'ol/control/ScaleLine.js'
-import type { EventsKey } from 'ol/events.js'
-import { createEmpty, extendCoordinate, isEmpty } from 'ol/extent.js'
-import type BaseLayer from 'ol/layer/Base.js'
-import { unByKey } from 'ol/Observable.js'
-import { fromLonLat, toLonLat } from 'ol/proj.js'
+import OlMap from 'ol/Map.js' // OpenLayers 地图根对象，编排 View、Layer、Control、Overlay 和 Interaction。
+import Feature from 'ol/Feature.js' // OpenLayers 要素容器，用于创建或更新可渲染的业务对象。
+import Point from 'ol/geom/Point.js' // OpenLayers 点几何，用投影坐标表示事件和临时位置。
+import Overlay from 'ol/Overlay.js' // OpenLayers DOM 覆盖物，将 Popup 锚定到地图坐标。
+import View from 'ol/View.js' // OpenLayers 视图状态，管理中心点、分辨率、缩放级别和投影。
+import { defaults as defaultControls } from 'ol/control/defaults.js' // 创建 OpenLayers 默认控件集合，供地图按需扩展。
+import ScaleLine from 'ol/control/ScaleLine.js' // OpenLayers 比例尺控件，按当前分辨率显示实际距离。
+import type { EventsKey } from 'ol/events.js' // OpenLayers 事件订阅句柄类型，用于在销毁时精确解绑。
+import { createEmpty, extendCoordinate, isEmpty } from 'ol/extent.js' // 创建、扩展并检查 OpenLayers 坐标范围。
+import type BaseLayer from 'ol/layer/Base.js' // OpenLayers 图层基础类型，用于统一处理不同业务图层。
+import { unByKey } from 'ol/Observable.js' // 按订阅句柄解除 OpenLayers Observable 事件监听。
+import { fromLonLat, toLonLat } from 'ol/proj.js' // 在业务 WGS84 经纬度与地图投影坐标之间双向转换。
 import type { InspectionEvent } from '../types/inspection-event'
 import type { Wgs84Bbox } from '../viewport/types'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
@@ -124,6 +124,7 @@ export class MapManager {
   private readonly listenerKeys: EventsKey[]
   private readonly handlePointerLeave: () => void
   /** offset 按 [水平像素, 垂直像素] 排列，负值让 Popup 位于点位图标上方。 */
+  // Overlay.positioning 指定 DOM 锚点相对坐标的位置；offset 是 [水平, 垂直] CSS 像素偏移。
   private readonly popupOverlay = new Overlay({ positioning: 'bottom-center', offset: [0, -14] })
   private renderMode: RenderMode = 'point'
   private mapMode: MapMode = 'select'
@@ -155,6 +156,7 @@ export class MapManager {
     this.featureConversionMs = performance.now() - conversionStartedAt
     const sourceUpdateStartedAt = performance.now()
     this.eventSource = createEventSource()
+    // VectorSource.addFeatures 批量加入初始 Feature，并一次性更新空间索引与渲染状态。
     this.eventSource.addFeatures(initialFeatures)
     this.sourceUpdateMs = performance.now() - sourceUpdateStartedAt
     this.eventLayer = createEventLayer(this.eventSource)
@@ -175,17 +177,22 @@ export class MapManager {
     this.stopEventDraftPulse = eventDraft.stopPulse
     this.setResponsibilityGridProgress = responsibilityGrid.setCoverageProgress
     this.setTrackCheckpointProgress = track.setCheckpointProgress
+    // Map.controls 接收控件集合；Map.view 接收唯一 View，target 延迟到 mount 时绑定 DOM。
     this.map = new OlMap({
+      // defaultControls({rotate:false}) 创建默认控件并关闭旋转控件；extend 追加自定义比例尺。
       controls: defaultControls({ rotate: false }).extend([
         // 比例尺由 View 分辨率自动换算，使用 metric 输出米或千米。
         new ScaleLine({
+          // units=metric 输出米/千米；minWidth、maxWidth 限制比例尺目标宽度，单位为 CSS 像素。
           units: 'metric',
           // OpenLayers 10 默认不限制最大宽度；显式约束避免比例尺在宽地图上占据过多空间。
           minWidth: 64,
           maxWidth: 120,
         }),
       ]),
+      // View.center 使用投影坐标；zoom 是初始级别；minZoom/maxZoom 限制用户缩放范围。
       view: new View({
+        // fromLonLat 接收 [经度, 纬度]，转换为默认 EPSG:3857 中心坐标。
         center: fromLonLat([...(options.center ?? DEFAULT_CENTER)]),
         zoom: options.zoom ?? 12,
         minZoom: 3,
@@ -202,6 +209,7 @@ export class MapManager {
     this.layerManager.addLayer('track', track.layer)
     this.layerManager.addLayer('selection', selection.layer)
     this.layerManager.addLayer('eventDraft', eventDraft.layer)
+    // addOverlay 将 DOM 覆盖物加入 Map 管理，但在 setElement 前不会显示实际内容。
     this.map.addOverlay(this.popupOverlay)
     this.interactionManager = new SpatialInteractionManager({
       map: this.map,
@@ -210,9 +218,11 @@ export class MapManager {
       eventSource: this.eventSource,
       regionSource: region.source,
       onEventSelect: (eventId) => {
+        // getFeatureById 使用 setId 建立的索引按业务 ID 查找 Feature，未命中时返回 null。
         const feature = eventId ? this.eventSource.getFeatureById(eventId) : null
         this.selectedEventId = eventId
         this.updateSelection(feature)
+        // setPosition 接收 [x, y] 投影坐标；undefined 会隐藏 Overlay。
         this.popupOverlay.setPosition(feature?.getGeometry()?.getCoordinates())
         options.onEventSelect?.(eventId)
       },
@@ -240,20 +250,24 @@ export class MapManager {
       emitStats()
     }
     this.listenerKeys = [
+      // View.on('change:resolution') 监听分辨率变化；返回的 EventsKey 在 destroy 中解绑。
       this.map.getView().on('change:resolution', () => {
         // 缩放过程中只切换图层显隐，不改写用户选择的渲染偏好；缩回阈值以下可恢复 Cluster。
         this.syncEventLayerVisibility()
       }),
+      // Map.on 注册地图事件：moveend 在交互移动结束触发，rendercomplete 在本帧资源完成后触发。
       this.map.on('moveend', () => {
         emitViewportChange()
         emitStats()
       }),
       this.map.on('rendercomplete', emitRenderStats),
       this.map.on('pointermove', (event) => {
+        // MapBrowserEvent.dragging 表示指针移动来自拖图；coordinate 是当前 View 投影下的 [x, y]。
         if (event.dragging) return
         const now = performance.now()
         if (now - this.lastPointerCoordinateEmittedAt < POINTER_COORDINATE_INTERVAL_MS) return
         this.lastPointerCoordinateEmittedAt = now
+        // toLonLat 将默认 EPSG:3857 投影坐标转换为 [WGS84 经度, WGS84 纬度]。
         const [lng, lat] = toLonLat(event.coordinate)
         options.onPointerCoordinate?.([lng, lat])
       }),
@@ -265,10 +279,13 @@ export class MapManager {
     // 首屏渲染只能从绑定真实 DOM 后开始计时，避免把构造阶段的页面等待算入地图耗时。
     this.renderCompleteMs = null
     this.pendingRenderStartedAt = performance.now()
+    // setTarget(HTMLElement) 绑定渲染容器并启动首屏渲染；传 undefined 可解除绑定。
     this.map.setTarget(target)
     target.addEventListener('pointerleave', this.handlePointerLeave)
+    // Overlay.setElement 绑定实际 Popup DOM；undefined 表示 Overlay 暂无内容元素。
     this.popupOverlay.setElement(popupElement)
     this.mounted = true
+    // updateSize() 重新读取容器像素尺寸，避免隐藏容器恢复后使用过期视口大小。
     this.map.updateSize()
     // updateSize 同步更新视口尺寸；微任务让 View 完成本轮状态归并后再计算首个 BBOX。
     queueMicrotask(() => {
@@ -282,14 +299,17 @@ export class MapManager {
 
   /** 定位并高亮业务事件；Cluster 模式会切换为普通点位以保证目标可见。 */
   focusEvent(eventId: string): void {
+    // getFeatureById 按 Feature ID 索引查找；getGeometry().getCoordinates() 取得 Point 的 [x, y]。
     const feature = this.eventSource.getFeatureById(eventId)
     const coordinates = feature?.getGeometry()?.getCoordinates()
     if (!feature || !coordinates) return
     if (this.renderMode !== 'point') this.setRenderMode('point')
     this.selectedEventId = eventId
     this.updateSelection(feature)
+    // Overlay.setPosition 将 Popup 锚定到事件投影坐标。
     this.popupOverlay.setPosition(coordinates)
     const view = this.map.getView()
+    // View.animate 平滑更新视图；center 是投影坐标，zoom 是级别，duration 单位为毫秒。
     view.animate({
       center: coordinates,
       // 列表定位需要让点位清晰可见，但用户已手动放得更近时不应突然缩小。
@@ -303,6 +323,7 @@ export class MapManager {
    * 返回 false 表示没有找到可定位的有效点位，调用方可保持当前视角不变。
    */
   fitEvents(eventIds?: readonly string[]): boolean {
+    // createEmpty() 创建 [Infinity, Infinity, -Infinity, -Infinity] 空范围，供后续逐点扩展。
     const extent = createEmpty()
     let firstCoordinate: number[] | null = null
     let coordinateCount = 0
@@ -311,18 +332,21 @@ export class MapManager {
       if (!coordinate) return
       firstCoordinate ??= coordinate
       coordinateCount += 1
+      // extendCoordinate(extent, coordinate) 原地扩展范围以包含指定 [x, y] 坐标。
       extendCoordinate(extent, coordinate)
     }
     if (eventIds) {
       for (const eventId of eventIds) includeFeature(this.eventSource.getFeatureById(eventId))
     } else {
       // 直接遍历 Source，避免定位十万点时额外创建 Feature 与坐标数组。
+      // forEachFeature(callback) 遍历 Source 当前全部 Feature。
       this.eventSource.forEachFeature(includeFeature)
     }
     if (coordinateCount === 0 || !firstCoordinate) return false
 
     const view = this.map.getView()
     if (coordinateCount === 1) {
+      // 单点使用 animate，参数语义与 focusEvent 相同。
       view.animate({
         center: firstCoordinate,
         zoom: Math.max(view.getZoom() ?? EVENT_FOCUS_ZOOM, EVENT_FOCUS_ZOOM),
@@ -331,7 +355,9 @@ export class MapManager {
       return true
     }
 
+    // isEmpty(extent) 判断范围是否仍未被任何有效坐标扩展。
     if (isEmpty(extent)) return false
+    // View.fit 计算能容纳 extent 的中心与分辨率；padding 为上右下左像素，maxZoom 防止过度放大。
     view.fit(extent, {
       duration: 450,
       maxZoom: EVENT_RESULTS_MAX_ZOOM,
@@ -350,9 +376,12 @@ export class MapManager {
     // Source 清空前解除旧选中 Feature 和 Popup 引用，避免大批数据切换后保留失效对象。
     this.updateSelection(null)
     this.selectedEventId = null
+    // setPosition(undefined) 清除 Overlay 锚点并隐藏 Popup。
     this.popupOverlay.setPosition(undefined)
     const sourceUpdateStartedAt = performance.now()
+    // clear(fast=true) 快速移除全部 Feature，不逐个派发 removefeature 事件。
     this.eventSource.clear(true)
+    // addFeatures 批量写入新集合并重建 Source 空间索引。
     this.eventSource.addFeatures(features)
     this.sourceUpdateMs = performance.now() - sourceUpdateStartedAt
     // rendercomplete 是异步信号，因此先保留批次起点，完成前向面板暴露 null。
@@ -383,6 +412,7 @@ export class MapManager {
 
   /** 向当前可见 Source 增量加入事件；ID 已存在时返回 false，避免覆盖既有 Feature。 */
   addEvent(event: InspectionEvent): boolean {
+    // getFeatureById 检查稳定 ID 是否已存在；addFeature 只加入一个新 Feature。
     if (this.eventSource.getFeatureById(event.id)) return false
     this.eventSource.addFeature(createEventFeature(event))
     return true
@@ -398,6 +428,7 @@ export class MapManager {
 
   /** 删除当前可见 Source 中的事件，并清除可能指向该事件的高亮和 Popup。 */
   removeEvent(eventId: string): boolean {
+    // removeFeature 接收 Source 中的同一 Feature 实例，并更新空间索引及图层渲染。
     const feature = this.eventSource.getFeatureById(eventId)
     if (!feature) return false
     this.eventSource.removeFeature(feature)
@@ -413,6 +444,7 @@ export class MapManager {
     this.syncEventLayerVisibility()
     // Select 同时支持普通点和聚合点，仅由当前交互模式决定是否启用。
     this.interactionManager.setSelectActive(this.mapMode === 'select')
+    // Map.render() 请求下一动画帧重绘，不会同步阻塞完成整个渲染。
     this.map.render()
   }
 
@@ -438,9 +470,12 @@ export class MapManager {
   startEventLocationPick(onPick: (coordinate: readonly [number, number]) => void): void {
     this.cancelEventLocationPick()
     this.interactionManager.setAllInactive()
+    // getTargetElement() 返回 Map 当前绑定的 HTMLElement；未挂载时返回 null。
     const targetElement = this.map.getTargetElement()
     if (targetElement) targetElement.style.cursor = 'crosshair'
+    // Map.once 只监听下一次 singleclick 并自动解绑；返回 EventsKey 仍可用于提前取消。
     this.eventLocationPickKey = this.map.once('singleclick', (event) => {
+      // singleclick 事件的 coordinate 是 View 投影坐标，toLonLat 转为业务经纬度。
       const [lng, lat] = toLonLat(event.coordinate)
       this.setEventDraftLocation([lng, lat])
       this.eventLocationPickKey = null
@@ -451,7 +486,9 @@ export class MapManager {
 
   /** 更新临时事件标记；坐标按 [WGS84 经度, WGS84 纬度] 排列，null 表示清除。 */
   setEventDraftLocation(coordinate: readonly [number, number] | null): void {
+    // Feature.setGeometry 替换草稿几何；Point 接收投影坐标，undefined 表示不参与渲染。
     this.eventDraftFeature.setGeometry(
+      // fromLonLat 将 [经度, 纬度] 转为默认 EPSG:3857 坐标。
       coordinate ? new Point(fromLonLat([...coordinate])) : undefined,
     )
     if (coordinate) this.startEventDraftPulse()
@@ -462,6 +499,7 @@ export class MapManager {
   cancelEventLocationPick(restoreInteraction = true): void {
     const wasPicking = this.eventLocationPickKey !== null
     if (this.eventLocationPickKey) {
+      // unByKey 通过 Map.once 返回的句柄提前解除尚未触发的单击监听。
       unByKey(this.eventLocationPickKey)
       this.eventLocationPickKey = null
     }
@@ -473,6 +511,7 @@ export class MapManager {
 
   /** 返回当前 Polygon/Circle 的可序列化 WGS84 协议；Point 或空区域返回 null。 */
   getCurrentRegionGeometry(): RegionGeometry | null {
+    // getFeatures() 返回 Source 当前 Feature 快照；这里只允许一个区域，因此读取索引 0。
     const geometry = this.regionSource.getFeatures()[0]?.getGeometry()
     return geometry ? serializeRegionGeometry(geometry) : null
   }
@@ -480,9 +519,11 @@ export class MapManager {
   /** 载入、定位并重新计算一个已保存区域；传入数据不会保存 OpenLayers 实例。 */
   showRegion(regionGeometry: RegionGeometry): void {
     const geometry = deserializeRegionGeometry(regionGeometry)
+    // clear() 移除旧区域；addFeature 写入一个持有反序列化 Geometry 的新 Feature。
     this.regionSource.clear()
     this.regionSource.addFeature(new Feature({ geometry }))
     this.interactionManager.evaluateRegion(geometry)
+    // geometry.getExtent() 返回最小包围盒；View.fit 按 duration、maxZoom 与四边 padding 定位。
     this.map.getView().fit(geometry.getExtent(), {
       duration: 450,
       maxZoom: 17,
@@ -507,6 +548,7 @@ export class MapManager {
   getStats(): MapStats {
     const effectiveRenderMode = this.getEffectiveRenderMode()
     return {
+      // getView().getZoom() 返回当前缩放级别；getFeatures() 返回 Source 要素快照用于计数。
       zoom: Number((this.map.getView().getZoom() ?? 0).toFixed(1)),
       featureCount:
         effectiveRenderMode === 'cluster'
@@ -523,10 +565,12 @@ export class MapManager {
   /** 返回当前地图视口的 WGS84 BBOX；未挂载或尺寸无效时返回 null。 */
   getViewportBbox(): Wgs84Bbox | null {
     if (!this.mounted || this.destroyed) return null
+    // Map.getSize() 返回渲染视口 [宽度, 高度]，单位为 CSS 像素。
     const size = this.map.getSize()
     if (!size || size[0] <= 0 || size[1] <= 0) return null
 
     const view = this.map.getView()
+    // calculateExtent(size) 计算当前视图投影范围；getProjection().getCode() 返回源 EPSG 编码。
     return calculateWgs84ViewportBbox(view.calculateExtent(size), view.getProjection().getCode())
   }
 
@@ -563,8 +607,10 @@ export class MapManager {
 
   /** 将完整巡检路线适配到视口；padding 按 [上, 右, 下, 左] 排列，单位为 CSS 像素。 */
   fitTrack(): void {
+    // VectorSource.getExtent() 返回全部轨迹 Feature 的联合范围。
     const extent = this.trackSource.getExtent()
     if (!extent || !Number.isFinite(extent[0])) return
+    // View.fit 的 padding 顺序为上右下左像素，duration 为毫秒，maxZoom 限制最大放大级别。
     this.map.getView().fit(extent, {
       padding: [72, 72, 72, 72],
       duration: 350,
@@ -600,6 +646,7 @@ export class MapManager {
 
   private updateSelection(feature: ReturnType<typeof createEventFeature> | null): void {
     // 克隆 Point 可避免高亮层和事件层共享可变 Geometry，后续扩展动画时互不影响。
+    // Geometry.clone() 创建独立几何副本；Feature.setGeometry(undefined) 会隐藏选中标记。
     this.selectionFeature.setGeometry(feature?.getGeometry()?.clone())
   }
 
@@ -608,12 +655,14 @@ export class MapManager {
   }
 
   private getEffectiveRenderMode(): RenderMode {
+    // View.getZoom() 返回当前缩放级别；若 View 尚未解析出级别则回退为 0。
     const zoom = this.map.getView().getZoom() ?? 0
     return this.renderMode === 'cluster' && zoom < CLUSTER_BREAK_ZOOM ? 'cluster' : 'point'
   }
 
   private syncEventLayerVisibility(): void {
     const effectiveRenderMode = this.getEffectiveRenderMode()
+    // Layer.setVisible 只切换渲染状态，不移除图层，也不释放 Source 数据。
     this.eventLayer.setVisible(this.eventLayersVisible && effectiveRenderMode === 'point')
     this.clusterLayer.setVisible(this.eventLayersVisible && effectiveRenderMode === 'cluster')
   }
@@ -630,18 +679,22 @@ export class MapManager {
     if (this.destroyed) return
     this.cancelEventLocationPick(false)
     if (this.mounted) {
+      // getTargetElement 取得已绑定容器；setTarget(undefined) 停止地图在该 DOM 中渲染。
       this.map.getTargetElement()?.removeEventListener('pointerleave', this.handlePointerLeave)
       this.map.setTarget(undefined)
     }
+    // unByKey 接收 EventsKey 数组，批量解除 View 与 Map 上注册的 Observable 监听。
     unByKey(this.listenerKeys)
     this.interactionManager.destroy()
     this.trackPlayback.destroy()
+    // Overlay.setElement(undefined) 解除 DOM 引用；removeOverlay 再解除 Map 对 Overlay 的持有。
     this.popupOverlay.setElement(undefined)
     this.map.removeOverlay(this.popupOverlay)
     this.updateSelection(null)
     this.selectedEventId = null
     this.lastViewportBbox = null
     this.setEventDraftLocation(null)
+    // clear(true) 快速清空海量事件 Feature；setSource(null) 解除 ClusterSource 对原 Source 的引用。
     this.eventSource.clear(true)
     // 主动解除 ClusterSource 对事件 Source 的引用，便于大数据集合及时回收。
     this.clusterSource.setSource(null)
