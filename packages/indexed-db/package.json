@@ -1,0 +1,14 @@
+{
+  "name": "@blog/indexed-db",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "idb": "7.1.1"
+  }
+}
