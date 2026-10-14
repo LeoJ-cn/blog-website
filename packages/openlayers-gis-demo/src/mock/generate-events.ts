@@ -5,6 +5,8 @@ const TYPES: readonly EventType[] = ['ROAD_DAMAGE', 'LIGHT_FAILURE', 'GARBAGE', 
 const STATUSES: readonly EventStatus[] = ['PENDING', 'PROCESSING', 'DONE']
 const LEVELS: readonly EventLevel[] = ['HIGH', 'MEDIUM', 'LOW']
 const DISTRICTS = ['黄浦区', '静安区', '徐汇区', '虹口区', '浦东新区'] as const
+/** 固定种子不包含数据量，确保较小量级始终是较大量级的前缀子集。 */
+const FIXTURE_RANDOM_SEED = 20261008
 
 /** 创建闭区间下界、开区间上界为 [0, 1) 的确定性伪随机函数。 */
 function createSeededRandom(seed: number) {
@@ -19,7 +21,7 @@ function createSeededRandom(seed: number) {
 /** 相同 count 始终生成相同数据；count 向下取整并限制为非负数。 */
 export function generateInspectionEvents(count: number): InspectionEvent[] {
   const normalizedCount = Math.max(0, Math.floor(count))
-  const random = createSeededRandom(20261008 + normalizedCount)
+  const random = createSeededRandom(FIXTURE_RANDOM_SEED)
   // 所有事件从固定基准时间开始，每条递增 30 秒，确保相同 count 的时间序列也可复现。
   const baseTime = Date.parse('2026-10-08T08:00:00+08:00')
 

@@ -30,6 +30,17 @@ afterEach(() => {
 })
 
 describe('MockViewportEventService dataset and filters', () => {
+  it('keeps every smaller dataset as an exact prefix of the 100k fixture', () => {
+    const largestDataset = generateInspectionEvents(100_000)
+
+    expect(generateInspectionEvents(1_000)).toEqual(largestDataset.slice(0, 1_000))
+    expect(generateInspectionEvents(10_000)).toEqual(largestDataset.slice(0, 10_000))
+    expect(generateInspectionEvents(50_000)).toEqual(largestDataset.slice(0, 50_000))
+    expect(largestDataset[999]?.id).toBe('EVT-001000')
+    expect(largestDataset[9_999]?.id).toBe('EVT-010000')
+    expect(largestDataset[49_999]?.id).toBe('EVT-050000')
+  })
+
   it('setDatasetSize builds deterministic dataset and increments version', async () => {
     const firstService = createMockViewportEventService(10)
     const secondService = createMockViewportEventService(10)
