@@ -267,6 +267,9 @@ importers:
 
   packages/openlayers-gis-demo:
     dependencies:
+      '@blog/indexed-db':
+        specifier: workspace:2.0.0
+        version: link:../indexed-db
       ol:
         specifier: 10.10.0
         version: 10.10.0

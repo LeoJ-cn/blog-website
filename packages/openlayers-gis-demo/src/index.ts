@@ -11,6 +11,8 @@ export {
   getDatasetSize,
   isGisDatasetScale,
 } from './persistence/dataset-scale'
+export { GisDatasetRepository, GIS_FIXTURE_VERSION } from './persistence/gis-dataset-repository'
+export { GisSettingsRepository } from './persistence/gis-settings-repository'
 export { createMockViewportEventService } from './viewport/mock-viewport-event-service'
 export { ViewportQueryController } from './viewport/viewport-query-controller'
 export { mergeViewportQueryState, resetViewportDatasetState } from './viewport/viewport-state'
@@ -26,6 +28,13 @@ export type { EventSourceDiffStats } from './map/sources/sync-event-source'
 export type { CoreLayerId } from './map/LayerManager'
 export type { DrawGeometryType, MapMode } from './map/interactions/SpatialInteractionManager'
 export type { GisDatasetScale } from './persistence/dataset-scale'
+export type {
+  GisDatasetRepositoryOptions,
+} from './persistence/gis-dataset-repository'
+export type {
+  GisSettingsRepositoryOptions,
+} from './persistence/gis-settings-repository'
+export type { GisDatasetMetadata, PersistedGisDataset } from './persistence/types'
 // 业务领域协议：事件、轨迹和可序列化区域均不暴露 OpenLayers 运行时对象。
 export type {
   EventLevel,
