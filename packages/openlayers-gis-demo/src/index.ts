@@ -29,12 +29,15 @@ export {
   calculatePolygonPerimeterMeters,
   calculateSphericalPolygonAreaSquareMeters,
   calculateEventRiskScore,
+  parseSpatialAnalysisGeoJson,
+  serializeSpatialAnalysisToGeoJson,
   createWgs84BufferPolygon,
   HIGH_RISK_SCORE_THRESHOLD,
   SpatialAnalysisService,
   validateAnalysisGeometry,
 } from './services/spatial-analysis'
 export type { SpatialAnalysisContext } from './services/spatial-analysis'
+export type { SpatialAnalysisGeoJson, SpatialAnalysisGeoJsonFeature, SpatialAnalysisGeoJsonImportResult, SpatialAnalysisImportDraft } from './services/spatial-analysis'
 // 地图层公开协议：宿主只依赖稳定选项、统计、模式和业务 Layer ID。
 export type { MapManagerOptions, MapStats, RenderMode } from './map/MapManager'
 export type {

@@ -1,4 +1,6 @@
 export { createWgs84BufferPolygon } from './buffer'
+export { parseSpatialAnalysisGeoJson, serializeSpatialAnalysisToGeoJson } from './analysis-geojson'
+export type { SpatialAnalysisGeoJson, SpatialAnalysisGeoJsonFeature, SpatialAnalysisGeoJsonImportResult, SpatialAnalysisImportDraft } from './analysis-geojson'
 export {
   calculateEventStatistics,
   calculateRegionBboxes,

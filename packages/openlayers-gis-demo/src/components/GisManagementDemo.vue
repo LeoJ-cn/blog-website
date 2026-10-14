@@ -31,6 +31,7 @@ import { SpatialAnalysisController } from '../analysis/spatial-analysis-controll
 import type { SpatialAnalysisControllerState } from '../analysis/spatial-analysis-controller'
 import type { AnalysisGeometry, SpatialAnalysisInput, SpatialAnalysisKind, SpatialAnalysisResult } from '../types/spatial-analysis'
 import type { PersistedSpatialAnalysis, SpatialAnalysisSummary } from '../persistence/types'
+import { parseSpatialAnalysisGeoJson, serializeSpatialAnalysisToGeoJson } from '../services/spatial-analysis'
 
 interface Props {
   /** 由宿主配置层注入的天地图浏览器端 Token；组件不会记录或展示其内容。 */
@@ -635,6 +636,58 @@ async function removeSavedAnalysis(summary: SpatialAnalysisSummary) {
     if (await gisApi.removeSpatialAnalysis(summary.id)) savedAnalyses.value = await gisApi.listSpatialAnalyses()
   } catch {
     persistenceFeedback.value = '分析记录删除失败，请重试'
+  }
+}
+
+async function exportSavedAnalysis(summary: SpatialAnalysisSummary) {
+  const loaded = await gisApi?.loadSpatialAnalysis(summary.id)
+  if (!loaded) return
+  const blob = new Blob([JSON.stringify(serializeSpatialAnalysisToGeoJson(loaded.record), null, 2)], {
+    type: 'application/geo+json;charset=utf-8',
+  })
+  const downloadUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = downloadUrl
+  link.download = `gis-analysis-${summary.id}.geojson`
+  document.body.append(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0)
+}
+
+async function importSpatialAnalyses(event: Event) {
+  const input = event.currentTarget as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !gisApi) return
+  // 分析文件不包含大型事件 ID，5 MiB 足以覆盖合理记录并避免误选大文件阻塞主线程。
+  if (file.size > 5 * 1024 * 1024) {
+    persistenceFeedback.value = '分析导入失败：文件不能超过 5 MiB'
+    return
+  }
+  try {
+    const parsed = parseSpatialAnalysisGeoJson(JSON.parse(await file.text()) as unknown)
+    let importedCount = 0
+    for (const draft of parsed.drafts) {
+      const result = await gisApi.executeSpatialAnalysis(draft.input)
+      const now = new Date().toISOString()
+      const record: PersistedSpatialAnalysis = {
+        id: crypto.randomUUID(),
+        name: draft.name,
+        kind: draft.kind,
+        input: draft.input,
+        result,
+        datasetScale: activeDatasetScale.value,
+        datasetVersion: gisApi.state.datasetVersion,
+        createdAt: now,
+        updatedAt: now,
+      }
+      if ((await gisApi.saveSpatialAnalysis(record)).saved) importedCount += 1
+    }
+    savedAnalyses.value = await gisApi.listSpatialAnalyses()
+    persistenceFeedback.value = `分析导入 ${importedCount} 条，非法 ${parsed.invalidCount} 条，文件内重复 ${parsed.duplicateInFileCount} 条`
+  } catch (error) {
+    persistenceFeedback.value = `分析导入失败：${error instanceof Error ? error.message : '无法解析文件'}`
   }
 }
 
@@ -1862,7 +1915,15 @@ onBeforeUnmount(() => {
             <button v-if="analysisState.errorMessage" type="button" @click="rerunLoadedAnalysis">按当前数据重新执行</button>
             <div class="analysis-save"><input v-model="analysisName" placeholder="分析名称" /><button type="button" @click="saveCurrentAnalysis">保存</button></div>
           </section>
-          <section class="saved-analyses"><strong>已保存分析</strong><p v-if="savedAnalyses.length === 0">暂无记录</p><div v-for="item in savedAnalyses" :key="item.id"><button type="button" @click="openSavedAnalysis(item)">{{ item.name }}</button><button type="button" aria-label="删除分析" @click="removeSavedAnalysis(item)">×</button></div></section>
+          <section class="saved-analyses">
+            <header><strong>已保存分析</strong><label class="analysis-import">导入<input type="file" accept=".geojson,application/geo+json,application/json" @change="importSpatialAnalyses" /></label></header>
+            <p v-if="savedAnalyses.length === 0">暂无记录</p>
+            <div v-for="item in savedAnalyses" :key="item.id">
+              <button type="button" @click="openSavedAnalysis(item)">{{ item.name }}</button>
+              <button type="button" aria-label="导出分析" @click="exportSavedAnalysis(item)">⇩</button>
+              <button type="button" aria-label="删除分析" @click="removeSavedAnalysis(item)">×</button>
+            </div>
+          </section>
         </section>
         <output class="map-zoom-indicator" aria-label="当前地图缩放级别">
           Zoom {{ stats.zoom.toFixed(1) }}x
@@ -3190,6 +3251,22 @@ onBeforeUnmount(() => {
 }
 .analysis-error {
   color: #fca5a5 !important;
+}
+.analysis-import {
+  position: relative;
+  padding: 5px 8px;
+  color: #67e8f9;
+  background: #111e32;
+  border: 1px solid #2a3d5c;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.analysis-import input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
 }
 .base-map-notice {
   position: absolute;
