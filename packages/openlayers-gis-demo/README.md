@@ -60,6 +60,12 @@
 - 播放、暂停、重置、1x/2x/8x 速度控制和当前巡检时间展示。
 - 支持通过百分比时间轴拖动定位轨迹进度，播放中拖动后继续播放。
 - 时间轴展示 12 个责任网格节点刻度，可点击任意节点直接跳转到对应网格，同时保留连续拖动定位。
+- 空间分析场景提供测距、测面积、缓冲区、最近事件、区域统计和区域对比六种工具。
+- 测量结果以米/千米和平方米/平方千米展示；距离与面积均为 WGS84 球面近似值，不代表道路导航或测绘级成果。
+- 区域统计汇总事件状态、等级、类型、演示风险分和高风险事件 ID；风险分仅用于演示排序，不表达真实公共安全结论。
+- 分析输入、结果和命中事件使用三个独立图层；完整命中 ID 保留在结果协议，地图最多高亮当前视口中的 2,000 条事件。
+- 分析记录按当前数据量级写入 IndexedDB；事件集合版本变化后旧记录仍可查看，但必须重新执行后才能覆盖保存。
+- 支持分析 GeoJSON 导入导出。导出不包含大型命中 ID 集合；导入会校验 WGS84、单位、几何和参数，重新执行并生成新的本地 ID。
 
 ## 布局约束
 
@@ -85,7 +91,9 @@ packages/openlayers-gis-demo/
 │   │   └── types/                      # Feature 业务属性协议
 │   ├── mock/                           # 固定 seed 事件与轨迹数据
 │   ├── services/
-│   │   └── TrackPlaybackController.ts  # requestAnimationFrame 时间插值
+│   │   ├── TrackPlaybackController.ts  # requestAnimationFrame 时间插值
+│   │   └── spatial-analysis/            # 球面计算、统计、风险与 GeoJSON
+│   ├── analysis/                        # 分析状态机和异步竞态治理
 │   ├── viewport/                        # BBOX 服务、固定网格、缓存和请求治理
 │   ├── stores/                         # 可序列化业务状态
 │   ├── types/                          # 事件与轨迹业务类型
@@ -100,10 +108,12 @@ packages/openlayers-gis-demo/
 ```text
 GisManagementDemo.vue
 ├── LocalGisApi：持久化业务协议与索引失效编排
-│   ├── GisDatasetRepository：事件 shard、详情、区域与 Blob 原子写入
+│   ├── GisDatasetRepository：事件 shard、详情、区域、分析与 Blob 原子写入
 │   └── MockViewportEventService：恢复快照的固定网格和 LRU
 ├── ViewportQueryController：Abort、request ID、版本保护和重试
-├── Pinia：当前视口事件、选中 ID、区域筛选结果
+├── SpatialAnalysisController：输入快照、request ID、执行结果与错误状态
+├── SpatialAnalysisService：球面测量、最近邻、区域包含、统计与对比
+├── Pinia：当前视口事件、选中 ID、区域筛选结果和轻量分析摘要
 └── MapManager
     ├── OpenLayers Map / View / Overlay
     ├── LayerManager
@@ -123,6 +133,19 @@ GisManagementDemo.vue
 - fixture 版本变化时只重建对应量级。初始化 metadata 与 128 个 shard 使用同一批写，失败后下次可以完整重试。
 - IndexedDB 不可用时降级为页面内 Memory，并在标题显示“刷新后数据丢失”；配额、克隆或事务写入失败不会提前更新 Pinia、空间索引或地图。
 - `GisApi` 是页面稳定业务边界，不暴露 namespace、shard 或 Key-Value Store。未来 `HttpGisApi` 可以实现同一协议，把完整数据和空间查询迁移到服务端。
+- 每个 `dataset:*` namespace 使用 `analyses:index` 保存轻量摘要，使用 `analysis:<analysisId>` 保存完整输入与结果；摘要不包含大型事件 ID 集合。
+- `datasetVersion` 只在事件集合变化时递增。旧版本分析记录标记为过期，允许查看和另存，但拒绝静默覆盖。
+
+## 空间分析架构与边界
+
+- Haversine 距离和球面 Polygon 面积使用固定地球平均半径 `6_371_008.8` 米；Polygon 支持洞，但第一阶段明确拒绝跨 180° 经线的环。
+- 缓冲区按球面目标点公式生成默认 64 段闭合 Polygon，适用于城市尺度展示与包含判断。
+- 最近事件遍历固定网格中的全部占用桶，再按 Haversine 距离和事件 ID 精确稳定排序；以最多 100k 的当前阶段边界换取结果正确性，返回数量限制为闭区间 `[1, 100]`。
+- 区域统计先用 WGS84 BBOX 查询候选，再用 Polygon/Circle 精筛。Circle 跨日期变更线时拆分为两个 BBOX。
+- 演示风险权重为状态 `3/2/0`、等级 `5/3/1`、未闭环超时额外 `+4`；高风险阈值为 8 分。
+- `SpatialAnalysisController` 的任何输入切换都会递增 request ID，旧异步结果不能覆盖新场景状态。
+- `analysisInput`、`analysisResult`、`analysisHighlight` 分别保存输入、结果和有限高亮，不修改事件图层的原始 Feature 或样式。
+- 分析 GeoJSON 单次最多导入 20 条记录、单个几何最多 2,000 个坐标，避免不可信文件触发无界同步计算。
 
 ### 为什么需要 MapManager
 
@@ -146,6 +169,9 @@ OpenLayers 是有状态的命令式对象系统，Vue 是声明式响应式系�
 | `track`      | `VectorLayer`                 | 完整轨迹和人员当前位置       |
 | `selection`  | `VectorLayer`                 | 当前选中事件的独立高亮       |
 | `eventDraft` | `VectorLayer`                 | 新建或编辑事件的临时选点标记 |
+| `analysisInput` | `VectorLayer`               | 当前分析输入几何             |
+| `analysisResult` | `VectorLayer`              | 当前分析结果几何             |
+| `analysisHighlight` | `VectorLayer`           | 最多 2,000 个分析命中点      |
 
 `LayerManager` 维护 Layer ID 到实例的唯一映射，统一提供 `addLayer`、`removeLayer`、`getLayer`、`showLayer`、`hideLayer` 和 `destroy`。普通点位、Cluster 与 Heatmap 共享同一个当前视口事件 `VectorSource`，避免按渲染方式复制 Feature。SelectionLayer 复用一个只保存坐标的 Feature，不修改原始事件 Feature，并在普通点与 Cluster 模式之间保留一致的选中效果。点位颜色只表达处置状态，避免与事件等级产生重复语义。
 
@@ -300,6 +326,8 @@ pnpm build:vite
 仓库约束要求页面交互和性能体验由用户手动验证，不默认执行 Webpack 构建。
 
 手动验收重点：首次进入默认 10k；标题右侧下拉框切换量级后刷新并保留选择；新增、编辑、删除、分派、状态、区域和附件刷新后保持；导入覆盖与新增符合统计；不同量级修改互相隔离；DevTools 中只有 `blog-gis/entries`；Memory 与配额失败提示符合预期；首屏与快速平移仍只提交当前视口最终请求。
+
+空间分析需手动检查：六种工具切换和绘制互斥；测距/面积单位；缓冲半径与最近数量边界；区域统计和区域对比；超过 2,000 条时的截断提示；保存、刷新恢复、删除；事件变化后的过期提示与重新执行；分析 GeoJSON 导出、导入计数和新 ID；切换场景、切换数据量级及卸载时没有残留绘制交互。
 
 性能测试区会记录数据集生成、固定网格构建、BBOX 候选/命中、缓存命中、纯查询、Feature Diff 和地图 `rendercomplete` 延迟。面板展示的是当前浏览器单次运行值；仓库没有保存固定环境的对照样本，因此不能据此宣称具体提升比例。
 

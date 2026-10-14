@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-14-gis-spatial-analysis-workbench-design.md`
 
+**Implementation status:** Task 1～6 已实现并按任务提交；Task 7 已完成文档、全量静态诊断和手动验收交付。用户明确要求不写测试代码，因此本计划未创建或修改测试文件。
+
 ## Global Constraints
 
 - 用户明确要求不新增、修改或生成任何测试代码；本计划不包含 TDD，不触碰现有 `*.test.ts`。

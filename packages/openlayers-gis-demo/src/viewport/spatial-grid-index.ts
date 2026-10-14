@@ -17,7 +17,6 @@ export interface SpatialGridIndexOptions {
 export class SpatialGridIndex {
   readonly #buckets = new Map<string, InspectionEvent[]>()
   readonly #cellSizeDegrees: number
-  #occupiedBounds: readonly [minX: number, minY: number, maxX: number, maxY: number] | null = null
 
   /** 构造时一次性把事件写入左闭右开网格桶；后续事件变化必须重建索引。 */
   constructor(events: readonly InspectionEvent[], options: SpatialGridIndexOptions) {
@@ -40,7 +39,6 @@ export class SpatialGridIndex {
       } else {
         this.#buckets.set(key, [event])
       }
-      this.#extendOccupiedBounds(gridX, gridY)
     }
   }
 
@@ -59,24 +57,9 @@ export class SpatialGridIndex {
     if (!Number.isInteger(limit) || limit < 1) {
       throw new RangeError('最近邻候选数量必须是正整数')
     }
-    if (!this.#occupiedBounds) return []
-
-    const originX = this.#getGridCoordinate(longitude)
-    const originY = this.#getGridCoordinate(latitude)
-    const [minOccupiedX, minOccupiedY, maxOccupiedX, maxOccupiedY] = this.#occupiedBounds
-    const maximumRing = Math.max(
-      Math.abs(originX - minOccupiedX),
-      Math.abs(originX - maxOccupiedX),
-      Math.abs(originY - minOccupiedY),
-      Math.abs(originY - maxOccupiedY),
-    )
-    const candidates: InspectionEvent[] = []
-
-    for (let ring = 0; ring <= maximumRing; ring += 1) {
-      this.#collectRing(originX, originY, ring, candidates)
-      if (candidates.length >= limit) break
-    }
-    return candidates
+    // 精确最近邻必须考虑相邻网格中可能更靠近边界的点。第一阶段最多 100k 数据，
+    // 因此返回全部占用桶供 Service 做 Haversine 精排，避免“桶内够数即停止”产生错误结果。
+    return [...this.#buckets.values()].flat()
   }
 
   /** 返回与 BBOX 覆盖网格相交的去重候选；结果可能包含真实 BBOX 外的事件。 */
@@ -89,6 +72,17 @@ export class SpatialGridIndex {
     const maxGridY = this.#getGridCoordinate(maxLatitude)
     const candidates: InspectionEvent[] = []
     const seenEventIds = new Set<string>()
+
+    const theoreticalCellCount = (maxGridX - minGridX + 1) * (maxGridY - minGridY + 1)
+    // 大范围 Polygon 可能覆盖数亿个理论空网格；超过占用桶规模时改为扫描现有桶。
+    if (theoreticalCellCount > this.#buckets.size * 2) {
+      for (const [key, bucket] of this.#buckets) {
+        const [gridX, gridY] = key.split(':').map(Number)
+        if (gridX < minGridX || gridX > maxGridX || gridY < minGridY || gridY > maxGridY) continue
+        candidates.push(...bucket)
+      }
+      return candidates
+    }
 
     for (let gridX = minGridX; gridX <= maxGridX; gridX += 1) {
       for (let gridY = minGridY; gridY <= maxGridY; gridY += 1) {
@@ -110,45 +104,6 @@ export class SpatialGridIndex {
   /** 返回至少包含一个事件的桶数量，不包含空网格。 */
   getCellCount(): number {
     return this.#buckets.size
-  }
-
-  #collectRing(
-    originX: number,
-    originY: number,
-    ring: number,
-    candidates: InspectionEvent[],
-  ): void {
-    if (ring === 0) {
-      candidates.push(...(this.#buckets.get(`${originX}:${originY}`) ?? []))
-      return
-    }
-
-    const minX = originX - ring
-    const maxX = originX + ring
-    const minY = originY - ring
-    const maxY = originY + ring
-    for (let gridX = minX; gridX <= maxX; gridX += 1) {
-      candidates.push(...(this.#buckets.get(`${gridX}:${minY}`) ?? []))
-      candidates.push(...(this.#buckets.get(`${gridX}:${maxY}`) ?? []))
-    }
-    for (let gridY = minY + 1; gridY < maxY; gridY += 1) {
-      candidates.push(...(this.#buckets.get(`${minX}:${gridY}`) ?? []))
-      candidates.push(...(this.#buckets.get(`${maxX}:${gridY}`) ?? []))
-    }
-  }
-
-  #extendOccupiedBounds(gridX: number, gridY: number): void {
-    if (!this.#occupiedBounds) {
-      this.#occupiedBounds = [gridX, gridY, gridX, gridY]
-      return
-    }
-    const [minX, minY, maxX, maxY] = this.#occupiedBounds
-    this.#occupiedBounds = [
-      Math.min(minX, gridX),
-      Math.min(minY, gridY),
-      Math.max(maxX, gridX),
-      Math.max(maxY, gridY),
-    ]
   }
 
   #getGridCoordinate(coordinate: number): number {

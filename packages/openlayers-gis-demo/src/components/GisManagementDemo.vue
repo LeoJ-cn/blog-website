@@ -414,6 +414,8 @@ const analysisName = ref('')
 const savedAnalyses = ref<SpatialAnalysisSummary[]>([])
 const analysisComparisonFirstGeometry = ref<Extract<AnalysisGeometry, { type: 'Polygon' | 'Circle' }> | null>(null)
 const analysisState = ref<SpatialAnalysisControllerState>({ status: 'idle', input: null, result: null, errorMessage: null, requestId: 0 })
+/** 当前结果实际使用的事件版本；旧记录另存时必须继续保留旧版本，不能伪装为最新结果。 */
+const analysisResultDatasetVersion = ref<number | null>(null)
 const isMemoryStorage = computed(() => {
   // initializationState 作为响应式依赖，确保 API 创建完成后重新读取运行时存储状态。
   void initializationState.value
@@ -540,9 +542,10 @@ function getAnalysisEventCount(result: SpatialAnalysisResult): number | null {
   return null
 }
 
-function handleAnalysisState(state: SpatialAnalysisControllerState) {
+function handleAnalysisState(state: SpatialAnalysisControllerState, preserveDatasetVersion = false) {
   analysisState.value = state
   if (!state.result) return
+  if (!preserveDatasetVersion) analysisResultDatasetVersion.value = gisApi?.state.datasetVersion ?? null
   mapManager?.showAnalysisResult(state.result)
   const highlightIds = 'highlightEventIds' in state.result ? new Set(state.result.highlightEventIds) : null
   mapManager?.setAnalysisHighlightEvents(highlightIds ? store.events.filter((event) => highlightIds.has(event.id)) : [])
@@ -591,12 +594,12 @@ async function executeCurrentAnalysis() {
 async function saveCurrentAnalysis() {
   const result = analysisState.value.result
   const input = analysisState.value.input
-  if (!gisApi || !result || !input) return
+  if (!gisApi || !result || !input || analysisResultDatasetVersion.value === null) return
   const now = new Date().toISOString()
   const record: PersistedSpatialAnalysis = {
     id: crypto.randomUUID(), name: analysisName.value.trim() || `${ANALYSIS_TOOL_LABELS[result.kind]} ${savedAnalyses.value.length + 1}`,
     kind: result.kind, input, result, datasetScale: activeDatasetScale.value,
-    datasetVersion: gisApi.state.datasetVersion, createdAt: now, updatedAt: now,
+    datasetVersion: analysisResultDatasetVersion.value, createdAt: now, updatedAt: now,
   }
   try {
     const saved = await gisApi.saveSpatialAnalysis(record)
@@ -618,9 +621,12 @@ async function openSavedAnalysis(summary: SpatialAnalysisSummary) {
     return
   }
   if (!loaded) return
+  // 先让 Controller 的 request ID 递增，使此前发出的异步结果无法覆盖刚打开的记录。
+  spatialAnalysisController?.reset()
   analysisState.value = { status: 'success', input: loaded.record.input, result: loaded.record.result, errorMessage: loaded.stale ? '数据已变化，请重新执行后再覆盖保存' : null, requestId: analysisState.value.requestId + 1 }
+  analysisResultDatasetVersion.value = loaded.record.datasetVersion
   store.setActiveAnalysis(loaded.record.kind, loaded.record.id)
-  handleAnalysisState(analysisState.value)
+  handleAnalysisState(analysisState.value, true)
 }
 
 async function rerunLoadedAnalysis() {

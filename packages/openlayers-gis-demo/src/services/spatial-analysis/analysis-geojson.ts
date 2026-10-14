@@ -7,6 +7,10 @@ import { validateAnalysisGeometry } from './geometry-validation'
 const ANALYSIS_KINDS: readonly SpatialAnalysisKind[] = [
   'DISTANCE', 'AREA', 'BUFFER', 'NEAREST_EVENTS', 'REGION_STATISTICS', 'REGION_COMPARISON',
 ]
+/** 单次导入最多执行 20 条全数据集分析，避免同步批次长时间占用主线程。 */
+const MAX_IMPORT_FEATURE_COUNT = 20
+/** 单个几何最多 2,000 个坐标点，兼顾城市区域表达与点面精筛成本。 */
+const MAX_GEOMETRY_COORDINATE_COUNT = 2_000
 
 type GeoJsonGeometry =
   | { type: 'Point'; coordinates: readonly [number, number] }
@@ -122,9 +126,15 @@ function parseGeometry(value: unknown): AnalysisGeometry | null {
     const coordinates = parseCoordinate(value.coordinates)
     if (coordinates) geometry = { type: 'Point', coordinates }
   } else if (value.type === 'LineString' && Array.isArray(value.coordinates)) {
+    if (value.coordinates.length > MAX_GEOMETRY_COORDINATE_COUNT) return null
     const coordinates = value.coordinates.map(parseCoordinate)
     if (coordinates.every((item) => item !== null)) geometry = { type: 'LineString', coordinates: coordinates as readonly (readonly [number, number])[] }
   } else if (value.type === 'Polygon' && Array.isArray(value.coordinates)) {
+    const coordinateCount = value.coordinates.reduce(
+      (total, ring) => total + (Array.isArray(ring) ? ring.length : MAX_GEOMETRY_COORDINATE_COUNT + 1),
+      0,
+    )
+    if (coordinateCount > MAX_GEOMETRY_COORDINATE_COUNT) return null
     const rings = value.coordinates.map((ring) => Array.isArray(ring) ? ring.map(parseCoordinate) : [null])
     if (rings.every((ring) => ring.every((item) => item !== null))) geometry = { type: 'Polygon', rings: rings as readonly (readonly (readonly [number, number])[])[] }
   }
@@ -173,6 +183,9 @@ function createInput(kind: SpatialAnalysisKind, geometry: unknown, properties: R
 /** 解析不可信分析 GeoJSON；根协议错误抛错，单 Feature 错误计数并跳过。 */
 export function parseSpatialAnalysisGeoJson(input: unknown): SpatialAnalysisGeoJsonImportResult {
   if (!isRecord(input) || input.type !== 'FeatureCollection' || !Array.isArray(input.features)) throw new TypeError('文件必须是 GeoJSON FeatureCollection')
+  if (input.features.length > MAX_IMPORT_FEATURE_COUNT) {
+    throw new RangeError(`单次最多导入 ${MAX_IMPORT_FEATURE_COUNT} 条空间分析`)
+  }
   const drafts: SpatialAnalysisImportDraft[] = []
   const sourceIds = new Set<string>()
   let invalidCount = 0
