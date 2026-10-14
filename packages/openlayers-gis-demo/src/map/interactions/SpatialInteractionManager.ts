@@ -11,6 +11,11 @@ import { unByKey } from 'ol/Observable.js' // 按事件句柄解绑 OpenLayers �
 import type { EventsKey } from 'ol/events.js' // OpenLayers 事件订阅句柄类型，用于集中管理监听生命周期。
 import type { createClusterLayer } from '../layers/create-cluster-layer'
 import type { EventFeature } from '../sources/create-event-source'
+import type { AnalysisGeometry } from '../../types/spatial-analysis'
+import { serializeRegionGeometry } from '../region-geometry'
+import LineString from 'ol/geom/LineString.js'
+import Point from 'ol/geom/Point.js'
+import { toLonLat } from 'ol/proj.js'
 
 export type MapMode =
   | 'select' // 选择事件点位并驱动业务详情。
@@ -18,6 +23,7 @@ export type MapMode =
   | 'modify' // 修改已绘制范围，并在结束时重新执行空间筛选。
 export type DrawGeometryType =
   | 'Point' // 仅演示点标绘，不执行区域包含查询。
+  | 'LineString' // 按绘制顺序生成测距路径。
   | 'Polygon' // 使用多边形包含关系框选事件。
   | 'Circle' // 使用圆形范围框选事件。
 
@@ -36,6 +42,8 @@ interface Options {
   onEventSelect?: (eventId: string | null) => void
   /** 区域计算完成时返回结果；null 表示当前几何不具备区域筛选语义。 */
   onRegionSelect?: (eventIds: string[] | null) => void
+  /** 分析绘制完成后返回可序列化 WGS84 几何。 */
+  onAnalysisDraw?: (geometry: AnalysisGeometry) => void
 }
 
 /** 统一编排 Select、Draw、Modify 的互斥激活、空间筛选和监听生命周期。 */
@@ -136,6 +144,36 @@ export class SpatialInteractionManager {
     this.removeDraw()
     this.select.setActive(false)
     this.modify.setActive(false)
+  }
+
+  /** 启动一次分析绘制；与 Select、区域 Draw 和 Modify 保持互斥。 */
+  startAnalysisDrawing(drawType: DrawGeometryType, source: VectorSource): void {
+    this.setAllInactive()
+    this.draw = new Draw({ source, type: drawType })
+    this.drawListenerKeys = [
+      this.draw.on('drawstart', () => source.clear()),
+      this.draw.on('drawend', (event) => {
+        const geometry = event.feature.getGeometry()
+        if (!geometry) return
+        if (geometry instanceof Point) {
+          const coordinate = toLonLat(geometry.getCoordinates())
+          this.options.onAnalysisDraw?.({ type: 'Point', coordinates: [coordinate[0], coordinate[1]] })
+        } else if (geometry instanceof LineString) {
+          this.options.onAnalysisDraw?.({
+            type: 'LineString',
+            coordinates: geometry.getCoordinates().map((coordinate) => {
+              const value = toLonLat(coordinate)
+              return [value[0], value[1]] as const
+            }),
+          })
+        } else {
+          const serialized = serializeRegionGeometry(geometry)
+          if (serialized) this.options.onAnalysisDraw?.(serialized)
+        }
+        this.removeDraw()
+      }),
+    ]
+    this.options.map.addInteraction(this.draw)
   }
 
   /** 对程序载入的区域复用与 Draw/Modify 相同的空间筛选流程。 */

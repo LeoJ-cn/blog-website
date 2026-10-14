@@ -37,6 +37,9 @@ import {
 } from './sources/create-event-source'
 import { syncEventSource, type EventSourceDiffStats } from './sources/sync-event-source'
 import { calculateWgs84ViewportBbox } from './viewport-bbox'
+import type { AnalysisGeometry, SpatialAnalysisKind, SpatialAnalysisResult } from '../types/spatial-analysis'
+import { createAnalysisLayers } from './layers/create-analysis-layers'
+import { AnalysisLayerManager } from './analysis-layer-manager'
 
 export type RenderMode =
   | 'point' // 逐个渲染原始事件 Feature，适合小数据量和精确选择。
@@ -84,6 +87,8 @@ export interface MapManagerOptions {
   trackPoints?: readonly TrackPoint[]
   /** 动画帧推进或播放状态改变时返回当前巡检时间。 */
   onTrackTimeChange?: (timestamp: number, status: TrackPlaybackStatus) => void
+  /** 分析绘制完成后返回与 OpenLayers 解耦的 WGS84 几何。 */
+  onAnalysisGeometryDrawn?: (geometry: AnalysisGeometry) => void
 }
 
 const DEFAULT_CENTER: readonly [number, number] = [121.4737, 31.2304]
@@ -120,6 +125,8 @@ export class MapManager {
   >['setCheckpointProgress']
   private readonly interactionManager: SpatialInteractionManager
   private readonly trackPlayback: TrackPlaybackController
+  private readonly analysisLayerManager: AnalysisLayerManager
+  private readonly analysisInputSource: ReturnType<typeof createAnalysisLayers>['inputSource']
   private readonly onViewportChange?: (bbox: Wgs84Bbox) => void
   private readonly onEventSelectInvalidated?: (eventId: string) => void
   private readonly listenerKeys: EventsKey[]
@@ -168,6 +175,7 @@ export class MapManager {
     const responsibilityGrid = createResponsibilityGridLayer()
     const selection = createSelectionLayer()
     const eventDraft = createEventDraftLayer()
+    const analysis = createAnalysisLayers()
     this.clusterLayer = cluster.layer
     this.clusterSource = cluster.source
     this.regionSource = region.source
@@ -178,6 +186,12 @@ export class MapManager {
     this.stopEventDraftPulse = eventDraft.stopPulse
     this.setResponsibilityGridProgress = responsibilityGrid.setCoverageProgress
     this.setTrackCheckpointProgress = track.setCheckpointProgress
+    this.analysisInputSource = analysis.inputSource
+    this.analysisLayerManager = new AnalysisLayerManager(
+      analysis.inputSource,
+      analysis.resultSource,
+      analysis.highlightSource,
+    )
     // Map.controls 接收控件集合；Map.view 接收唯一 View，target 延迟到 mount 时绑定 DOM。
     this.map = new OlMap({
       // defaultControls({rotate:false}) 创建默认控件并关闭旋转控件；extend 追加自定义比例尺。
@@ -210,6 +224,9 @@ export class MapManager {
     this.layerManager.addLayer('track', track.layer)
     this.layerManager.addLayer('selection', selection.layer)
     this.layerManager.addLayer('eventDraft', eventDraft.layer)
+    this.layerManager.addLayer('analysisInput', analysis.inputLayer)
+    this.layerManager.addLayer('analysisResult', analysis.resultLayer)
+    this.layerManager.addLayer('analysisHighlight', analysis.highlightLayer)
     // addOverlay 将 DOM 覆盖物加入 Map 管理，但在 setElement 前不会显示实际内容。
     this.map.addOverlay(this.popupOverlay)
     this.interactionManager = new SpatialInteractionManager({
@@ -228,6 +245,7 @@ export class MapManager {
         options.onEventSelect?.(eventId)
       },
       onRegionSelect: options.onRegionSelect,
+      onAnalysisDraw: options.onAnalysisGeometryDrawn,
     })
     this.trackPlayback = new TrackPlaybackController({
       personFeature: track.personFeature,
@@ -465,6 +483,35 @@ export class MapManager {
     this.interactionManager.setSelectActive(mode === 'select')
   }
 
+  /** 按分析类型启动对应几何绘制；区域类第一阶段默认使用 Polygon。 */
+  startAnalysisDrawing(kind: SpatialAnalysisKind): void {
+    this.cancelEventLocationPick(false)
+    const drawType: DrawGeometryType =
+      kind === 'DISTANCE'
+        ? 'LineString'
+        : kind === 'BUFFER' || kind === 'NEAREST_EVENTS'
+          ? 'Point'
+          : 'Polygon'
+    this.interactionManager.startAnalysisDrawing(drawType, this.analysisInputSource)
+  }
+
+  showAnalysisInput(geometry: AnalysisGeometry): void {
+    this.analysisLayerManager.showInput(geometry)
+  }
+
+  showAnalysisResult(result: SpatialAnalysisResult): void {
+    this.analysisLayerManager.showResult(result)
+  }
+
+  setAnalysisHighlightEvents(events: readonly InspectionEvent[]): void {
+    this.analysisLayerManager.setHighlightEvents(events)
+  }
+
+  clearActiveAnalysis(): void {
+    this.interactionManager.setAllInactive()
+    this.analysisLayerManager.clear()
+  }
+
   /**
    * 独占下一次地图单击并返回 [WGS84 经度, WGS84 纬度]；完成后恢复此前空间交互。
    */
@@ -695,6 +742,7 @@ export class MapManager {
     this.selectedEventId = null
     this.lastViewportBbox = null
     this.setEventDraftLocation(null)
+    this.analysisLayerManager.clear()
     // clear(true) 快速清空海量事件 Feature；setSource(null) 解除 ClusterSource 对原 Source 的引用。
     this.eventSource.clear(true)
     // 主动解除 ClusterSource 对事件 Source 的引用，便于大数据集合及时回收。

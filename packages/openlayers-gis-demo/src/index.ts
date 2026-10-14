@@ -1,6 +1,7 @@
 // 运行时入口：地图编排、Vue 演示组件、业务 Store、Mock 服务与纯函数工具。
 export { MapManager } from './map/MapManager'
 export { LayerManager } from './map/LayerManager'
+export { SpatialAnalysisController } from './analysis/spatial-analysis-controller'
 export { LocalGisApi } from './api/local-gis-api'
 export { default as GisManagementDemo } from './components/GisManagementDemo.vue'
 export { useGisStore } from './stores/gis'
@@ -36,6 +37,10 @@ export {
 export type { SpatialAnalysisContext } from './services/spatial-analysis'
 // 地图层公开协议：宿主只依赖稳定选项、统计、模式和业务 Layer ID。
 export type { MapManagerOptions, MapStats, RenderMode } from './map/MapManager'
+export type {
+  SpatialAnalysisControllerState,
+  SpatialAnalysisControllerStatus,
+} from './analysis/spatial-analysis-controller'
 export type { LocalGisApiOptions } from './api/local-gis-api'
 export type {
   GisApi,
