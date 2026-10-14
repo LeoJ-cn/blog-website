@@ -421,21 +421,31 @@ git commit -m "docs: document indexed db key value package"
 
 ## Final Review Checklist
 
-- [ ] `@blog/indexed-db` 只有通用 Key-Value 语义，没有 Feature 领域类型。
-- [ ] `idb` 版本精确固定为 `7.1.1`。
-- [ ] databaseName 和 namespace 为空时拒绝；namespace 不允许包含内部分隔符。
-- [ ] Caller Key 保留原值但拒绝全空白；内部 Key 不从公共 API 泄漏。
-- [ ] IndexedDB 只创建 Version 1 `entries` Store。
-- [ ] prefix 游标在离开前缀时停止，不依赖不完整的 Unicode 上界技巧。
-- [ ] IndexedDB 批量操作等待 Transaction 完成且失败回滚。
-- [ ] Memory 读写均 structured clone，批量操作使用副本提交。
-- [ ] 相同 databaseName/namespace 的 Memory 实例共享页面级数据。
-- [ ] blocked/terminated 能进入 Memory，并向调用方报告刷新丢失风险。
-- [ ] 配额不足、无效 Key、clone 失败和已关闭调用不静默降级。
-- [ ] close 幂等，关闭后所有数据方法返回 `STORE_CLOSED`。
-- [ ] 公共入口不导出 Adapter、Registry、内部 Schema 或 `idb` 类型。
-- [ ] 全部复杂边界和公开协议成员具备准确简体中文注释。
-- [ ] 未新增、修改或生成任何测试代码，也未执行测试命令。
-- [ ] 未执行页面自动化或 Webpack。
-- [ ] 未触碰或提交用户现有的未跟踪 GIS 文档。
+- [x] `@blog/indexed-db` 只有通用 Key-Value 语义，没有 Feature 领域类型。
+- [x] `idb` 版本精确固定为 `7.1.1`。
+- [x] databaseName 和 namespace 为空时拒绝；namespace 不允许包含内部分隔符。
+- [x] Caller Key 保留原值但拒绝全空白；内部 Key 不从公共 API 泄漏。
+- [x] IndexedDB 只创建 Version 1 `entries` Store。
+- [x] prefix 游标在离开前缀时停止，不依赖不完整的 Unicode 上界技巧。
+- [x] IndexedDB 批量操作等待 Transaction 完成且失败回滚。
+- [x] Memory 读写均 structured clone，批量操作使用副本提交。
+- [x] 相同 databaseName/namespace 的 Memory 实例共享页面级数据。
+- [x] blocked/terminated 能进入 Memory，并向调用方报告刷新丢失风险。
+- [x] 配额不足、无效 Key、clone 失败和已关闭调用不静默降级。
+- [x] close 幂等，关闭后所有数据方法返回 `STORE_CLOSED`。
+- [x] 公共入口不导出 Adapter、Registry、内部 Schema 或 `idb` 类型。
+- [x] 全部复杂边界和公开协议成员具备准确简体中文注释。
+- [x] 未新增、修改或生成任何测试代码，也未执行测试命令。
+- [x] 未执行页面自动化或 Webpack。
+- [x] 未触碰或提交用户现有的未跟踪 GIS 文档。
 
+## 实施记录（2026-10-12）
+
+- Task 1 已由提交 `b729baf` 实现；Task 2 已由提交 `d26cf57` 实现。
+- Task 3 与 README 已实现，但相关文件被包含在既有提交 `a9290d6` 中；本次不重写提交历史。
+- `idb` 已以精确版本 `7.1.1` 写入 Package 配置和锁文件。
+- 用户报告已手动执行 `pnpm --filter @blog/indexed-db typecheck`、`pnpm lint` 和 `pnpm build:vite`，执行时均未报错。该结果为用户提供的验证记录，不是 Agent 本次直接观察的命令输出。
+- 最终审查发现并修正了打开阶段 `AbortError` 未触发 Memory 降级的问题。用户于 2026-10-14 确认修正后的检查没有问题并要求继续开发；该结果为用户提供的验证记录，不是 Agent 本次直接观察的命令输出。
+- Package 内测试代码扫描为 0；本批未新增、修改或生成测试代码，Agent 未执行测试命令。
+- Agent 未执行页面操作、浏览器自动化或 Webpack 命令；本 Package 没有页面验证范围。
+- `git diff --check`、精确依赖扫描、测试文件扫描和 CSS Grid 扫描由 Agent 执行并通过。

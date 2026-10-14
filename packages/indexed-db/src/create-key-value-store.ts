@@ -148,10 +148,13 @@ export async function createKeyValueStore(
 }
 
 function canFallbackFromOpenError(code: StorageErrorCode): boolean {
+  // AbortError 在打开或升级数据库阶段表示连接未能建立，并非调用方的数据操作失败；
+  // 此时还没有可继续使用的持久化 Adapter，应按“打开失败”语义进入 Memory。
   return (
     code === 'INDEXED_DB_UNSUPPORTED' ||
     code === 'OPEN_BLOCKED' ||
     code === 'CONNECTION_TERMINATED' ||
+    code === 'TRANSACTION_ABORTED' ||
     code === 'UNKNOWN'
   )
 }
