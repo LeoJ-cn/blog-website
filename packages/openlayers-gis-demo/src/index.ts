@@ -21,6 +21,15 @@ export {
   parseInspectionEventsGeoJson,
   serializeInspectionEventsToGeoJson,
 } from './services/export-events'
+export {
+  EARTH_MEAN_RADIUS_METERS,
+  calculateHaversineDistanceMeters,
+  calculateLineLengthMeters,
+  calculatePolygonPerimeterMeters,
+  calculateSphericalPolygonAreaSquareMeters,
+  createWgs84BufferPolygon,
+  validateAnalysisGeometry,
+} from './services/spatial-analysis'
 // 地图层公开协议：宿主只依赖稳定选项、统计、模式和业务 Layer ID。
 export type { MapManagerOptions, MapStats, RenderMode } from './map/MapManager'
 export type { LocalGisApiOptions } from './api/local-gis-api'
@@ -53,6 +62,15 @@ export type {
 export type { EventEvidenceMetadata } from './types/event-evidence'
 export type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from './types/track'
 export type { InspectionRegion, RegionGeometry, Wgs84Coordinate } from './types/region'
+export type {
+  AnalysisGeometry,
+  GeometryValidationResult,
+  SpatialAnalysisFailureReason,
+  SpatialAnalysisInput,
+  SpatialAnalysisKind,
+  SpatialAnalysisResult,
+  SpatialEventStatistics,
+} from './types/spatial-analysis'
 export type {
   InspectionEventGeoJson,
   InspectionEventGeoJsonFeature,
