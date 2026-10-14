@@ -13,10 +13,7 @@ import {
   EVENT_STATUS_VISUALS,
 } from '../map/styles/event-visual'
 import { mockInspectionTrack } from '../mock/tracks'
-import {
-  GIS_DATASET_SCALES,
-  type GisDatasetScale,
-} from '../persistence/dataset-scale'
+import { GIS_DATASET_SCALES, type GisDatasetScale } from '../persistence/dataset-scale'
 import { GisSettingsRepository } from '../persistence/gis-settings-repository'
 import {
   parseInspectionEventsGeoJson,
@@ -29,11 +26,7 @@ import type { Wgs84Coordinate } from '../types/region'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
 import { ViewportQueryController } from '../viewport/viewport-query-controller'
 import { mergeViewportQueryState } from '../viewport/viewport-state'
-import type {
-  ViewportDatasetBuildStats,
-  ViewportQueryState,
-  Wgs84Bbox,
-} from '../viewport/types'
+import type { ViewportDatasetBuildStats, ViewportQueryState, Wgs84Bbox } from '../viewport/types'
 
 interface Props {
   /** 由宿主配置层注入的天地图浏览器端 Token；组件不会记录或展示其内容。 */
@@ -2212,8 +2205,7 @@ onBeforeUnmount(() => {
       </aside>
     </div>
     <div class="performance-controls">
-      <strong>性能测试</strong>
-      <span>空间交互</span>
+      <strong>空间交互</strong>
       <button :class="{ active: mapMode === 'select' }" @click="changeMapMode('select')">
         Select
       </button>
