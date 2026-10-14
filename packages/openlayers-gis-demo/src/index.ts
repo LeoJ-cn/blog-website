@@ -1,6 +1,7 @@
 // 运行时入口：地图编排、Vue 演示组件、业务 Store、Mock 服务与纯函数工具。
 export { MapManager } from './map/MapManager'
 export { LayerManager } from './map/LayerManager'
+export { LocalGisApi } from './api/local-gis-api'
 export { default as GisManagementDemo } from './components/GisManagementDemo.vue'
 export { useGisStore } from './stores/gis'
 export { generateInspectionEvents } from './mock/generate-events'
@@ -24,11 +25,14 @@ export {
 } from './services/export-events'
 // 地图层公开协议：宿主只依赖稳定选项、统计、模式和业务 Layer ID。
 export type { MapManagerOptions, MapStats, RenderMode } from './map/MapManager'
+export type { LocalGisApiOptions } from './api/local-gis-api'
+export type { GisApi, GisApiState, GisStorageState } from './api/types'
 export type { EventSourceDiffStats } from './map/sources/sync-event-source'
 export type { CoreLayerId } from './map/LayerManager'
 export type { DrawGeometryType, MapMode } from './map/interactions/SpatialInteractionManager'
 export type { GisDatasetScale } from './persistence/dataset-scale'
 export type {
+  GisEventImportResult,
   GisDatasetRepositoryOptions,
   InspectionEventEditableFields,
 } from './persistence/gis-dataset-repository'
@@ -64,6 +68,7 @@ export type {
   ViewportEventQuery,
   ViewportEventQueryResult,
   ViewportEventService,
+  RestorableViewportEventService,
   ViewportQueryParams,
   ViewportQueryState,
   ViewportQueryStatus,

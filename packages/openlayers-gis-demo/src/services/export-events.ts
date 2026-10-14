@@ -28,7 +28,11 @@ export interface InspectionEventGeoJson {
 
 export interface InspectionEventGeoJsonImportResult {
   events: InspectionEvent[]
-  /** 因协议错误、坐标越界或文件内 ID 重复而跳过的 Feature 数量。 */
+  /** 因协议错误或坐标越界跳过的 Feature 数量。 */
+  invalidCount: number
+  /** 文件内同一 ID 第二次及后续出现的数量；首个合法 Feature 保留。 */
+  duplicateInFileCount: number
+  /** 兼容总数，恒等于 invalidCount + duplicateInFileCount。 */
   rejectedCount: number
 }
 
@@ -62,16 +66,17 @@ export function parseInspectionEventsGeoJson(input: unknown): InspectionEventGeo
 
   const events: InspectionEvent[] = []
   const eventIds = new Set<string>()
-  let rejectedCount = 0
+  let invalidCount = 0
+  let duplicateInFileCount = 0
   for (const candidate of input.features) {
     if (!isRecord(candidate) || candidate.type !== 'Feature') {
-      rejectedCount += 1
+      invalidCount += 1
       continue
     }
     const geometry = candidate.geometry
     const properties = candidate.properties
     if (!isRecord(geometry) || geometry.type !== 'Point' || !isRecord(properties)) {
-      rejectedCount += 1
+      invalidCount += 1
       continue
     }
     const coordinates = geometry.coordinates
@@ -81,7 +86,6 @@ export function parseInspectionEventsGeoJson(input: unknown): InspectionEventGeo
     const isValid =
       typeof id === 'string' &&
       id.length > 0 &&
-      !eventIds.has(id) &&
       EVENT_TYPES.includes(type as EventType) &&
       EVENT_STATUSES.includes(status as EventStatus) &&
       EVENT_LEVELS.includes(level as EventLevel) &&
@@ -97,7 +101,11 @@ export function parseInspectionEventsGeoJson(input: unknown): InspectionEventGeo
       lat >= -90 &&
       lat <= 90
     if (!isValid) {
-      rejectedCount += 1
+      invalidCount += 1
+      continue
+    }
+    if (eventIds.has(id)) {
+      duplicateInFileCount += 1
       continue
     }
     eventIds.add(id)
@@ -112,5 +120,10 @@ export function parseInspectionEventsGeoJson(input: unknown): InspectionEventGeo
       createdAt,
     })
   }
-  return { events, rejectedCount }
+  return {
+    events,
+    invalidCount,
+    duplicateInFileCount,
+    rejectedCount: invalidCount + duplicateInFileCount,
+  }
 }

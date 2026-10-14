@@ -58,6 +58,12 @@ export interface ViewportEventService {
   destroy(): void
 }
 
+/** 本地索引实现的扩展协议；远程 ViewportEventService 无需接收完整事件快照。 */
+export interface RestorableViewportEventService extends ViewportEventService {
+  /** 使用持久化恢复的事件快照重建索引；不得按数量重新生成 Mock 数据。 */
+  replaceDataset(events: readonly InspectionEvent[]): ViewportDatasetBuildStats
+}
+
 export type ViewportQueryStatus =
   | 'idle' // 尚未发起视口查询。
   | 'loading' // 正在查询；若已有成功结果则继续保留旧结果。

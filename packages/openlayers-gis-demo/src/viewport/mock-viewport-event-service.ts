@@ -7,7 +7,7 @@ import {
   type ViewportDatasetBuildStats,
   type ViewportEventQuery,
   type ViewportEventQueryResult,
-  type ViewportEventService,
+  type RestorableViewportEventService,
   type Wgs84Bbox,
 } from './types'
 
@@ -35,7 +35,7 @@ export interface MockViewportEventServiceOptions {
 }
 
 /** 在内存数据集上实现可取消视口查询、固定网格索引和有界 LRU 缓存。 */
-class MockViewportEventService implements ViewportEventService {
+class MockViewportEventService implements RestorableViewportEventService {
   readonly #latencyMs: number
   readonly #cacheCapacity: number
   readonly #cellSizeDegrees: number
@@ -74,11 +74,25 @@ class MockViewportEventService implements ViewportEventService {
     const generationDurationMs = performance.now() - generationStartedAt
     this.#assertUniqueEventIds(events)
 
+    return this.#replaceDataset(events, generationDurationMs)
+  }
+
+  /** 使用调用方恢复的完整事件快照重建索引，并使旧查询缓存立即失效。 */
+  replaceDataset(events: readonly InspectionEvent[]): ViewportDatasetBuildStats {
+    this.#assertActive()
+    return this.#replaceDataset(events, 0)
+  }
+
+  #replaceDataset(
+    events: readonly InspectionEvent[],
+    generationDurationMs: number,
+  ): ViewportDatasetBuildStats {
+    this.#assertUniqueEventIds(events)
     const indexStartedAt = performance.now()
     const index = new SpatialGridIndex(events, { cellSizeDegrees: this.#cellSizeDegrees })
     const indexBuildDurationMs = performance.now() - indexStartedAt
 
-    this.#events = [...events]
+    this.#events = structuredClone([...events])
     this.#index = index
     this.#datasetVersion += 1
     this.clearCache()
@@ -265,6 +279,6 @@ class MockViewportEventService implements ViewportEventService {
 export function createMockViewportEventService(
   initialCount: number,
   options: MockViewportEventServiceOptions = {},
-): ViewportEventService {
+): RestorableViewportEventService {
   return new MockViewportEventService(initialCount, options)
 }

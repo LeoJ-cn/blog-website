@@ -102,6 +102,20 @@ describe('MockViewportEventService dataset and filters', () => {
     expect(result.cacheHit).toBe(false)
   })
 
+  it('replaces generated data with a restored snapshot and invalidates cached queries', async () => {
+    const service = createMockViewportEventService(10, { latencyMs: 0 })
+    await service.query({ bbox: DATASET_BBOX, filter: EMPTY_FILTER })
+    const restored = [createEvent('restored', 121.47, 31.23)]
+
+    const stats = service.replaceDataset(restored)
+    const result = await service.query({ bbox: DATASET_BBOX, filter: EMPTY_FILTER })
+
+    expect(stats.datasetSize).toBe(1)
+    expect(stats.generationDurationMs).toBe(0)
+    expect(result.cacheHit).toBe(false)
+    expect(result.events).toEqual(restored)
+  })
+
   it('rejects duplicate IDs from an injected dataset factory', () => {
     expect(() =>
       createMockViewportEventService(2, {

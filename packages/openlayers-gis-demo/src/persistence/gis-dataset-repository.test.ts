@@ -365,4 +365,47 @@ describe('GIS persisted business mutations', () => {
     expect(after.events).toEqual(before.events)
     repository.close()
   })
+
+  it('upserts imported events while preserving unrelated events and existing details', async () => {
+    const databaseName = createDatabaseName('import-upsert')
+    const repository = await GisDatasetRepository.create('1k', { databaseName })
+    const initialized = await repository.loadOrInitialize()
+    const existing = initialized.events[0]!
+    const untouched = initialized.events[1]!
+    await repository.setAssignee(existing.id, '王工')
+    const attachment = {
+      id: 'IMPORT-ATTACHMENT-1',
+      name: '现场.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 5,
+      addedAt: '2026-10-14T07:00:00.000Z',
+    }
+    await repository.addAttachment(existing.id, attachment, new Blob(['image']))
+    const overwritten = {
+      ...existing,
+      type: 'MANHOLE' as const,
+      status: 'DONE' as const,
+      level: 'HIGH' as const,
+      address: '导入覆盖后的地址',
+    }
+    const added = createEvent('IMPORT-NEW-1')
+
+    expect(await repository.importEvents([overwritten, added])).toEqual({
+      addedCount: 1,
+      overwrittenCount: 1,
+    })
+    repository.close()
+
+    const reopened = await GisDatasetRepository.create('1k', { databaseName })
+    const restored = await reopened.loadOrInitialize()
+    expect(restored.metadata.currentEventCount).toBe(1_001)
+    expect(restored.events.find(({ id }) => id === existing.id)).toEqual(overwritten)
+    expect(restored.events.find(({ id }) => id === added.id)).toEqual(added)
+    expect(restored.events.find(({ id }) => id === untouched.id)).toEqual(untouched)
+    expect(await reopened.loadEventDetails(existing.id)).toMatchObject({
+      assignee: '王工',
+      attachments: [attachment],
+    })
+    reopened.close()
+  })
 })

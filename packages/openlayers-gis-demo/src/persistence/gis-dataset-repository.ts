@@ -58,6 +58,13 @@ export type InspectionEventEditableFields = Pick<
   'type' | 'level' | 'lng' | 'lat' | 'address'
 >
 
+export interface GisEventImportResult {
+  /** 导入前不存在、此次新增的事件数量。 */
+  addedCount: number
+  /** 导入前已存在、此次按 ID 覆盖基础字段的事件数量。 */
+  overwrittenCount: number
+}
+
 export class GisDatasetRepository {
   readonly #scale: GisDatasetScale
   readonly #store: KeyValueStore
@@ -358,6 +365,42 @@ export class GisDatasetRepository {
       storageState: this.state,
     }
     return true
+  }
+
+  /** 按 ID 原子 upsert 导入事件；未出现在导入文件中的现有事件及详情保持不变。 */
+  async importEvents(events: readonly InspectionEvent[]): Promise<GisEventImportResult> {
+    const dataset = await this.#ensureDataset()
+    const existingIds = new Set(dataset.events.map(({ id }) => id))
+    const importedById = new Map<string, InspectionEvent>()
+    for (const event of events) importedById.set(event.id, structuredClone(event))
+
+    let addedCount = 0
+    let overwrittenCount = 0
+    for (const eventId of importedById.keys()) {
+      if (existingIds.has(eventId)) overwrittenCount += 1
+      else addedCount += 1
+    }
+    if (importedById.size === 0) return { addedCount, overwrittenCount }
+
+    const nextEvents = dataset.events.map((event) => importedById.get(event.id) ?? event)
+    for (const [eventId, event] of importedById) {
+      if (!existingIds.has(eventId)) nextEvents.push(event)
+    }
+    const affectedShardIndexes = [...new Set([...importedById.keys()].map(getEventShardIndex))]
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, nextEvents.length)
+    await this.#store.setMany([
+      ...affectedShardIndexes.map(
+        (shardIndex) =>
+          [
+            getEventShardKey(shardIndex),
+            nextEvents.filter((event) => getEventShardIndex(event.id) === shardIndex),
+          ] as const,
+      ),
+      [METADATA_KEY, metadata],
+    ])
+    const sortedEvents = mergeEventShards(partitionEventsByShard(nextEvents))
+    this.#dataset = { ...dataset, metadata, events: sortedEvents, storageState: this.state }
+    return { addedCount, overwrittenCount }
   }
 
   close(): void {
