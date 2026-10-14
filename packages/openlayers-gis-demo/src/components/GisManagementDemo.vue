@@ -27,6 +27,10 @@ import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../typ
 import { ViewportQueryController } from '../viewport/viewport-query-controller'
 import { mergeViewportQueryState } from '../viewport/viewport-state'
 import type { ViewportDatasetBuildStats, ViewportQueryState, Wgs84Bbox } from '../viewport/types'
+import { SpatialAnalysisController } from '../analysis/spatial-analysis-controller'
+import type { SpatialAnalysisControllerState } from '../analysis/spatial-analysis-controller'
+import type { AnalysisGeometry, SpatialAnalysisInput, SpatialAnalysisKind, SpatialAnalysisResult } from '../types/spatial-analysis'
+import type { PersistedSpatialAnalysis, SpatialAnalysisSummary } from '../persistence/types'
 
 interface Props {
   /** 由宿主配置层注入的天地图浏览器端 Token；组件不会记录或展示其内容。 */
@@ -73,10 +77,16 @@ type WorkspaceScene =
   | 'realtime' // 日常监控事件、轨迹和处置状态。
   | 'dispatch' // 展示责任网格并突出任务分派与区域处置。
   | 'replay' // 隐藏事件点，突出巡检轨迹和时间轴复盘。
+  | 'analysis' // 绘制几何并执行空间分析，展示结果和已保存记录。
 const WORKSPACE_SCENE_META: Record<WorkspaceScene, { label: string; description: string }> = {
   realtime: { label: '实时态势', description: '事件聚合、在线轨迹与处置状态' },
   dispatch: { label: '任务调度', description: '责任网格、精确点位与人员分派' },
   replay: { label: '巡检复盘', description: '巡检路线、时间定位与覆盖核查' },
+  analysis: { label: '空间分析', description: '测量、缓冲区、最近事件与区域洞察' },
+}
+const ANALYSIS_TOOL_LABELS: Readonly<Record<SpatialAnalysisKind, string>> = {
+  DISTANCE: '测距', AREA: '测面积', BUFFER: '缓冲区', NEAREST_EVENTS: '最近事件',
+  REGION_STATISTICS: '区域统计', REGION_COMPARISON: '区域对比',
 }
 /** 事件时间统一按中文两位月日和 24 小时制展示，输入为 ISO 时间或时间戳。 */
 const EVENT_CREATED_AT_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
@@ -397,6 +407,12 @@ const pendingDatasetScale = ref<GisDatasetScale>('10k')
 const initializationState = ref<'loading' | 'ready' | 'error'>('loading')
 const initializationError = ref('')
 const persistenceFeedback = ref('')
+const analysisRadiusMeters = ref(500)
+const analysisNearestLimit = ref(10)
+const analysisName = ref('')
+const savedAnalyses = ref<SpatialAnalysisSummary[]>([])
+const analysisComparisonFirstGeometry = ref<Extract<AnalysisGeometry, { type: 'Polygon' | 'Circle' }> | null>(null)
+const analysisState = ref<SpatialAnalysisControllerState>({ status: 'idle', input: null, result: null, errorMessage: null, requestId: 0 })
 const isMemoryStorage = computed(() => {
   // initializationState 作为响应式依赖，确保 API 创建完成后重新读取运行时存储状态。
   void initializationState.value
@@ -515,6 +531,112 @@ let mapManager: MapManager | null = null
 let gisApi: GisApi | null = null
 let settingsRepository: GisSettingsRepository | null = null
 let viewportQueryController: ViewportQueryController | null = null
+let spatialAnalysisController: SpatialAnalysisController | null = null
+
+function getAnalysisEventCount(result: SpatialAnalysisResult): number | null {
+  if (result.kind === 'NEAREST_EVENTS' || result.kind === 'REGION_STATISTICS') return result.eventIds.length
+  if (result.kind === 'REGION_COMPARISON') return result.onlyAEventIds.length + result.sharedEventIds.length + result.onlyBEventIds.length
+  return null
+}
+
+function handleAnalysisState(state: SpatialAnalysisControllerState) {
+  analysisState.value = state
+  if (!state.result) return
+  mapManager?.showAnalysisResult(state.result)
+  const highlightIds = 'highlightEventIds' in state.result ? new Set(state.result.highlightEventIds) : null
+  mapManager?.setAnalysisHighlightEvents(highlightIds ? store.events.filter((event) => highlightIds.has(event.id)) : [])
+  store.setAnalysisResultSummary(state.result.kind, getAnalysisEventCount(state.result))
+}
+
+function buildAnalysisInput(kind: SpatialAnalysisKind, geometry: AnalysisGeometry): SpatialAnalysisInput | null {
+  if (kind === 'DISTANCE' && geometry.type === 'LineString') return { kind, geometry }
+  if (kind === 'AREA' && geometry.type === 'Polygon') return { kind, geometry }
+  if (kind === 'BUFFER' && geometry.type === 'Point') return { kind, geometry, radiusMeters: analysisRadiusMeters.value }
+  if (kind === 'NEAREST_EVENTS' && geometry.type === 'Point') return { kind, geometry, limit: analysisNearestLimit.value }
+  if (kind === 'REGION_STATISTICS' && (geometry.type === 'Polygon' || geometry.type === 'Circle')) return { kind, geometry, nowTimestamp: demoClock.value }
+  if (kind === 'REGION_COMPARISON' && (geometry.type === 'Polygon' || geometry.type === 'Circle')) {
+    if (!analysisComparisonFirstGeometry.value) {
+      analysisComparisonFirstGeometry.value = geometry
+      mapManager?.showAnalysisInput(geometry)
+      mapManager?.startAnalysisDrawing(kind)
+      return null
+    }
+    return { kind, geometryA: analysisComparisonFirstGeometry.value, geometryB: geometry, nowTimestamp: demoClock.value }
+  }
+  return null
+}
+
+function selectAnalysisTool(kind: SpatialAnalysisKind) {
+  store.setActiveAnalysis(kind)
+  analysisComparisonFirstGeometry.value = null
+  spatialAnalysisController?.startDrawing()
+  mapManager?.clearActiveAnalysis()
+  mapManager?.startAnalysisDrawing(kind)
+}
+
+function handleAnalysisGeometryDrawn(geometry: AnalysisGeometry) {
+  const kind = store.activeAnalysisKind
+  if (!kind) return
+  const input = buildAnalysisInput(kind, geometry)
+  if (!input) return
+  mapManager?.showAnalysisInput(geometry)
+  spatialAnalysisController?.setInput(input)
+}
+
+async function executeCurrentAnalysis() {
+  await spatialAnalysisController?.execute()
+}
+
+async function saveCurrentAnalysis() {
+  const result = analysisState.value.result
+  const input = analysisState.value.input
+  if (!gisApi || !result || !input) return
+  const now = new Date().toISOString()
+  const record: PersistedSpatialAnalysis = {
+    id: crypto.randomUUID(), name: analysisName.value.trim() || `${ANALYSIS_TOOL_LABELS[result.kind]} ${savedAnalyses.value.length + 1}`,
+    kind: result.kind, input, result, datasetScale: activeDatasetScale.value,
+    datasetVersion: gisApi.state.datasetVersion, createdAt: now, updatedAt: now,
+  }
+  try {
+    const saved = await gisApi.saveSpatialAnalysis(record)
+    if (!saved.saved) { persistenceFeedback.value = '数据已变化，请重新执行后再保存'; return }
+    store.setActiveAnalysis(result.kind, record.id)
+    savedAnalyses.value = await gisApi.listSpatialAnalyses()
+    analysisName.value = ''
+  } catch {
+    persistenceFeedback.value = '分析记录保存失败，当前结果仍已保留'
+  }
+}
+
+async function openSavedAnalysis(summary: SpatialAnalysisSummary) {
+  let loaded
+  try {
+    loaded = await gisApi?.loadSpatialAnalysis(summary.id)
+  } catch {
+    persistenceFeedback.value = '分析记录读取失败，请重试'
+    return
+  }
+  if (!loaded) return
+  analysisState.value = { status: 'success', input: loaded.record.input, result: loaded.record.result, errorMessage: loaded.stale ? '数据已变化，请重新执行后再覆盖保存' : null, requestId: analysisState.value.requestId + 1 }
+  store.setActiveAnalysis(loaded.record.kind, loaded.record.id)
+  handleAnalysisState(analysisState.value)
+}
+
+async function rerunLoadedAnalysis() {
+  const input = analysisState.value.input
+  if (!input || !spatialAnalysisController) return
+  spatialAnalysisController.setInput(input)
+  await spatialAnalysisController.execute()
+}
+
+async function removeSavedAnalysis(summary: SpatialAnalysisSummary) {
+  if (!gisApi || !window.confirm(`删除分析“${summary.name}”？`)) return
+  try {
+    if (await gisApi.removeSpatialAnalysis(summary.id)) savedAnalyses.value = await gisApi.listSpatialAnalyses()
+  } catch {
+    persistenceFeedback.value = '分析记录删除失败，请重试'
+  }
+}
 
 // 回放场景用零基轨迹节点驱动责任网格；其他场景传 null 恢复普通网格状态。
 watch([trackActiveGridSequence, workspaceScene], ([activeSequence, scene]) => {
@@ -663,6 +785,17 @@ async function assignSelectedEvent() {
 
 function changeWorkspaceScene(scene: WorkspaceScene) {
   const restoresAllAssignees = scene !== 'dispatch' && assigneeFilter.value !== 'ALL'
+  if (
+    scene !== 'analysis' &&
+    (analysisState.value.status === 'drawing' ||
+      analysisState.value.status === 'ready' ||
+      analysisState.value.status === 'running')
+  ) {
+    // 离开分析场景只取消尚未提交的工作；已成功或已保存结果继续保留，返回时仍可查看。
+    spatialAnalysisController?.reset()
+    analysisComparisonFirstGeometry.value = null
+    mapManager?.clearActiveAnalysis()
+  }
   if (restoresAllAssignees) assigneeFilter.value = 'ALL'
   workspaceScene.value = scene
   // 每个场景只声明需要覆盖的图层，其余图层沿用用户当前开关状态。
@@ -673,6 +806,7 @@ function changeWorkspaceScene(scene: WorkspaceScene) {
     dispatch: { events: true, heatmap: false, responsibilityGrid: true, track: false },
     // 复盘场景隐藏事件点，只保留责任网格与巡检轨迹。
     replay: { events: false, heatmap: false, responsibilityGrid: true, track: true },
+    analysis: { events: true, heatmap: false, responsibilityGrid: false, track: false },
   }
   for (const [layerId, visible] of Object.entries(visibilityByScene[scene])) {
     const typedLayerId = layerId as LayerControlId
@@ -682,12 +816,15 @@ function changeWorkspaceScene(scene: WorkspaceScene) {
   if (scene === 'realtime') {
     // 实时态势固定恢复海量点聚合和完整轨迹，避免其他场景的精确点选状态泄漏回来。
     changeRenderMode('cluster')
+    changeMapMode('select')
     mapManager?.resetTrack()
   } else if (scene === 'dispatch') {
     changeMapMode('select')
-  } else {
+  } else if (scene === 'replay') {
     mapManager?.resetTrack()
     mapManager?.fitTrack()
+  } else {
+    changeMapMode('select')
   }
   if (restoresAllAssignees) {
     store.selectEvent(null)
@@ -1285,6 +1422,8 @@ async function initializeWorkspace() {
     datasetBuildStats.value = gisApi.state.viewportBuild
     store.setEvents([])
     store.setRegions(dataset.regions)
+    savedAnalyses.value = await gisApi.listSpatialAnalyses()
+    spatialAnalysisController = new SpatialAnalysisController(gisApi, handleAnalysisState)
   } catch (error) {
     gisApi?.close()
     gisApi = null
@@ -1341,6 +1480,7 @@ async function initializeWorkspace() {
           })
       }
     },
+    onAnalysisGeometryDrawn: handleAnalysisGeometryDrawn,
     // 轨迹点按 timestamp 升序，坐标字段是 WGS84 经纬度。
     trackPoints: mockInspectionTrack,
     // timestamp 为 Unix 毫秒；status 由轨迹控制器的播放状态机产生。
@@ -1386,6 +1526,8 @@ onBeforeUnmount(() => {
   releaseAllEventEvidence()
   viewportQueryController?.destroy()
   viewportQueryController = null
+  spatialAnalysisController?.reset()
+  spatialAnalysisController = null
   gisApi?.close()
   gisApi = null
   settingsRepository?.close()
@@ -1437,6 +1579,9 @@ onBeforeUnmount(() => {
           @click="changeWorkspaceScene('replay')"
         >
           巡检复盘
+        </button>
+        <button type="button" :class="{ active: workspaceScene === 'analysis' }" @click="changeWorkspaceScene('analysis')">
+          空间分析
         </button>
       </nav>
       <span v-if="isMemoryStorage" class="storage-warning">内存模式 · 刷新后数据丢失</span>
@@ -1691,6 +1836,34 @@ onBeforeUnmount(() => {
       </aside>
       <main class="map-panel">
         <div ref="mapTarget" class="map-canvas"></div>
+        <section v-if="workspaceScene === 'analysis'" class="analysis-workbench" aria-label="空间分析工具">
+          <header><strong>空间分析</strong><small>{{ analysisState.status }}</small></header>
+          <div class="analysis-tools">
+            <button v-for="(label, kind) in ANALYSIS_TOOL_LABELS" :key="kind" type="button" :class="{ active: store.activeAnalysisKind === kind }" :disabled="analysisState.status === 'running'" @click="selectAnalysisTool(kind)">{{ label }}</button>
+          </div>
+          <label v-if="store.activeAnalysisKind === 'BUFFER'"><span>半径（米）</span><input v-model.number="analysisRadiusMeters" type="number" min="1" step="10" /></label>
+          <label v-if="store.activeAnalysisKind === 'NEAREST_EVENTS'"><span>返回数量（1–100）</span><input v-model.number="analysisNearestLimit" type="number" min="1" max="100" /></label>
+          <p v-if="analysisState.status === 'drawing'">请在地图上绘制分析范围{{ store.activeAnalysisKind === 'REGION_COMPARISON' ? '（需要绘制两次）' : '' }}</p>
+          <p v-if="analysisState.errorMessage" class="analysis-error">{{ analysisState.errorMessage }}</p>
+          <button type="button" :disabled="analysisState.status !== 'ready' && analysisState.status !== 'error'" @click="executeCurrentAnalysis">执行分析</button>
+          <section v-if="analysisState.result" class="analysis-result">
+            <strong>{{ ANALYSIS_TOOL_LABELS[analysisState.result.kind] }}结果</strong>
+            <span v-if="analysisState.result.kind === 'DISTANCE'">{{ analysisState.result.totalLengthMeters.toFixed(1) }} m · {{ (analysisState.result.totalLengthMeters / 1000).toFixed(2) }} km</span>
+            <span v-else-if="analysisState.result.kind === 'AREA'">{{ analysisState.result.areaSquareMeters.toFixed(1) }} m² · {{ (analysisState.result.areaSquareMeters / 1000000).toFixed(2) }} km²</span>
+            <span v-else-if="analysisState.result.kind === 'BUFFER'">半径 {{ analysisState.result.radiusMeters.toLocaleString() }} m</span>
+            <span v-else>{{ getAnalysisEventCount(analysisState.result)?.toLocaleString() }} 个事件</span>
+            <small v-if="'highlightTruncated' in analysisState.result && analysisState.result.highlightTruncated">地图仅高亮前 2,000 条，统计仍基于完整结果</small>
+            <dl v-if="analysisState.result.kind === 'REGION_STATISTICS'" class="analysis-statistics">
+              <div><dt>风险分</dt><dd>{{ analysisState.result.statistics.riskScore }}</dd></div>
+              <div><dt>待处理</dt><dd>{{ analysisState.result.statistics.statusCounts.PENDING }}</dd></div>
+              <div><dt>处理中</dt><dd>{{ analysisState.result.statistics.statusCounts.PROCESSING }}</dd></div>
+              <div><dt>高等级</dt><dd>{{ analysisState.result.statistics.levelCounts.HIGH }}</dd></div>
+            </dl>
+            <button v-if="analysisState.errorMessage" type="button" @click="rerunLoadedAnalysis">按当前数据重新执行</button>
+            <div class="analysis-save"><input v-model="analysisName" placeholder="分析名称" /><button type="button" @click="saveCurrentAnalysis">保存</button></div>
+          </section>
+          <section class="saved-analyses"><strong>已保存分析</strong><p v-if="savedAnalyses.length === 0">暂无记录</p><div v-for="item in savedAnalyses" :key="item.id"><button type="button" @click="openSavedAnalysis(item)">{{ item.name }}</button><button type="button" aria-label="删除分析" @click="removeSavedAnalysis(item)">×</button></div></section>
+        </section>
         <output class="map-zoom-indicator" aria-label="当前地图缩放级别">
           Zoom {{ stats.zoom.toFixed(1) }}x
         </output>
@@ -2905,6 +3078,118 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   background: #dbe4ec;
+}
+.analysis-workbench {
+  position: absolute;
+  top: 76px;
+  left: 12px;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 286px;
+  max-height: calc(100% - 100px);
+  box-sizing: border-box;
+  padding: 12px;
+  overflow: auto;
+  color: #dbeafe;
+  background: #08101ff2;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #02061766;
+  font-size: 11px;
+}
+.analysis-workbench header,
+.analysis-save,
+.saved-analyses div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+.analysis-workbench header small,
+.analysis-workbench p,
+.analysis-result small,
+.saved-analyses p {
+  margin: 0;
+  color: #94a3b8;
+}
+.analysis-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.analysis-tools button {
+  flex: 1 1 82px;
+}
+.analysis-workbench button,
+.analysis-workbench input {
+  min-height: 30px;
+  box-sizing: border-box;
+  color: #dbeafe;
+  background: #111e32;
+  border: 1px solid #2a3d5c;
+  border-radius: 5px;
+}
+.analysis-workbench button {
+  padding: 0 9px;
+  cursor: pointer;
+}
+.analysis-workbench button.active {
+  color: #67e8f9;
+  border-color: #38bdf8;
+}
+.analysis-workbench button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.analysis-workbench label,
+.analysis-result,
+.saved-analyses {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.analysis-workbench input {
+  width: 100%;
+  padding: 0 8px;
+}
+.analysis-result,
+.saved-analyses {
+  padding-top: 9px;
+  border-top: 1px solid #263449;
+}
+.analysis-result > span {
+  color: #67e8f9;
+  font-size: 18px;
+  font-weight: 700;
+}
+.analysis-statistics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+.analysis-statistics div {
+  flex: 1 1 42%;
+  padding: 6px;
+  background: #111e32;
+  border-radius: 4px;
+}
+.analysis-statistics dt {
+  color: #71809a;
+}
+.analysis-statistics dd {
+  margin: 2px 0 0;
+  color: #e0f2fe;
+  font-weight: 700;
+}
+.analysis-save input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.analysis-error {
+  color: #fca5a5 !important;
 }
 .base-map-notice {
   position: absolute;

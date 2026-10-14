@@ -6,6 +6,7 @@ import type { EventActivity } from '../types/inspection-event'
 import type { InspectionRegion, RegionGeometry } from '../types/region'
 import type { PersistedEventDetails } from '../persistence/types'
 import { reconcileViewportEvents } from '../viewport/viewport-state'
+import type { SpatialAnalysisKind } from '../types/spatial-analysis'
 
 /** 单向处置状态机；DONE 映射 null，表示不允许继续推进或回退。 */
 const NEXT_EVENT_STATUS = {
@@ -36,6 +37,12 @@ export const useGisStore = defineStore('openlayers-gis', () => {
   const selectedEventId = ref<string | null>(null)
   /** null 表示尚未执行区域筛选；空数组表示已筛选但区域内没有事件。 */
   const regionEventIds = ref<string[] | null>(null)
+  /** 当前分析工具；null 表示未进入具体工具。 */
+  const activeAnalysisKind = ref<SpatialAnalysisKind | null>(null)
+  /** 当前已打开的持久化分析 ID；未保存结果为 null。 */
+  const activeAnalysisId = ref<string | null>(null)
+  /** 轻量结果摘要；完整事件 ID 集合只保留在 Controller，不进入 Pinia。 */
+  const analysisResultSummary = ref<{ kind: SpatialAnalysisKind; eventCount: number | null } | null>(null)
   const selectedEvent = computed(
     () => events.value.find((event) => event.id === selectedEventId.value) ?? null,
   )
@@ -136,6 +143,16 @@ export const useGisStore = defineStore('openlayers-gis', () => {
   /** 保存当前区域命中 ID；null 与空数组分别表示未筛选和筛选后无命中。 */
   function selectRegionEvents(eventIds: string[] | null) {
     regionEventIds.value = eventIds
+  }
+
+  function setActiveAnalysis(kind: SpatialAnalysisKind | null, analysisId: string | null = null) {
+    activeAnalysisKind.value = kind
+    activeAnalysisId.value = analysisId
+    if (!kind) analysisResultSummary.value = null
+  }
+
+  function setAnalysisResultSummary(kind: SpatialAnalysisKind, eventCount: number | null) {
+    analysisResultSummary.value = { kind, eventCount }
   }
 
   /** 追加会话内事件活动，并以替换 Record 的方式触发响应式更新。 */
@@ -335,6 +352,9 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     selectedEventActivities,
     selectedEventAssignee,
     regionEventIds,
+    activeAnalysisKind,
+    activeAnalysisId,
+    analysisResultSummary,
     setEvents,
     replaceViewportEvents,
     selectEvent,
@@ -342,6 +362,8 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     hydrateEventDetails,
     setRegions,
     selectRegionEvents,
+    setActiveAnalysis,
+    setAnalysisResultSummary,
     addEvent,
     addEvents,
     updateEvent,
