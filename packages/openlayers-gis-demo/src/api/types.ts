@@ -7,7 +7,11 @@ import type { PersistedEventDetails, PersistedGisDataset } from '../persistence/
 import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { EventStatus, InspectionEvent } from '../types/inspection-event'
 import type { InspectionRegion } from '../types/region'
-import type { ViewportEventQuery, ViewportEventQueryResult } from '../viewport/types'
+import type {
+  ViewportDatasetBuildStats,
+  ViewportEventQuery,
+  ViewportEventQueryResult,
+} from '../viewport/types'
 
 export interface GisStorageState {
   /** indexed-db 表示可跨刷新持久化；memory 表示当前页面生命周期内降级。 */
@@ -23,6 +27,8 @@ export interface GisApiState {
   /** 当前真实事件数量，单位为条；用户写入后可偏离量级基准值。 */
   datasetSize: number
   storage: GisStorageState
+  /** 最近一次从持久化快照重建空间索引的统计。 */
+  viewportBuild: ViewportDatasetBuildStats
   /** true 表示资源已释放，后续异步业务操作必须失败。 */
   closed: boolean
 }

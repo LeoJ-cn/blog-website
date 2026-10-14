@@ -7,14 +7,14 @@ import type {
 
 export interface ViewportQueryControllerOptions {
   /** 实际数据服务，可注入内存 Mock 或保持相同协议的 HTTP Adapter。 */
-  service: ViewportEventService
+  service: Pick<ViewportEventService, 'query'>
   /** 每次状态转换后同步调用；参数是冻结的只读浅快照。 */
   onStateChange: (state: Readonly<ViewportQueryState>) => void
 }
 
 /** 负责请求取消、序号竞态保护、数据版本校验、重试和 UI 查询状态转换。 */
 export class ViewportQueryController {
-  readonly #service: ViewportEventService
+  readonly #service: Pick<ViewportEventService, 'query'>
   readonly #onStateChange: (state: Readonly<ViewportQueryState>) => void
   #state: ViewportQueryState = {
     status: 'idle',

@@ -4,6 +4,7 @@ import { mockInspectionRegions } from '../mock/regions'
 import type { EventStatus, InspectionEvent, InspectionEventFilter } from '../types/inspection-event'
 import type { EventActivity } from '../types/inspection-event'
 import type { InspectionRegion, RegionGeometry } from '../types/region'
+import type { PersistedEventDetails } from '../persistence/types'
 import { reconcileViewportEvents } from '../viewport/viewport-state'
 
 /** 单向处置状态机；DONE 映射 null，表示不允许继续推进或回退。 */
@@ -114,6 +115,22 @@ export const useGisStore = defineStore('openlayers-gis', () => {
   /** 查询事件当前责任人；null 表示尚未分派或事件没有分派记录。 */
   function getEventAssignee(eventId: string): string | null {
     return eventAssignees.value[eventId] ?? null
+  }
+
+  /** 用持久化详情覆盖单个事件的增量活动和责任人，不影响其他视口事件。 */
+  function hydrateEventDetails(eventId: string, details: PersistedEventDetails) {
+    eventActivities.value = { ...eventActivities.value, [eventId]: [...details.activities] }
+    const nextAssignees = { ...eventAssignees.value }
+    if (details.assignee) nextAssignees[eventId] = details.assignee
+    else delete nextAssignees[eventId]
+    eventAssignees.value = nextAssignees
+  }
+
+  /** 恢复当前量级持久化区域；调用方负责保证数据集初始化已经成功。 */
+  function setRegions(nextRegions: readonly InspectionRegion[]) {
+    regions.value = structuredClone([...nextRegions])
+    activeRegionId.value = null
+    regionEventIds.value = null
   }
 
   /** 保存当前区域命中 ID；null 与空数组分别表示未筛选和筛选后无命中。 */
@@ -322,6 +339,8 @@ export const useGisStore = defineStore('openlayers-gis', () => {
     replaceViewportEvents,
     selectEvent,
     getEventAssignee,
+    hydrateEventDetails,
+    setRegions,
     selectRegionEvents,
     addEvent,
     addEvents,

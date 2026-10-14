@@ -2,6 +2,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 // OpenLayers 基础样式负责地图画布、控件与 Overlay 的必要布局；业务视觉仍由组件样式控制。
 import 'ol/ol.css'
+import { LocalGisApi } from '../api/local-gis-api'
+import type { GisApi } from '../api/types'
 import { MapManager } from '../map/MapManager'
 import type { MapStats, RenderMode } from '../map/MapManager'
 import type { DrawGeometryType, MapMode } from '../map/interactions/SpatialInteractionManager'
@@ -12,19 +14,23 @@ import {
 } from '../map/styles/event-visual'
 import { mockInspectionTrack } from '../mock/tracks'
 import {
+  GIS_DATASET_SCALES,
+  type GisDatasetScale,
+} from '../persistence/dataset-scale'
+import { GisSettingsRepository } from '../persistence/gis-settings-repository'
+import {
   parseInspectionEventsGeoJson,
   serializeInspectionEventsToGeoJson,
 } from '../services/export-events'
 import { useGisStore } from '../stores/gis'
 import type { EventLevel, EventStatus, EventType, InspectionEvent } from '../types/inspection-event'
+import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { Wgs84Coordinate } from '../types/region'
 import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
-import { createMockViewportEventService } from '../viewport/mock-viewport-event-service'
 import { ViewportQueryController } from '../viewport/viewport-query-controller'
-import { mergeViewportQueryState, resetViewportDatasetState } from '../viewport/viewport-state'
+import { mergeViewportQueryState } from '../viewport/viewport-state'
 import type {
   ViewportDatasetBuildStats,
-  ViewportEventService,
   ViewportQueryState,
   Wgs84Bbox,
 } from '../viewport/types'
@@ -142,15 +148,9 @@ interface EventFormDraft {
   lat: number
 }
 
-interface EventEvidenceAttachment {
-  id: string
-  name: string
+interface EventEvidenceAttachment extends EventEvidenceMetadata {
   /** 浏览器为本地图片创建的临时 Blob URL，组件销毁或附件移除时必须释放。 */
   objectUrl: string
-  /** 文件大小，单位为字节。 */
-  sizeBytes: number
-  /** ISO 8601 格式的本地附件添加时间。 */
-  addedAt: string
 }
 
 /** 新建事件表单默认值；中心点使用上海 WGS84 [经度, 纬度]。 */
@@ -179,7 +179,7 @@ const workspaceScene = ref<WorkspaceScene>('realtime')
 const activeSceneMeta = computed(() => WORKSPACE_SCENE_META[workspaceScene.value])
 /** GeoJSON 导入结果；null 表示无需展示反馈。 */
 const importFeedback = ref<{ message: string; error: boolean } | null>(null)
-/** 现场凭证仅保存在浏览器内存，按事件 ID 分组，不进入业务 Store。 */
+/** 现场凭证 metadata 与 Blob 持久化；此处仅按事件保存当前页面可用的 Blob URL。 */
 const evidenceByEventId = reactive<Record<string, EventEvidenceAttachment[]>>({})
 const evidenceFeedback = ref<{ message: string; error: boolean } | null>(null)
 const selectedEventEvidence = computed(() => {
@@ -399,8 +399,16 @@ const layerVisibility = reactive<Record<LayerControlId, boolean>>({
   region: true,
   selection: true,
 })
-/** Mock 数据集默认生成 10,000 条；调整后会重建索引并重新查询当前视口。 */
-const dataCount = ref(10_000)
+const activeDatasetScale = ref<GisDatasetScale>('10k')
+const pendingDatasetScale = ref<GisDatasetScale>('10k')
+const initializationState = ref<'loading' | 'ready' | 'error'>('loading')
+const initializationError = ref('')
+const persistenceFeedback = ref('')
+const isMemoryStorage = computed(() => {
+  // initializationState 作为响应式依赖，确保 API 创建完成后重新读取运行时存储状态。
+  void initializationState.value
+  return gisApi?.state.storage.engine === 'memory'
+})
 /** 海量点默认使用 Cluster；高缩放级别由 MapManager 自动展开为原始点。 */
 const renderMode = ref<RenderMode>('cluster')
 /** 地图性能面板初始快照；耗时单位均为毫秒，null 表示仍等待 rendercomplete。 */
@@ -511,7 +519,8 @@ const trackCompletedDistanceKm = computed(() => {
   return completedKilometers
 })
 let mapManager: MapManager | null = null
-let viewportService: ViewportEventService | null = null
+let gisApi: GisApi | null = null
+let settingsRepository: GisSettingsRepository | null = null
 let viewportQueryController: ViewportQueryController | null = null
 
 // 回放场景用零基轨迹节点驱动责任网格；其他场景传 null 恢复普通网格状态。
@@ -525,8 +534,20 @@ watch(
   async (eventId) => {
     deleteCandidateId.value = null
     evidenceFeedback.value = null
-    dispatchAssignee.value = store.selectedEventAssignee ?? ''
-    if (!eventId) return
+    if (!eventId) {
+      dispatchAssignee.value = ''
+      return
+    }
+    try {
+      const details = await gisApi?.loadEventDetails(eventId)
+      if (details && store.selectedEventId === eventId) {
+        store.hydrateEventDetails(eventId, details)
+        dispatchAssignee.value = details.assignee ?? ''
+        await restoreEventEvidence(eventId, details.attachments)
+      }
+    } catch {
+      evidenceFeedback.value = { message: '事件详情恢复失败，请重新选择', error: true }
+    }
     const selectedIndex = sortedScopedEvents.value.findIndex((event) => event.id === eventId)
     if (selectedIndex < 0) return
     // 地图选择可能命中任意分页；先切换页码，再等待 Vue 渲染对应事件按钮。
@@ -628,9 +649,15 @@ function getEventSlaPresentation(event: InspectionEvent) {
     : { label: `剩余 ${duration}`, tone: 'normal' as const }
 }
 
-function assignSelectedEvent() {
+async function assignSelectedEvent() {
   const eventId = store.selectedEventId
-  if (!eventId || !dispatchAssignee.value) return
+  if (!gisApi || !eventId || !dispatchAssignee.value) return
+  try {
+    if (!(await gisApi.setAssignee(eventId, dispatchAssignee.value))) return
+  } catch {
+    persistenceFeedback.value = '分派保存失败，请重试'
+    return
+  }
   if (!store.assignEvent(eventId, dispatchAssignee.value)) return
   // 人员筛选开启时，分派可能让事件离开当前结果，必须同步地图 Source 和选择状态。
   if (assigneeFilter.value !== 'ALL') {
@@ -712,6 +739,7 @@ function handleViewportQueryState(nextState: Readonly<ViewportQueryState>) {
 
 function queryViewport(bbox: Wgs84Bbox) {
   currentViewportBbox.value = bbox
+  if (gisApi) datasetBuildStats.value = gisApi.state.viewportBuild
   const expectedDatasetVersion = datasetBuildStats.value?.datasetVersion
   if (!viewportQueryController || expectedDatasetVersion === undefined) return
   void viewportQueryController.query({
@@ -799,8 +827,12 @@ function pickEventLocationFromMap() {
   })
 }
 
-function saveEventForm() {
+async function saveEventForm() {
   if (!validateEventForm()) return
+  if (!gisApi) {
+    eventFormError.value = '数据服务尚未就绪'
+    return
+  }
   const changes = {
     type: eventForm.type,
     level: eventForm.level,
@@ -814,11 +846,18 @@ function saveEventForm() {
   let savedEventId: string
 
   if (editingEventId.value) {
-    const updatedEvent = store.updateEvent(editingEventId.value, changes)
+    let updatedEvent: InspectionEvent | null
+    try {
+      updatedEvent = await gisApi.updateEvent(editingEventId.value, changes)
+    } catch {
+      eventFormError.value = '事件保存失败，请检查本地存储空间后重试'
+      return
+    }
     if (!updatedEvent) {
       eventFormError.value = '事件不存在，无法保存'
       return
     }
+    store.updateEvent(editingEventId.value, changes)
     savedEventId = updatedEvent.id
     const remainsVisible = scopedEvents.value.some((event) => event.id === updatedEvent.id)
     // 编辑可能让事件进入或离开当前筛选结果；仅在仍可见且 Feature 存在时走增量更新。
@@ -830,10 +869,18 @@ function saveEventForm() {
       createdAt: new Date().toISOString(),
       ...changes,
     }
-    if (!store.addEvent(createdEvent)) {
+    let added = false
+    try {
+      added = await gisApi.addEvent(createdEvent)
+    } catch {
+      eventFormError.value = '事件保存失败，请检查本地存储空间后重试'
+      return
+    }
+    if (!added) {
       eventFormError.value = '事件 ID 冲突，请重试'
       return
     }
+    store.addEvent(createdEvent)
     savedEventId = createdEvent.id
     if (scopedEvents.value.some((event) => event.id === createdEvent.id)) {
       mapManager?.addEvent(createdEvent)
@@ -855,14 +902,20 @@ function cancelDeleteEvent() {
   deleteCandidateId.value = null
 }
 
-function confirmDeleteEvent() {
+async function confirmDeleteEvent() {
   const eventId = deleteCandidateId.value
   // 二次确认期间选择若发生变化则拒绝删除，确保目标仍是用户刚才看到的事件。
   if (!eventId || store.selectedEventId !== eventId) {
     cancelDeleteEvent()
     return
   }
-  if (!store.removeEvent(eventId)) {
+  let removed = false
+  try {
+    removed = (await gisApi?.removeEvent(eventId)) ?? false
+  } catch {
+    persistenceFeedback.value = '事件删除失败，请重试'
+  }
+  if (!removed || !store.removeEvent(eventId)) {
     cancelDeleteEvent()
     return
   }
@@ -872,12 +925,12 @@ function confirmDeleteEvent() {
   cancelDeleteEvent()
 }
 
-function addEventEvidence(event: Event) {
+async function addEventEvidence(event: Event) {
   const input = event.currentTarget as HTMLInputElement
   const eventId = store.selectedEventId
   const files = [...(input.files ?? [])]
   input.value = ''
-  if (!eventId || files.length === 0) return
+  if (!gisApi || !eventId || files.length === 0) return
 
   const currentAttachments = evidenceByEventId[eventId] ?? []
   // 每个事件最多保留 3 张图片；availableSlots 是本次仍可接收的数量。
@@ -895,13 +948,27 @@ function addEventEvidence(event: Event) {
       rejectedCount += 1
       continue
     }
-    acceptedAttachments.push({
+    const attachment: EventEvidenceMetadata = {
       id: `${eventId}-evidence-${Date.now()}-${acceptedAttachments.length}`,
       name: file.name,
-      // createObjectURL 创建仅当前页面可用的 Blob URL，移除附件和卸载组件时必须 revoke。
-      objectUrl: URL.createObjectURL(file),
+      mimeType: file.type,
       sizeBytes: file.size,
       addedAt: new Date().toISOString(),
+    }
+    let saved = false
+    try {
+      saved = await gisApi.addAttachment(eventId, attachment, file)
+    } catch {
+      evidenceFeedback.value = { message: '附件保存失败，请检查本地存储空间', error: true }
+    }
+    if (!saved) {
+      rejectedCount += 1
+      continue
+    }
+    acceptedAttachments.push({
+      ...attachment,
+      // 持久化成功后才创建页面 Blob URL，避免失败附件残留在 UI。
+      objectUrl: URL.createObjectURL(file),
     })
   }
   // 超出剩余槽位的文件也计入跳过数量，反馈用户实际未写入的总数。
@@ -915,10 +982,16 @@ function addEventEvidence(event: Event) {
   }
 }
 
-function removeEventEvidence(eventId: string, attachmentId: string) {
+async function removeEventEvidence(eventId: string, attachmentId: string) {
   const attachments = evidenceByEventId[eventId] ?? []
   const target = attachments.find((attachment) => attachment.id === attachmentId)
-  if (!target) return
+  if (!gisApi || !target) return
+  try {
+    if (!(await gisApi.removeAttachment(eventId, attachmentId))) return
+  } catch {
+    evidenceFeedback.value = { message: '附件删除失败，请重试', error: true }
+    return
+  }
   URL.revokeObjectURL(target.objectUrl)
   evidenceByEventId[eventId] = attachments.filter((attachment) => attachment.id !== attachmentId)
   evidenceFeedback.value = null
@@ -935,21 +1008,20 @@ function releaseAllEventEvidence() {
   for (const eventId of Object.keys(evidenceByEventId)) releaseEventEvidence(eventId)
 }
 
-function changeDataCount(count: number) {
-  if (!viewportService) return
-  releaseAllEventEvidence()
-  dataCount.value = count
-  viewportQueryController?.cancel()
-  // setDatasetSize 同步重建完整 Mock 数据集、经纬度桶索引并递增 datasetVersion。
-  datasetBuildStats.value = viewportService.setDatasetSize(count)
-  const reset = resetViewportDatasetState()
-  store.setEvents(reset.events)
-  eventListPage.value = reset.page
-  // 数据源切换后旧区域几何及其命中结果都不再属于当前数据集，必须整体释放。
-  mapManager?.clearRegion()
-  mapManager?.setEvents([])
-  if (mapManager) stats.value = mapManager.getStats()
-  if (currentViewportBbox.value) queryViewport(currentViewportBbox.value)
+async function restoreEventEvidence(
+  eventId: string,
+  attachments: readonly EventEvidenceMetadata[],
+) {
+  releaseEventEvidence(eventId)
+  if (!gisApi) return
+  const restored: EventEvidenceAttachment[] = []
+  for (const attachment of attachments) {
+    const blob = await gisApi.loadAttachmentBlob(eventId, attachment.id)
+    if (!blob) continue
+    restored.push({ ...attachment, objectUrl: URL.createObjectURL(blob) })
+  }
+  if (store.selectedEventId === eventId) evidenceByEventId[eventId] = restored
+  else for (const attachment of restored) URL.revokeObjectURL(attachment.objectUrl)
 }
 
 function applyEventFilter() {
@@ -1053,19 +1125,12 @@ async function importGeoJson(event: Event) {
   }
   try {
     const parsed = parseInspectionEventsGeoJson(JSON.parse(await file.text()) as unknown)
-    const result = store.addEvents(parsed.events)
-    if (result.addedEvents.length > 0) {
-      syncVisibleEvents()
-      const addedIds = new Set(result.addedEvents.map((addedEvent) => addedEvent.id))
-      const visibleAddedIds = scopedEvents.value
-        .filter((visibleEvent) => addedIds.has(visibleEvent.id))
-        .map((visibleEvent) => visibleEvent.id)
-      // 仅定位当前筛选与空间范围内的新数据，避免导入后视角跳向用户看不到的结果。
-      mapManager?.fitEvents(visibleAddedIds)
-    }
+    if (!gisApi) throw new Error('数据服务尚未就绪')
+    const result = await gisApi.importEvents(parsed.events)
+    if (currentViewportBbox.value) queryViewport(currentViewportBbox.value)
     importFeedback.value = {
-      message: `已导入 ${result.addedEvents.length} 条，跳过 ${parsed.rejectedCount + result.skippedCount} 条`,
-      error: result.addedEvents.length === 0,
+      message: `新增 ${result.addedCount} 条，覆盖 ${result.overwrittenCount} 条，非法 ${parsed.invalidCount} 条，文件内重复 ${parsed.duplicateInFileCount} 条`,
+      error: result.addedCount + result.overwrittenCount === 0,
     }
   } catch (error) {
     importFeedback.value = {
@@ -1075,12 +1140,20 @@ async function importGeoJson(event: Event) {
   }
 }
 
-function advanceSelectedEventStatus() {
+async function advanceSelectedEventStatus() {
   const eventId = store.selectedEventId
   // 单条处置必须满足责任人和现场凭证门禁；批量区域流程保持独立，避免隐式改变其协议。
   if (!eventId || statusActionBlockReason.value) return
-  const updatedEvent = store.advanceEventStatus(eventId)
+  if (!gisApi) return
+  let updatedEvent: InspectionEvent | null
+  try {
+    updatedEvent = await gisApi.advanceEventStatus(eventId)
+  } catch {
+    persistenceFeedback.value = '状态保存失败，请重试'
+    return
+  }
   if (!updatedEvent) return
+  store.advanceEventStatus(eventId)
 
   const remainsVisible = scopedEvents.value.some((event) => event.id === updatedEvent.id)
   if (remainsVisible && mapManager?.updateEvent(updatedEvent)) return
@@ -1091,10 +1164,18 @@ function advanceSelectedEventStatus() {
   syncVisibleEvents()
 }
 
-function batchAdvanceRegionEvents(fromStatus: Exclude<EventStatus, 'DONE'>) {
+async function batchAdvanceRegionEvents(fromStatus: Exclude<EventStatus, 'DONE'>) {
   if (store.regionEventIds === null) return
-  const updatedEvents = store.advanceEventStatuses(store.regionEventIds, fromStatus)
+  if (!gisApi) return
+  let updatedEvents: InspectionEvent[]
+  try {
+    updatedEvents = await gisApi.advanceEventStatuses(store.regionEventIds, fromStatus)
+  } catch {
+    persistenceFeedback.value = '批量状态保存失败，请重试'
+    return
+  }
   if (updatedEvents.length === 0) return
+  store.advanceEventStatuses(store.regionEventIds, fromStatus)
   // 状态筛选可能排除批量更新后的事件，整体同步一次比逐条维护可见 Source 更稳定。
   store.selectEvent(null)
   syncVisibleEvents()
@@ -1111,19 +1192,27 @@ function applyLayerVisibility(layerId: LayerControlId) {
   else mapManager?.hideLayer(layerId)
 }
 
-function saveCurrentRegion() {
+async function saveCurrentRegion() {
   const geometry = mapManager?.getCurrentRegionGeometry()
   if (!geometry || store.regionEventIds === null) return
   const customRegionCount = store.regions.filter((region) =>
     region.id.startsWith('REGION-CUSTOM-'),
   ).length
-  store.saveRegion({
+  const region = {
     id: `REGION-CUSTOM-${Date.now()}`,
     name: `自定义巡检区 ${customRegionCount + 1}`,
     geometry,
     eventIds: [...store.regionEventIds],
     createdAt: new Date().toISOString(),
-  })
+  }
+  if (!gisApi) return
+  try {
+    await gisApi.saveRegions([...store.regions, region])
+  } catch {
+    persistenceFeedback.value = '区域保存失败，请重试'
+    return
+  }
+  store.saveRegion(region)
 }
 
 function showSavedRegion(regionId: string) {
@@ -1136,8 +1225,15 @@ function showSavedRegion(regionId: string) {
   mapManager?.showRegion(region.geometry)
 }
 
-function removeSavedRegion(regionId: string) {
+async function removeSavedRegion(regionId: string) {
   const removesActiveRegion = store.activeRegionId === regionId
+  if (!gisApi) return
+  try {
+    await gisApi.saveRegions(store.regions.filter((region) => region.id !== regionId))
+  } catch {
+    persistenceFeedback.value = '区域删除失败，请重试'
+    return
+  }
   store.removeRegion(regionId)
   if (!removesActiveRegion) return
   store.selectRegionEvents(null)
@@ -1184,18 +1280,33 @@ function seekTrackCheckpoint(sequence: number) {
   mapManager?.seekTrack(sequence / lastSequence)
 }
 
-onMounted(() => {
-  // initialCount=0 避免构造后立即生成默认数据；下一行再按 dataCount 统一建立数据集和索引。
-  viewportService = createMockViewportEventService(0)
-  // 返回值包含数据集版本、数量和构建耗时，供查询版本保护与性能面板展示。
-  datasetBuildStats.value = viewportService.setDatasetSize(dataCount.value)
+async function initializeWorkspace() {
+  initializationState.value = 'loading'
+  initializationError.value = ''
+  try {
+    settingsRepository = await GisSettingsRepository.create()
+    activeDatasetScale.value = await settingsRepository.getActiveScale()
+    pendingDatasetScale.value = activeDatasetScale.value
+    gisApi = await LocalGisApi.create(activeDatasetScale.value)
+    const dataset = await gisApi.loadDataset()
+    datasetBuildStats.value = gisApi.state.viewportBuild
+    store.setEvents([])
+    store.setRegions(dataset.regions)
+  } catch (error) {
+    gisApi?.close()
+    gisApi = null
+    settingsRepository?.close()
+    settingsRepository = null
+    initializationState.value = 'error'
+    initializationError.value = error instanceof Error ? error.message : '本地数据初始化失败'
+    return
+  }
   viewportQueryController = new ViewportQueryController({
-    // service 通过 ViewportEventService 接口注入，后续可替换为 HTTP 实现。
-    service: viewportService,
+    // Controller 只依赖 query，Local API 与未来 HTTP API 均无需暴露本地索引控制能力。
+    service: { query: (query) => gisApi!.queryViewport(query) },
     // onStateChange 接收 idle/loading/success/empty/error 状态和已校验结果。
     onStateChange: handleViewportQueryState,
   })
-  store.setEvents([])
   mapManager = new MapManager({
     // 浏览器端 Token 仅传给 WMTS Source；组件不记录、不展示 Token。
     tiandituToken: props.tiandituToken,
@@ -1225,7 +1336,17 @@ onMounted(() => {
       eventListPage.value = 1
       const regionId = store.activeRegionId
       const geometry = mapManager?.getCurrentRegionGeometry()
-      if (regionId && geometry && eventIds) store.updateRegion(regionId, geometry, eventIds)
+      if (regionId && geometry && eventIds && gisApi) {
+        const nextRegions = store.regions.map((region) =>
+          region.id === regionId ? { ...region, geometry, eventIds: [...eventIds] } : region,
+        )
+        void gisApi
+          .saveRegions(nextRegions)
+          .then(() => store.updateRegion(regionId, geometry, eventIds))
+          .catch(() => {
+            persistenceFeedback.value = '区域修改保存失败，请重试'
+          })
+      }
     },
     // 轨迹点按 timestamp 升序，坐标字段是 WGS84 经纬度。
     trackPoints: mockInspectionTrack,
@@ -1240,6 +1361,28 @@ onMounted(() => {
   mapManager.updateResponsibilityGridProgress(null)
   // 第二参数是 Popup DOM；缺失时地图仍可正常挂载和渲染。
   if (mapTarget.value) mapManager.mount(mapTarget.value, popupElement.value ?? undefined)
+  initializationState.value = 'ready'
+}
+
+function retryWorkspaceInitialization() {
+  if (initializationState.value === 'loading') return
+  void initializeWorkspace()
+}
+
+async function changeDatasetScale() {
+  const previousScale = activeDatasetScale.value
+  if (!settingsRepository || pendingDatasetScale.value === previousScale) return
+  try {
+    await settingsRepository.setActiveScale(pendingDatasetScale.value)
+    window.location.reload()
+  } catch {
+    pendingDatasetScale.value = previousScale
+    initializationError.value = '数据量级保存失败，页面未刷新'
+  }
+}
+
+onMounted(() => {
+  void initializeWorkspace()
 })
 
 onBeforeUnmount(() => {
@@ -1250,8 +1393,10 @@ onBeforeUnmount(() => {
   releaseAllEventEvidence()
   viewportQueryController?.destroy()
   viewportQueryController = null
-  viewportService?.destroy()
-  viewportService = null
+  gisApi?.close()
+  gisApi = null
+  settingsRepository?.close()
+  settingsRepository = null
   mapManager?.destroy()
   mapManager = null
 })
@@ -1260,9 +1405,23 @@ onBeforeUnmount(() => {
 <template>
   <section class="gis-shell">
     <header class="gis-header">
-      <div>
+      <div class="gis-brand">
         <small>URBAN INSPECTION CENTER</small>
-        <h2>城市巡检运营工作台</h2>
+        <div class="gis-title-row">
+          <h2>城市巡检运营工作台</h2>
+          <label class="dataset-scale-select">
+            <span>数据量级</span>
+            <select
+              v-model="pendingDatasetScale"
+              :disabled="initializationState !== 'ready'"
+              @change="changeDatasetScale"
+            >
+              <option v-for="scale in GIS_DATASET_SCALES" :key="scale" :value="scale">
+                {{ scale }}
+              </option>
+            </select>
+          </label>
+        </div>
       </div>
       <nav class="gis-primary-nav" aria-label="GIS 工作台导航">
         <button
@@ -1287,8 +1446,20 @@ onBeforeUnmount(() => {
           巡检复盘
         </button>
       </nav>
-      <span class="online">● 系统在线</span>
+      <span v-if="isMemoryStorage" class="storage-warning">内存模式 · 刷新后数据丢失</span>
+      <span v-else class="online">● 系统在线</span>
     </header>
+    <div v-if="initializationState !== 'ready'" class="initialization-status" role="status">
+      <span v-if="initializationState === 'loading'">正在恢复本地数据…</span>
+      <template v-else>
+        <span>初始化失败：{{ initializationError || '无法打开本地数据' }}</span>
+        <button type="button" @click="retryWorkspaceInitialization">重试</button>
+      </template>
+    </div>
+    <div v-if="persistenceFeedback" class="persistence-feedback" role="alert">
+      <span>{{ persistenceFeedback }}</span>
+      <button type="button" @click="persistenceFeedback = ''">关闭</button>
+    </div>
     <section class="operations-summary" aria-label="今日巡检态势">
       <button
         type="button"
@@ -2042,15 +2213,6 @@ onBeforeUnmount(() => {
     </div>
     <div class="performance-controls">
       <strong>性能测试</strong>
-      <span>数据量</span>
-      <button
-        v-for="count in [1000, 10000, 50000, 100000]"
-        :key="count"
-        :class="{ active: dataCount === count }"
-        @click="changeDataCount(count)"
-      >
-        {{ count / 1000 }}k
-      </button>
       <span>空间交互</span>
       <button :class="{ active: mapMode === 'select' }" @click="changeMapMode('select')">
         Select
@@ -2224,6 +2386,76 @@ onBeforeUnmount(() => {
   align-self: stretch;
   display: flex;
   gap: 8px;
+}
+.gis-brand {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.gis-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.dataset-scale-select {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #71809a;
+  font-size: 11px;
+}
+.dataset-scale-select select {
+  padding: 4px 24px 4px 8px;
+  border: 1px solid #2a3d5c;
+  border-radius: 5px;
+  background: #111e32;
+  color: #7dd3fc;
+}
+.dataset-scale-select select:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.storage-warning {
+  color: #fbbf24;
+  font-size: 12px;
+}
+.initialization-status {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #20314c;
+  background: #111827;
+  color: #fbbf24;
+  font-size: 12px;
+}
+.initialization-status button {
+  padding: 5px 10px;
+  border: 1px solid #38bdf8;
+  border-radius: 5px;
+  background: #0c2d46;
+  color: #bae6fd;
+  cursor: pointer;
+}
+.persistence-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 7px 16px;
+  border-bottom: 1px solid #7f1d1d;
+  background: #451a1a;
+  color: #fecaca;
+  font-size: 12px;
+}
+.persistence-feedback button {
+  padding: 3px 8px;
+  border: 1px solid #f87171;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 .gis-primary-nav button {
   position: relative;

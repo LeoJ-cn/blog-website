@@ -9,7 +9,11 @@ import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { EventStatus, InspectionEvent } from '../types/inspection-event'
 import type { InspectionRegion } from '../types/region'
 import { createMockViewportEventService } from '../viewport/mock-viewport-event-service'
-import type { ViewportEventQuery, ViewportEventQueryResult } from '../viewport/types'
+import type {
+  ViewportDatasetBuildStats,
+  ViewportEventQuery,
+  ViewportEventQueryResult,
+} from '../viewport/types'
 import type { GisApi, GisApiState } from './types'
 
 export interface LocalGisApiOptions {
@@ -27,6 +31,7 @@ export class LocalGisApi implements GisApi {
   readonly #repository: GisDatasetRepository
   readonly #viewportService
   #datasetSize: number
+  #viewportBuild: ViewportDatasetBuildStats
   #closed = false
 
   private constructor(
@@ -39,7 +44,7 @@ export class LocalGisApi implements GisApi {
     this.#repository = repository
     this.#datasetSize = dataset.events.length
     this.#viewportService = createMockViewportEventService(0, { latencyMs })
-    this.#viewportService.replaceDataset(dataset.events)
+    this.#viewportBuild = this.#viewportService.replaceDataset(dataset.events)
   }
 
   static async create(
@@ -64,6 +69,7 @@ export class LocalGisApi implements GisApi {
       datasetScale: this.#scale,
       datasetSize: this.#datasetSize,
       storage: { ...this.#repository.state },
+      viewportBuild: { ...this.#viewportBuild },
       closed: this.#closed,
     }
   }
@@ -170,7 +176,7 @@ export class LocalGisApi implements GisApi {
   async #refreshIndex(): Promise<void> {
     const dataset = await this.#repository.loadOrInitialize()
     this.#datasetSize = dataset.events.length
-    this.#viewportService.replaceDataset(dataset.events)
+    this.#viewportBuild = this.#viewportService.replaceDataset(dataset.events)
   }
 
   #assertActive(): void {
