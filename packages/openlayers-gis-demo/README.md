@@ -30,9 +30,9 @@
 - 事件按“待处理 → 处理中 → 已完成”单向流转，并同步地图颜色、列表、筛选结果与统计。
 - 支持地图选点新建、编辑和二次确认删除事件；业务字段、WGS84 坐标、筛选结果、地图点位与空间区域统计同步更新。
 - 事件详情展示上报、资料编辑、开始处理和完成处置的增量时间线。
-- 事件可在当前会话添加最多 3 张现场图片，支持缩略图、文件信息、移除和 Blob URL 生命周期释放。
+- 事件可添加最多 3 张现场图片；metadata 与 Blob 写入当前数据量级，页面只临时创建并按生命周期释放 Blob URL。
 - 单事件处置执行责任门禁：待处理事件必须先分派责任人，处理中事件必须至少添加 1 张现场图片后才能完成；禁用按钮会直接提示缺失条件。
-- 1k、10k、50k、100k 稳定 Mock 完整数据集切换；Pinia 和地图只保存当前视口命中结果。
+- 标题右侧下拉框切换 1k、10k、50k、100k 稳定数据量级，保存最后选择后通过真实页面刷新载入对应数据集；Pinia 和地图只保存当前视口命中结果。
 - `moveend` 触发 WGS84 BBOX 查询，支持请求取消、request ID、数据集版本校验、错误保留与重试。
 - 前端 Mock Service 使用固定经纬度网格缩小候选集、有界 LRU 缓存查询，并对真实 BBOX 再做精确过滤。
 - OpenLayers Event Source 使用事件 ID Diff 增删改，未变化和更新 Feature 保持对象身份。
@@ -49,8 +49,8 @@
 - Polygon/Circle 区域保存、预设区域载入、定位、修改、删除及事件数量同步。
 - 支持将区域内待处理或处理中事件按状态机批量推进，并同步筛选、地图颜色与处置记录。
 - 支持将当前筛选及区域范围内的完整事件结果导出为 WGS84 GeoJSON，而不受列表 100 行展示上限影响。
-- 支持校验并追加导入事件 GeoJSON；非法 Feature、文件内重复 ID 和现有 ID 冲突会被跳过并汇总提示。
-- 支持一键定位当前筛选及区域范围内的完整结果；导入成功后自动定位本次新增且当前可见的事件。
+- 支持校验并 upsert 导入事件 GeoJSON；已有 ID 覆盖基础字段、新 ID 新增，未出现在文件中的事件及既有责任人、活动和附件保持不变。
+- 导入反馈分别展示新增、覆盖、非法 Feature 和文件内重复 ID 数量。
 - 完整巡检轨迹、人员当前位置和时间插值动画；蛇形路线依次经过 4×3 责任网格的全部 12 个中心点。
 - 责任网格随回放进度区分当前、已巡和未巡状态，复盘摘要同步展示覆盖网格数与当前网格编号。
 - 巡检复盘显示 1–12 号轨迹节点并标识起终点；节点沿用路线的紫色进度语义，责任网格继续独立表达空间覆盖状态。
@@ -99,7 +99,9 @@ packages/openlayers-gis-demo/
 
 ```text
 GisManagementDemo.vue
-├── MockViewportEventService：完整 Mock 数据集、固定网格和 LRU
+├── LocalGisApi：持久化业务协议与索引失效编排
+│   ├── GisDatasetRepository：事件 shard、详情、区域与 Blob 原子写入
+│   └── MockViewportEventService：恢复快照的固定网格和 LRU
 ├── ViewportQueryController：Abort、request ID、版本保护和重试
 ├── Pinia：当前视口事件、选中 ID、区域筛选结果
 └── MapManager
@@ -110,6 +112,17 @@ GisManagementDemo.vue
 ```
 
 `MapManager` 是 Vue 与 OpenLayers 之间的命令式边界。Vue 组件只传入 DOM、业务数据和回调，不负责创建或销毁 Map、Layer、Source、Feature、Geometry、Interaction。
+
+## 本地持久化
+
+- 浏览器只创建一个物理数据库 `blog-gis`，由 `@blog/indexed-db` 的 `entries` object store 保存数据。
+- 逻辑 namespace 为 `settings`、`dataset:1k`、`dataset:10k`、`dataset:50k`、`dataset:100k`；量级之间的用户修改互相隔离。
+- 固定数据满足 `1k ⊂ 10k ⊂ 50k ⊂ 100k`，相同事件 ID 在各量级内容一致。首次进入某量级时完整生成并写入；后续刷新直接恢复，不覆盖用户修改。
+- 每个数据集固定使用 128 个事件 shard。单事件写入只重写目标 shard 与 metadata；批量导入和状态推进一次原子提交所有受影响 shard。
+- 新增、编辑、删除、分派、状态活动、区域、附件 metadata 和 Blob 都写入当前量级。删除使用显式 `null` 墓碑，让详情与 Blob 清理和事件删除保持同一业务提交。
+- fixture 版本变化时只重建对应量级。初始化 metadata 与 128 个 shard 使用同一批写，失败后下次可以完整重试。
+- IndexedDB 不可用时降级为页面内 Memory，并在标题显示“刷新后数据丢失”；配额、克隆或事务写入失败不会提前更新 Pinia、空间索引或地图。
+- `GisApi` 是页面稳定业务边界，不暴露 namespace、shard 或 Key-Value Store。未来 `HttpGisApi` 可以实现同一协议，把完整数据和空间查询迁移到服务端。
 
 ### 为什么需要 MapManager
 
@@ -148,7 +161,7 @@ Cluster 按当前分辨率合并邻近点位，Zoom 小于 16 时只绘制聚合
 
 ### 3. 视口加载与 Feature Diff
 
-完整 1k–100k 数据集只存在于 Mock Service。地图 `moveend` 后将当前 extent 转为 WGS84 BBOX，查询固定网格候选并精确过滤；正常视口更新通过事件 ID Diff 增删改 Source，数据集版本切换才使用整体清空。
+完整 1k–100k 数据集持久化在 IndexedDB，并由 Local API 恢复到非响应式空间索引。地图 `moveend` 后将当前 extent 转为 WGS84 BBOX，查询固定网格候选并精确过滤；正常视口更新通过事件 ID Diff 增删改 Source，数据集版本切换才使用整体清空。
 
 ### 4. 控制 Vue DOM 数量
 
@@ -156,11 +169,11 @@ Cluster 按当前分辨率合并邻近点位，Zoom 小于 16 时只绘制聚合
 
 ### 5. 避免深层响应式代理
 
-Pinia 中的当前视口事件集合使用 `shallowRef` 并整体替换，完整 1k–100k Mock 数据不会进入 Vue 响应式系统。
+Pinia 中的当前视口事件集合使用 `shallowRef` 并整体替换，完整 1k–100k 数据不会进入 Vue 响应式系统。
 
 ### 10 万点为什么需要优化
 
-十万条业务对象和前端索引仍会占用内存与主线程时间，但它们只由 Mock Service 持有；地图、Pinia 和列表只处理当前视口结果。当前方案同时采用固定网格候选、LRU、Feature Diff、Cluster、Style Cache 和有限 DOM，未引入 Web Worker、矢量瓦片、WebGL Layer 或额外 GIS 库。
+十万条业务对象和前端索引仍会占用内存与主线程时间，但它们只由 Local API 的非响应式索引持有；地图、Pinia 和列表只处理当前视口结果。当前方案同时采用持久化分片、固定网格候选、LRU、Feature Diff、Cluster、Style Cache 和有限 DOM，未引入 Web Worker、矢量瓦片、WebGL Layer 或额外 GIS 库。
 
 ## Select、Draw 和 Modify
 
@@ -239,10 +252,10 @@ Map、Layer、Source、Feature、Geometry、Interaction、Overlay 都由普通 T
 
 ## 生命周期与资源释放
 
-组件 `onMounted` 依次创建 Mock Service、Query Controller 和唯一 `MapManager`；`onBeforeUnmount` 先停止查询回调，再释放地图。销毁流程包括：
+组件 `onMounted` 先恢复 settings 和当前量级数据，再创建 Query Controller 与唯一 `MapManager`；初始化失败时不会创建半成品地图。`onBeforeUnmount` 先停止查询回调，再释放 Local API 和地图。销毁流程包括：
 
 - 取消在途 BBOX 请求，销毁 Controller；
-- 清空 Service 的完整数据集、网格索引和 LRU；
+- 关闭 Repository、清空空间索引和 LRU；
 - 解除 Map target。
 - 解绑 OpenLayers 事件监听器。
 - 移除 Select、Draw 和 Modify。
@@ -286,7 +299,7 @@ pnpm build:vite
 
 仓库约束要求页面交互和性能体验由用户手动验证，不默认执行 Webpack 构建。
 
-手动验收重点：首屏只出现当前视口结果；快速平移后只提交最终请求；回到相同视口显示缓存命中；切换 1k/10k/50k/100k 后重建数据集；筛选、列表、统计和地图数量一致；选中事件离开视口后清理详情与 Popup；Polygon/Circle 和 GeoJSON 导出均明确只作用于当前视口结果。
+手动验收重点：首次进入默认 10k；标题右侧下拉框切换量级后刷新并保留选择；新增、编辑、删除、分派、状态、区域和附件刷新后保持；导入覆盖与新增符合统计；不同量级修改互相隔离；DevTools 中只有 `blog-gis/entries`；Memory 与配额失败提示符合预期；首屏与快速平移仍只提交当前视口最终请求。
 
 性能测试区会记录数据集生成、固定网格构建、BBOX 候选/命中、缓存命中、纯查询、Feature Diff 和地图 `rendercomplete` 延迟。面板展示的是当前浏览器单次运行值；仓库没有保存固定环境的对照样本，因此不能据此宣称具体提升比例。
 

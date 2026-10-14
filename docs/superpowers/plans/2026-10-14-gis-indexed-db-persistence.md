@@ -446,20 +446,34 @@ git commit -m "docs: document gis local persistence"
 
 ## Final Review Checklist
 
-- [ ] 标题右侧使用数据量级下拉框，刷新后保留最后选择。
-- [ ] `1k ⊂ 10k ⊂ 50k ⊂ 100k`，相同 ID 跨量级内容一致。
-- [ ] 完整 Mock 数据首次写入 IndexedDB，后续刷新不覆盖用户修改。
-- [ ] 一个 `blog-gis` 数据库使用 settings 与四个 dataset namespace。
-- [ ] 事件固定分为 128 shard，新增/编辑/删除只重写受影响 shard。
-- [ ] 新增、编辑、删除、状态、分派、区域和附件均写入当前量级。
-- [ ] 导入已有 ID 覆盖、新 ID 新增、其他事件保留。
-- [ ] 删除级联使用 `null` 墓碑保持业务原子性。
-- [ ] 持久化失败时内存、索引、Pinia 和地图不提前更新。
-- [ ] 完整数据不进入 Pinia 或 OpenLayers Source。
-- [ ] Memory 降级与配额错误不会误导用户。
-- [ ] 关闭旧 API/Repository 后禁止继续写入。
-- [ ] 公共入口不导出 Repository 内部 Key、shard 或 IndexedDB 类型。
-- [ ] 新增测试均按 TDD 观察 RED→GREEN，且获准执行的最终套件通过。
-- [ ] 所有触碰文件完成完整诊断和公开协议/中文注释人工审查。
-- [ ] 页面验证由用户手动完成，Agent 未操作浏览器或执行 Webpack。
-- [ ] 本批自有前端样式未新增或保留触碰区域内的 CSS Grid。
+- [x] 标题右侧使用数据量级下拉框，刷新后保留最后选择。
+- [x] `1k ⊂ 10k ⊂ 50k ⊂ 100k`，相同 ID 跨量级内容一致。
+- [x] 完整 Mock 数据首次写入 IndexedDB，后续刷新不覆盖用户修改。
+- [x] 一个 `blog-gis` 数据库使用 settings 与四个 dataset namespace。
+- [x] 事件固定分为 128 shard，新增/编辑/删除只重写受影响 shard。
+- [x] 新增、编辑、删除、状态、分派、区域和附件均写入当前量级。
+- [x] 导入已有 ID 覆盖、新 ID 新增、其他事件保留。
+- [x] 删除级联使用 `null` 墓碑保持业务原子性。
+- [x] 持久化失败时内存、索引、Pinia 和地图不提前更新。
+- [x] 完整数据不进入 Pinia 或 OpenLayers Source。
+- [x] Memory 降级与配额错误不会误导用户。
+- [x] 关闭旧 API/Repository 后禁止继续写入。
+- [x] 公共入口不导出 Repository 内部 Key、shard 或 IndexedDB 类型。
+- [ ] 新增测试均按 TDD 观察 RED→GREEN，且获准执行的最终套件通过。（最终套件通过；两类测试缺少独立 RED 证据。）
+- [x] 所有触碰文件完成完整诊断和公开协议/中文注释人工审查。
+- [ ] 页面验证由用户手动完成，Agent 未操作浏览器或执行 Webpack。（Agent 未执行页面或 Webpack；等待用户手动验收。）
+- [x] 本批自有前端样式未新增或保留触碰区域内的 CSS Grid。
+
+## 实际验证记录（2026-10-14）
+
+- Workspace 依赖：已安装 `@blog/indexed-db@workspace:2.0.0`，锁文件仅增加本地 Workspace 解析。
+- `pnpm --filter @blog/openlayers-gis-demo test`：通过，10 个测试文件、77 条测试全部成功。
+- `pnpm --filter @blog/openlayers-gis-demo typecheck`：通过。
+- `pnpm lint`：通过，仓库级 ESLint 无错误。
+- `pnpm build:vite`：通过；仅输出仓库既有的第三方 `use client`、低代码 `eval` 与 chunk 大小警告。
+- `git diff --check`：通过。
+- CSS Grid 扫描：`packages/openlayers-gis-demo/src` 无匹配。
+- 依赖版本扫描：`packages/openlayers-gis-demo/package.json` 无 `^`、`~` 或 `latest`。
+- Webpack：未执行，符合默认关闭约束。
+- 页面/浏览器验证：未执行，按仓库规则由用户依据本任务清单手动完成。
+- TDD 记录：绝大多数行为观察到 RED→GREEN；fixture 版本/失败重试分支及 GeoJSON 分类解析没有独立 RED 输出，已在执行台账中如实记录，不能把最终测试通过等同为完整 TDD 证据。

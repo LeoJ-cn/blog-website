@@ -3,6 +3,10 @@ import type {
   GisEventImportResult,
   InspectionEventEditableFields,
 } from '../persistence/gis-dataset-repository'
+export type {
+  GisEventImportResult,
+  InspectionEventEditableFields,
+} from '../persistence/gis-dataset-repository'
 import type { PersistedEventDetails, PersistedGisDataset } from '../persistence/types'
 import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { EventStatus, InspectionEvent } from '../types/inspection-event'

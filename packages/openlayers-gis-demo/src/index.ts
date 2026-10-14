@@ -12,8 +12,6 @@ export {
   getDatasetSize,
   isGisDatasetScale,
 } from './persistence/dataset-scale'
-export { GisDatasetRepository, GIS_FIXTURE_VERSION } from './persistence/gis-dataset-repository'
-export { GisSettingsRepository } from './persistence/gis-settings-repository'
 export { createMockViewportEventService } from './viewport/mock-viewport-event-service'
 export { ViewportQueryController } from './viewport/viewport-query-controller'
 export { mergeViewportQueryState, resetViewportDatasetState } from './viewport/viewport-state'
@@ -26,19 +24,17 @@ export {
 // 地图层公开协议：宿主只依赖稳定选项、统计、模式和业务 Layer ID。
 export type { MapManagerOptions, MapStats, RenderMode } from './map/MapManager'
 export type { LocalGisApiOptions } from './api/local-gis-api'
-export type { GisApi, GisApiState, GisStorageState } from './api/types'
+export type {
+  GisApi,
+  GisApiState,
+  GisEventImportResult,
+  GisStorageState,
+  InspectionEventEditableFields,
+} from './api/types'
 export type { EventSourceDiffStats } from './map/sources/sync-event-source'
 export type { CoreLayerId } from './map/LayerManager'
 export type { DrawGeometryType, MapMode } from './map/interactions/SpatialInteractionManager'
 export type { GisDatasetScale } from './persistence/dataset-scale'
-export type {
-  GisEventImportResult,
-  GisDatasetRepositoryOptions,
-  InspectionEventEditableFields,
-} from './persistence/gis-dataset-repository'
-export type {
-  GisSettingsRepositoryOptions,
-} from './persistence/gis-settings-repository'
 export type {
   GisDatasetMetadata,
   PersistedEventDetails,
