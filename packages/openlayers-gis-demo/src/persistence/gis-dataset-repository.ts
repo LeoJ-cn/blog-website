@@ -26,11 +26,14 @@ import type {
   GisDatasetMetadata,
   PersistedEventDetails,
   PersistedGisDataset,
+  PersistedSpatialAnalysis,
+  SpatialAnalysisSummary,
 } from './types'
 
 const DEFAULT_DATABASE_NAME = 'blog-gis'
 const METADATA_KEY = 'metadata'
 const REGIONS_KEY = 'regions'
+const ANALYSES_INDEX_KEY = 'analyses:index'
 
 const NEXT_EVENT_STATUS = {
   PENDING: 'PROCESSING',
@@ -126,7 +129,7 @@ export class GisDatasetRepository {
       (currentEvent) => getEventShardIndex(currentEvent.id) === shardIndex,
     )
     shard.push(structuredClone(event))
-    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length + 1)
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length + 1, true)
     await this.#store.setMany([
       [getEventShardKey(shardIndex), shard],
       [METADATA_KEY, metadata],
@@ -155,7 +158,7 @@ export class GisDatasetRepository {
     nextEvents[eventIndex] = updatedEvent
     const shardIndex = getEventShardIndex(eventId)
     const shard = nextEvents.filter((event) => getEventShardIndex(event.id) === shardIndex)
-    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length, true)
     const activity = await this.#createActivityMutation(eventId, 'EDITED', '事件资料已更新')
     await this.#store.setMany([
       [getEventShardKey(shardIndex), shard],
@@ -207,7 +210,7 @@ export class GisDatasetRepository {
       'STATUS_CHANGED',
       nextStatus === 'PROCESSING' ? '事件已开始处理' : '事件已完成处置',
     )
-    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length, true)
     await this.#store.setMany([
       [getEventShardKey(shardIndex), shard],
       [METADATA_KEY, metadata],
@@ -244,7 +247,7 @@ export class GisDatasetRepository {
         ),
       ),
     )
-    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length, true)
     await this.#store.setMany([
       ...affectedShardIndexes.map(
         (shardIndex) =>
@@ -270,6 +273,49 @@ export class GisDatasetRepository {
       [METADATA_KEY, metadata],
     ])
     this.#dataset = { ...dataset, metadata, regions: nextRegions, storageState: this.state }
+  }
+
+  async listSpatialAnalyses(): Promise<SpatialAnalysisSummary[]> {
+    return (await this.#store.get<SpatialAnalysisSummary[]>(ANALYSES_INDEX_KEY)) ?? []
+  }
+
+  async loadSpatialAnalysis(analysisId: string): Promise<PersistedSpatialAnalysis | null> {
+    const record = await this.#store.get<PersistedSpatialAnalysis | null>(this.#analysisKey(analysisId))
+    return record ? structuredClone(record) : null
+  }
+
+  /** 记录与不含大型事件 ID 集合的摘要索引在同一批次提交。 */
+  async saveSpatialAnalysis(record: PersistedSpatialAnalysis): Promise<void> {
+    const summaries = await this.listSpatialAnalyses()
+    const summary: SpatialAnalysisSummary = {
+      id: record.id,
+      name: record.name,
+      kind: record.kind,
+      datasetScale: record.datasetScale,
+      datasetVersion: record.datasetVersion,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    }
+    const nextSummaries = [...summaries.filter(({ id }) => id !== record.id), summary].sort(
+      (left, right) =>
+        right.updatedAt.localeCompare(left.updatedAt) ||
+        (left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
+    )
+    await this.#store.setMany([
+      [this.#analysisKey(record.id), structuredClone(record)],
+      [ANALYSES_INDEX_KEY, nextSummaries],
+    ])
+  }
+
+  /** 使用 null 墓碑删除记录，并原子更新摘要索引。 */
+  async removeSpatialAnalysis(analysisId: string): Promise<boolean> {
+    const summaries = await this.listSpatialAnalyses()
+    if (!summaries.some(({ id }) => id === analysisId)) return false
+    await this.#store.setMany([
+      [this.#analysisKey(analysisId), null],
+      [ANALYSES_INDEX_KEY, summaries.filter(({ id }) => id !== analysisId)],
+    ])
+    return true
   }
 
   /** 读取事件增量详情；显式 null 墓碑与缺失 Key 均解释为未保存。 */
@@ -344,7 +390,7 @@ export class GisDatasetRepository {
       ...region,
       eventIds: region.eventIds?.filter((id) => id !== eventId) ?? null,
     }))
-    const metadata = this.#createUpdatedMetadata(dataset.metadata, nextEvents.length)
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, nextEvents.length, true)
     await this.#store.setMany([
       [getEventShardKey(shardIndex), shard],
       [REGIONS_KEY, regions],
@@ -387,7 +433,7 @@ export class GisDatasetRepository {
       if (!existingIds.has(eventId)) nextEvents.push(event)
     }
     const affectedShardIndexes = [...new Set([...importedById.keys()].map(getEventShardIndex))]
-    const metadata = this.#createUpdatedMetadata(dataset.metadata, nextEvents.length)
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, nextEvents.length, true)
     await this.#store.setMany([
       ...affectedShardIndexes.map(
         (shardIndex) =>
@@ -415,10 +461,12 @@ export class GisDatasetRepository {
   #createUpdatedMetadata(
     metadata: GisDatasetMetadata,
     currentEventCount: number,
+    eventCollectionChanged = false,
   ): GisDatasetMetadata {
     return {
       ...metadata,
       currentEventCount,
+      datasetVersion: metadata.datasetVersion + (eventCollectionChanged ? 1 : 0),
       updatedAt: this.#now().toISOString(),
     }
   }
@@ -473,6 +521,10 @@ export class GisDatasetRepository {
     return `event:${eventId}:attachment:${attachmentId}:blob`
   }
 
+  #analysisKey(analysisId: string): string {
+    return `analysis:${analysisId}`
+  }
+
   #isCurrentMetadata(metadata: GisDatasetMetadata): boolean {
     return (
       metadata.scale === this.#scale &&
@@ -490,8 +542,10 @@ export class GisDatasetRepository {
     const regions = await this.#store.get<InspectionRegion[]>(REGIONS_KEY)
     if (shards.some((shard) => !Array.isArray(shard)) || !Array.isArray(regions)) return null
 
+    const normalizedMetadata = { ...metadata, datasetVersion: metadata.datasetVersion ?? 1 }
+    if (metadata.datasetVersion === undefined) await this.#store.set(METADATA_KEY, normalizedMetadata)
     return {
-      metadata,
+      metadata: normalizedMetadata,
       events: mergeEventShards(shards as InspectionEvent[][]),
       regions,
       storageState: this.state,
@@ -508,6 +562,7 @@ export class GisDatasetRepository {
       scale: this.#scale,
       currentEventCount: events.length,
       fixtureVersion: this.#fixtureVersion,
+      datasetVersion: 1,
       shardCount: GIS_EVENT_SHARD_COUNT,
       initializedAt: timestamp,
       updatedAt: timestamp,

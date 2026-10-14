@@ -4,10 +4,20 @@ import {
   type GisEventImportResult,
   type InspectionEventEditableFields,
 } from '../persistence/gis-dataset-repository'
-import type { PersistedEventDetails, PersistedGisDataset } from '../persistence/types'
+import type {
+  LoadedSpatialAnalysis,
+  PersistedEventDetails,
+  PersistedGisDataset,
+  PersistedSpatialAnalysis,
+  SpatialAnalysisSaveResult,
+  SpatialAnalysisSummary,
+} from '../persistence/types'
+import { SpatialAnalysisService } from '../services/spatial-analysis'
 import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { EventStatus, InspectionEvent } from '../types/inspection-event'
 import type { InspectionRegion } from '../types/region'
+import type { SpatialAnalysisInput, SpatialAnalysisResult } from '../types/spatial-analysis'
+import { DEFAULT_CELL_SIZE_DEGREES, SpatialGridIndex } from '../viewport/spatial-grid-index'
 import { createMockViewportEventService } from '../viewport/mock-viewport-event-service'
 import type {
   ViewportDatasetBuildStats,
@@ -32,6 +42,10 @@ export class LocalGisApi implements GisApi {
   readonly #viewportService
   #datasetSize: number
   #viewportBuild: ViewportDatasetBuildStats
+  #events: InspectionEvent[]
+  #analysisIndex: SpatialGridIndex
+  readonly #analysisService = new SpatialAnalysisService()
+  #datasetVersion: number
   #closed = false
 
   private constructor(
@@ -43,6 +57,11 @@ export class LocalGisApi implements GisApi {
     this.#scale = scale
     this.#repository = repository
     this.#datasetSize = dataset.events.length
+    this.#events = structuredClone(dataset.events)
+    this.#analysisIndex = new SpatialGridIndex(this.#events, {
+      cellSizeDegrees: DEFAULT_CELL_SIZE_DEGREES,
+    })
+    this.#datasetVersion = dataset.metadata.datasetVersion
     this.#viewportService = createMockViewportEventService(0, { latencyMs })
     this.#viewportBuild = this.#viewportService.replaceDataset(dataset.events)
   }
@@ -67,6 +86,7 @@ export class LocalGisApi implements GisApi {
   get state(): GisApiState {
     return {
       datasetScale: this.#scale,
+      datasetVersion: this.#datasetVersion,
       datasetSize: this.#datasetSize,
       storage: { ...this.#repository.state },
       viewportBuild: { ...this.#viewportBuild },
@@ -166,6 +186,43 @@ export class LocalGisApi implements GisApi {
     return this.#repository.loadAttachmentBlob(eventId, attachmentId)
   }
 
+  async executeSpatialAnalysis(input: SpatialAnalysisInput): Promise<SpatialAnalysisResult> {
+    this.#assertActive()
+    return this.#analysisService.execute(input, {
+      events: this.#events,
+      index: this.#analysisIndex,
+    })
+  }
+
+  async listSpatialAnalyses(): Promise<SpatialAnalysisSummary[]> {
+    this.#assertActive()
+    return this.#repository.listSpatialAnalyses()
+  }
+
+  async loadSpatialAnalysis(analysisId: string): Promise<LoadedSpatialAnalysis | null> {
+    this.#assertActive()
+    const record = await this.#repository.loadSpatialAnalysis(analysisId)
+    return record ? { record, stale: record.datasetVersion !== this.#datasetVersion } : null
+  }
+
+  async saveSpatialAnalysis(record: PersistedSpatialAnalysis): Promise<SpatialAnalysisSaveResult> {
+    this.#assertActive()
+    if (record.datasetScale !== this.#scale) {
+      throw new RangeError('分析记录的数据量级与当前数据库命名空间不一致')
+    }
+    const existing = await this.#repository.loadSpatialAnalysis(record.id)
+    if (existing && record.datasetVersion !== this.#datasetVersion) {
+      return { saved: false, reason: 'STALE_DATASET_VERSION' }
+    }
+    await this.#repository.saveSpatialAnalysis(record)
+    return { saved: true, reason: 'SAVED' }
+  }
+
+  async removeSpatialAnalysis(analysisId: string): Promise<boolean> {
+    this.#assertActive()
+    return this.#repository.removeSpatialAnalysis(analysisId)
+  }
+
   close(): void {
     if (this.#closed) return
     this.#closed = true
@@ -176,6 +233,11 @@ export class LocalGisApi implements GisApi {
   async #refreshIndex(): Promise<void> {
     const dataset = await this.#repository.loadOrInitialize()
     this.#datasetSize = dataset.events.length
+    this.#events = structuredClone(dataset.events)
+    this.#analysisIndex = new SpatialGridIndex(this.#events, {
+      cellSizeDegrees: DEFAULT_CELL_SIZE_DEGREES,
+    })
+    this.#datasetVersion = dataset.metadata.datasetVersion
     this.#viewportBuild = this.#viewportService.replaceDataset(dataset.events)
   }
 

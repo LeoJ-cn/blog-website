@@ -7,10 +7,18 @@ export type {
   GisEventImportResult,
   InspectionEventEditableFields,
 } from '../persistence/gis-dataset-repository'
-import type { PersistedEventDetails, PersistedGisDataset } from '../persistence/types'
+import type {
+  LoadedSpatialAnalysis,
+  PersistedEventDetails,
+  PersistedGisDataset,
+  PersistedSpatialAnalysis,
+  SpatialAnalysisSaveResult,
+  SpatialAnalysisSummary,
+} from '../persistence/types'
 import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { EventStatus, InspectionEvent } from '../types/inspection-event'
 import type { InspectionRegion } from '../types/region'
+import type { SpatialAnalysisInput, SpatialAnalysisResult } from '../types/spatial-analysis'
 import type {
   ViewportDatasetBuildStats,
   ViewportEventQuery,
@@ -28,6 +36,8 @@ export interface GisStorageState {
 
 export interface GisApiState {
   datasetScale: GisDatasetScale
+  /** 完整持久化事件集合的单调递增版本，用于分析记录失效判断。 */
+  datasetVersion: number
   /** 当前真实事件数量，单位为条；用户写入后可偏离量级基准值。 */
   datasetSize: number
   storage: GisStorageState
@@ -64,5 +74,10 @@ export interface GisApi {
   ): Promise<boolean>
   removeAttachment(eventId: string, attachmentId: string): Promise<boolean>
   loadAttachmentBlob(eventId: string, attachmentId: string): Promise<Blob | null>
+  executeSpatialAnalysis(input: SpatialAnalysisInput): Promise<SpatialAnalysisResult>
+  listSpatialAnalyses(): Promise<SpatialAnalysisSummary[]>
+  loadSpatialAnalysis(analysisId: string): Promise<LoadedSpatialAnalysis | null>
+  saveSpatialAnalysis(record: PersistedSpatialAnalysis): Promise<SpatialAnalysisSaveResult>
+  removeSpatialAnalysis(analysisId: string): Promise<boolean>
   close(): void
 }

@@ -52,6 +52,10 @@ export type {
   GisDatasetMetadata,
   PersistedEventDetails,
   PersistedGisDataset,
+  PersistedSpatialAnalysis,
+  LoadedSpatialAnalysis,
+  SpatialAnalysisSaveResult,
+  SpatialAnalysisSummary,
 } from './persistence/types'
 // 业务领域协议：事件、轨迹和可序列化区域均不暴露 OpenLayers 运行时对象。
 export type {
