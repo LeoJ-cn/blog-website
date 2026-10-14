@@ -2230,7 +2230,7 @@ onBeforeUnmount(() => {
       <button :class="{ active: mapMode === 'modify' }" @click="changeMapMode('modify')">
         Modify
       </button>
-      <span>渲染模式</span>
+      <strong>渲染模式</strong>
       <button :class="{ active: renderMode === 'point' }" @click="changeRenderMode('point')">
         普通点位
       </button>
