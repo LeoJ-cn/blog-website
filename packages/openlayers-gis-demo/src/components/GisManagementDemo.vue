@@ -893,6 +893,10 @@ function changeWorkspaceScene(scene: WorkspaceScene) {
   }
 }
 
+function changeWorkspaceSceneFromSelect(event: Event) {
+  changeWorkspaceScene((event.target as HTMLSelectElement).value as WorkspaceScene)
+}
+
 function applyAssigneeQuickFilter(assignee: string) {
   assigneeFilter.value = assignee
   store.selectEvent(null)
@@ -1643,6 +1647,14 @@ onBeforeUnmount(() => {
           空间分析
         </button>
       </nav>
+      <label class="gis-mobile-scene-select">
+        <span>当前场景</span>
+        <select :value="workspaceScene" @change="changeWorkspaceSceneFromSelect">
+          <option v-for="(meta, scene) in WORKSPACE_SCENE_META" :key="scene" :value="scene">
+            {{ meta.label }}
+          </option>
+        </select>
+      </label>
       <span v-if="isMemoryStorage" class="storage-warning">内存模式 · 刷新后数据丢失</span>
       <span v-else class="online">● 系统在线</span>
     </header>
@@ -2618,6 +2630,9 @@ onBeforeUnmount(() => {
   align-self: stretch;
   display: flex;
   gap: 8px;
+}
+.gis-mobile-scene-select {
+  display: none;
 }
 .gis-brand {
   flex: 0 1 auto;
@@ -4606,6 +4621,22 @@ onBeforeUnmount(() => {
 @media (max-width: 720px) {
   .gis-primary-nav {
     display: none;
+  }
+  .gis-mobile-scene-select {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    color: #71809a;
+    font-size: 11px;
+  }
+  .gis-mobile-scene-select select {
+    max-width: 96px;
+    padding: 4px 20px 4px 7px;
+    border: 1px solid #2a3d5c;
+    border-radius: 5px;
+    background: #111e32;
+    color: #7dd3fc;
   }
   .operations-summary > * {
     flex-basis: calc(50% - 5px);
