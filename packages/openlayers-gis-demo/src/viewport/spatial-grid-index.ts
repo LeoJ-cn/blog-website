@@ -1,4 +1,5 @@
 import type { InspectionEvent } from '../types/inspection-event'
+import type { Wgs84Coordinate } from '../types/region'
 import { validateWgs84Bbox, type Wgs84Bbox } from './types'
 
 /** 城市演示数据使用的默认网格边长；该经验值不代表通用 GIS 场景的最优配置。 */
@@ -16,6 +17,7 @@ export interface SpatialGridIndexOptions {
 export class SpatialGridIndex {
   readonly #buckets = new Map<string, InspectionEvent[]>()
   readonly #cellSizeDegrees: number
+  #occupiedBounds: readonly [minX: number, minY: number, maxX: number, maxY: number] | null = null
 
   /** 构造时一次性把事件写入左闭右开网格桶；后续事件变化必须重建索引。 */
   constructor(events: readonly InspectionEvent[], options: SpatialGridIndexOptions) {
@@ -29,14 +31,52 @@ export class SpatialGridIndex {
 
     this.#cellSizeDegrees = cellSizeDegrees
     for (const event of events) {
-      const key = this.#getCellKey(event.lng, event.lat)
+      const gridX = this.#getGridCoordinate(event.lng)
+      const gridY = this.#getGridCoordinate(event.lat)
+      const key = `${gridX}:${gridY}`
       const bucket = this.#buckets.get(key)
       if (bucket) {
         bucket.push(event)
       } else {
         this.#buckets.set(key, [event])
       }
+      this.#extendOccupiedBounds(gridX, gridY)
     }
+  }
+
+  /**
+   * 从目标点所在网格按方形环向外读取候选，达到 limit 或覆盖全部占用桶后停止。
+   * 返回值只用于 Service 的 Haversine 精排，不保证自身顺序具有距离语义。
+   */
+  queryNearestCandidates(point: Wgs84Coordinate, limit: number): readonly InspectionEvent[] {
+    const [longitude, latitude] = point
+    if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+      throw new TypeError('最近邻目标坐标必须是有限数值')
+    }
+    if (longitude < -180 || longitude > 180 || latitude < -90 || latitude > 90) {
+      throw new RangeError('最近邻目标坐标超出 WGS84 合法范围')
+    }
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new RangeError('最近邻候选数量必须是正整数')
+    }
+    if (!this.#occupiedBounds) return []
+
+    const originX = this.#getGridCoordinate(longitude)
+    const originY = this.#getGridCoordinate(latitude)
+    const [minOccupiedX, minOccupiedY, maxOccupiedX, maxOccupiedY] = this.#occupiedBounds
+    const maximumRing = Math.max(
+      Math.abs(originX - minOccupiedX),
+      Math.abs(originX - maxOccupiedX),
+      Math.abs(originY - minOccupiedY),
+      Math.abs(originY - maxOccupiedY),
+    )
+    const candidates: InspectionEvent[] = []
+
+    for (let ring = 0; ring <= maximumRing; ring += 1) {
+      this.#collectRing(originX, originY, ring, candidates)
+      if (candidates.length >= limit) break
+    }
+    return candidates
   }
 
   /** 返回与 BBOX 覆盖网格相交的去重候选；结果可能包含真实 BBOX 外的事件。 */
@@ -72,8 +112,43 @@ export class SpatialGridIndex {
     return this.#buckets.size
   }
 
-  #getCellKey(longitude: number, latitude: number): string {
-    return `${this.#getGridCoordinate(longitude)}:${this.#getGridCoordinate(latitude)}`
+  #collectRing(
+    originX: number,
+    originY: number,
+    ring: number,
+    candidates: InspectionEvent[],
+  ): void {
+    if (ring === 0) {
+      candidates.push(...(this.#buckets.get(`${originX}:${originY}`) ?? []))
+      return
+    }
+
+    const minX = originX - ring
+    const maxX = originX + ring
+    const minY = originY - ring
+    const maxY = originY + ring
+    for (let gridX = minX; gridX <= maxX; gridX += 1) {
+      candidates.push(...(this.#buckets.get(`${gridX}:${minY}`) ?? []))
+      candidates.push(...(this.#buckets.get(`${gridX}:${maxY}`) ?? []))
+    }
+    for (let gridY = minY + 1; gridY < maxY; gridY += 1) {
+      candidates.push(...(this.#buckets.get(`${minX}:${gridY}`) ?? []))
+      candidates.push(...(this.#buckets.get(`${maxX}:${gridY}`) ?? []))
+    }
+  }
+
+  #extendOccupiedBounds(gridX: number, gridY: number): void {
+    if (!this.#occupiedBounds) {
+      this.#occupiedBounds = [gridX, gridY, gridX, gridY]
+      return
+    }
+    const [minX, minY, maxX, maxY] = this.#occupiedBounds
+    this.#occupiedBounds = [
+      Math.min(minX, gridX),
+      Math.min(minY, gridY),
+      Math.max(maxX, gridX),
+      Math.max(maxY, gridY),
+    ]
   }
 
   #getGridCoordinate(coordinate: number): number {
