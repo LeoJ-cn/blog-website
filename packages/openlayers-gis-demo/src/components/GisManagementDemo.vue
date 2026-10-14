@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 // OpenLayers 基础样式负责地图画布、控件与 Overlay 的必要布局；业务视觉仍由组件样式控制。
 import 'ol/ol.css'
 import { LocalGisApi } from '../api/local-gis-api'
@@ -412,8 +412,10 @@ const analysisRadiusMeters = ref(500)
 const analysisNearestLimit = ref(10)
 const analysisName = ref('')
 const savedAnalyses = ref<SpatialAnalysisSummary[]>([])
-const analysisComparisonFirstGeometry = ref<Extract<AnalysisGeometry, { type: 'Polygon' | 'Circle' }> | null>(null)
-const analysisState = ref<SpatialAnalysisControllerState>({ status: 'idle', input: null, result: null, errorMessage: null, requestId: 0 })
+// 区域对比几何必须保持为可 structuredClone 的普通对象，避免 Vue 深层代理导致持久化输入克隆失败。
+const analysisComparisonFirstGeometry = shallowRef<Extract<AnalysisGeometry, { type: 'Polygon' | 'Circle' }> | null>(null)
+// Controller 状态始终整对象替换；保持内部输入和结果为普通对象，确保可直接写入 IndexedDB。
+const analysisState = shallowRef<SpatialAnalysisControllerState>({ status: 'idle', input: null, result: null, errorMessage: null, requestId: 0 })
 /** 当前结果实际使用的事件版本；旧记录另存时必须继续保留旧版本，不能伪装为最新结果。 */
 const analysisResultDatasetVersion = ref<number | null>(null)
 const isMemoryStorage = computed(() => {

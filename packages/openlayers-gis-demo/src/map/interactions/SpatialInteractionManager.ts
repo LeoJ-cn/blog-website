@@ -154,23 +154,25 @@ export class SpatialInteractionManager {
       this.draw.on('drawstart', () => source.clear()),
       this.draw.on('drawend', (event) => {
         const geometry = event.feature.getGeometry()
-        if (!geometry) return
+        let analysisGeometry: AnalysisGeometry | null = null
         if (geometry instanceof Point) {
           const coordinate = toLonLat(geometry.getCoordinates())
-          this.options.onAnalysisDraw?.({ type: 'Point', coordinates: [coordinate[0], coordinate[1]] })
+          analysisGeometry = { type: 'Point', coordinates: [coordinate[0], coordinate[1]] }
         } else if (geometry instanceof LineString) {
-          this.options.onAnalysisDraw?.({
+          analysisGeometry = {
             type: 'LineString',
             coordinates: geometry.getCoordinates().map((coordinate) => {
               const value = toLonLat(coordinate)
               return [value[0], value[1]] as const
             }),
-          })
-        } else {
-          const serialized = serializeRegionGeometry(geometry)
-          if (serialized) this.options.onAnalysisDraw?.(serialized)
+          }
+        } else if (geometry) {
+          analysisGeometry = serializeRegionGeometry(geometry)
         }
+
+        // 区域对比回调会立即创建第二个 Draw；先移除旧实例，避免回调返回后误删新交互。
         this.removeDraw()
+        if (analysisGeometry) this.options.onAnalysisDraw?.(analysisGeometry)
       }),
     ]
     this.options.map.addInteraction(this.draw)
