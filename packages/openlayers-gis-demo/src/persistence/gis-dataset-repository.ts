@@ -6,20 +6,37 @@ import {
 } from '@blog/indexed-db'
 import { generateInspectionEvents } from '../mock/generate-events'
 import { mockInspectionRegions } from '../mock/regions'
-import type { InspectionEvent } from '../types/inspection-event'
+import type {
+  EventActivity,
+  EventActivityType,
+  EventStatus,
+  InspectionEvent,
+} from '../types/inspection-event'
+import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { InspectionRegion } from '../types/region'
 import { getDatasetSize, type GisDatasetScale } from './dataset-scale'
 import {
   GIS_EVENT_SHARD_COUNT,
+  getEventShardIndex,
   getEventShardKey,
   mergeEventShards,
   partitionEventsByShard,
 } from './event-shards'
-import type { GisDatasetMetadata, PersistedGisDataset } from './types'
+import type {
+  GisDatasetMetadata,
+  PersistedEventDetails,
+  PersistedGisDataset,
+} from './types'
 
 const DEFAULT_DATABASE_NAME = 'blog-gis'
 const METADATA_KEY = 'metadata'
 const REGIONS_KEY = 'regions'
+
+const NEXT_EVENT_STATUS = {
+  PENDING: 'PROCESSING',
+  PROCESSING: 'DONE',
+  DONE: null,
+} as const satisfies Record<EventStatus, EventStatus | null>
 
 export const GIS_FIXTURE_VERSION = 1
 
@@ -36,11 +53,17 @@ export interface GisDatasetRepositoryOptions {
   onRuntimeStateChange?: CreateKeyValueStoreOptions['onRuntimeStateChange']
 }
 
+export type InspectionEventEditableFields = Pick<
+  InspectionEvent,
+  'type' | 'level' | 'lng' | 'lat' | 'address'
+>
+
 export class GisDatasetRepository {
   readonly #scale: GisDatasetScale
   readonly #store: KeyValueStore
   readonly #now: () => Date
   readonly #fixtureVersion: number
+  #dataset: PersistedGisDataset | null = null
 
   private constructor(
     scale: GisDatasetScale,
@@ -72,16 +95,339 @@ export class GisDatasetRepository {
   }
 
   async loadOrInitialize(): Promise<PersistedGisDataset> {
+    if (this.#dataset) return structuredClone(this.#dataset)
     const metadata = await this.#store.get<GisDatasetMetadata>(METADATA_KEY)
     if (metadata && this.#isCurrentMetadata(metadata)) {
       const restored = await this.#restore(metadata)
-      if (restored) return restored
+      if (restored) {
+        this.#dataset = restored
+        return structuredClone(restored)
+      }
     }
-    return this.#initialize()
+    const initialized = await this.#initialize()
+    this.#dataset = initialized
+    return structuredClone(initialized)
+  }
+
+  /** 新增 ID 唯一的事件，并将目标 shard 与数量 metadata 作为同一原子批次写入。 */
+  async addEvent(event: InspectionEvent): Promise<boolean> {
+    const dataset = await this.#ensureDataset()
+    if (dataset.events.some(({ id }) => id === event.id)) return false
+
+    const shardIndex = getEventShardIndex(event.id)
+    const shard = dataset.events.filter(
+      (currentEvent) => getEventShardIndex(currentEvent.id) === shardIndex,
+    )
+    shard.push(structuredClone(event))
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length + 1)
+    await this.#store.setMany([
+      [getEventShardKey(shardIndex), shard],
+      [METADATA_KEY, metadata],
+    ])
+    this.#dataset = {
+      ...dataset,
+      metadata,
+      events: mergeEventShards(partitionEventsByShard([...dataset.events, event])),
+      storageState: this.state,
+    }
+    return true
+  }
+
+  /** 编辑非状态业务字段；事件不存在时不写入并返回 null。 */
+  async updateEvent(
+    eventId: string,
+    changes: InspectionEventEditableFields,
+  ): Promise<InspectionEvent | null> {
+    const dataset = await this.#ensureDataset()
+    const eventIndex = dataset.events.findIndex(({ id }) => id === eventId)
+    const currentEvent = dataset.events[eventIndex]
+    if (!currentEvent) return null
+
+    const updatedEvent: InspectionEvent = { ...currentEvent, ...changes }
+    const nextEvents = [...dataset.events]
+    nextEvents[eventIndex] = updatedEvent
+    const shardIndex = getEventShardIndex(eventId)
+    const shard = nextEvents.filter((event) => getEventShardIndex(event.id) === shardIndex)
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    const activity = await this.#createActivityMutation(eventId, 'EDITED', '事件资料已更新')
+    await this.#store.setMany([
+      [getEventShardKey(shardIndex), shard],
+      [METADATA_KEY, metadata],
+      ...activity.entries,
+    ])
+    this.#dataset = { ...dataset, metadata, events: nextEvents, storageState: this.state }
+    return structuredClone(updatedEvent)
+  }
+
+  /** 分派或转派事件；空白人员名称和不存在的事件均拒绝写入。 */
+  async setAssignee(eventId: string, assignee: string): Promise<boolean> {
+    const dataset = await this.#ensureDataset()
+    if (!dataset.events.some(({ id }) => id === eventId)) return false
+    const normalizedAssignee = assignee.trim()
+    if (!normalizedAssignee) return false
+
+    const activity = await this.#createActivityMutation(
+      eventId,
+      'ASSIGNED',
+      `任务已分派给 ${normalizedAssignee}`,
+    )
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    await this.#store.setMany([
+      [this.#assigneeKey(eventId), normalizedAssignee],
+      [METADATA_KEY, metadata],
+      ...activity.entries,
+    ])
+    this.#dataset = { ...dataset, metadata, storageState: this.state }
+    return true
+  }
+
+  /** 按待处理→处理中→已完成单向推进；不存在或已完成事件返回 null。 */
+  async advanceEventStatus(eventId: string): Promise<InspectionEvent | null> {
+    const dataset = await this.#ensureDataset()
+    const eventIndex = dataset.events.findIndex(({ id }) => id === eventId)
+    const currentEvent = dataset.events[eventIndex]
+    if (!currentEvent) return null
+    const nextStatus = NEXT_EVENT_STATUS[currentEvent.status]
+    if (!nextStatus) return null
+
+    const updatedEvent: InspectionEvent = { ...currentEvent, status: nextStatus }
+    const nextEvents = [...dataset.events]
+    nextEvents[eventIndex] = updatedEvent
+    const shardIndex = getEventShardIndex(eventId)
+    const shard = nextEvents.filter((event) => getEventShardIndex(event.id) === shardIndex)
+    const activity = await this.#createActivityMutation(
+      eventId,
+      'STATUS_CHANGED',
+      nextStatus === 'PROCESSING' ? '事件已开始处理' : '事件已完成处置',
+    )
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    await this.#store.setMany([
+      [getEventShardKey(shardIndex), shard],
+      [METADATA_KEY, metadata],
+      ...activity.entries,
+    ])
+    this.#dataset = { ...dataset, metadata, events: nextEvents, storageState: this.state }
+    return structuredClone(updatedEvent)
+  }
+
+  /** 批量推进匹配起始状态的事件，并将跨 shard 更新与各事件活动一次提交。 */
+  async advanceEventStatuses(
+    eventIds: readonly string[],
+    fromStatus: Exclude<EventStatus, 'DONE'>,
+  ): Promise<InspectionEvent[]> {
+    const dataset = await this.#ensureDataset()
+    const targetIds = new Set(eventIds)
+    const nextStatus = NEXT_EVENT_STATUS[fromStatus]
+    const updatedEvents: InspectionEvent[] = []
+    const nextEvents = dataset.events.map((event) => {
+      if (!targetIds.has(event.id) || event.status !== fromStatus) return event
+      const updatedEvent: InspectionEvent = { ...event, status: nextStatus }
+      updatedEvents.push(updatedEvent)
+      return updatedEvent
+    })
+    if (updatedEvents.length === 0) return []
+
+    const affectedShardIndexes = [...new Set(updatedEvents.map(({ id }) => getEventShardIndex(id)))]
+    const activityMutations = await Promise.all(
+      updatedEvents.map(({ id }) =>
+        this.#createActivityMutation(
+          id,
+          'STATUS_CHANGED',
+          nextStatus === 'PROCESSING' ? '事件已批量开始处理' : '事件已批量完成处置',
+        ),
+      ),
+    )
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    await this.#store.setMany([
+      ...affectedShardIndexes.map(
+        (shardIndex) =>
+          [
+            getEventShardKey(shardIndex),
+            nextEvents.filter((event) => getEventShardIndex(event.id) === shardIndex),
+          ] as const,
+      ),
+      [METADATA_KEY, metadata],
+      ...activityMutations.flatMap(({ entries }) => entries),
+    ])
+    this.#dataset = { ...dataset, metadata, events: nextEvents, storageState: this.state }
+    return structuredClone(updatedEvents)
+  }
+
+  /** 整体保存当前量级的区域定义；调用方传入空数组表示删除全部区域。 */
+  async saveRegions(regions: readonly InspectionRegion[]): Promise<void> {
+    const dataset = await this.#ensureDataset()
+    const nextRegions = structuredClone([...regions])
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    await this.#store.setMany([
+      [REGIONS_KEY, nextRegions],
+      [METADATA_KEY, metadata],
+    ])
+    this.#dataset = { ...dataset, metadata, regions: nextRegions, storageState: this.state }
+  }
+
+  /** 读取事件增量详情；显式 null 墓碑与缺失 Key 均解释为未保存。 */
+  async loadEventDetails(eventId: string): Promise<PersistedEventDetails> {
+    const [assignee, activities, attachments] = await Promise.all([
+      this.#store.get<string | null>(this.#assigneeKey(eventId)),
+      this.#store.get<EventActivity[] | null>(this.#activitiesKey(eventId)),
+      this.#store.get<PersistedEventDetails['attachments'] | null>(this.#attachmentsKey(eventId)),
+    ])
+    return {
+      assignee: typeof assignee === 'string' ? assignee : null,
+      activities: Array.isArray(activities) ? activities : [],
+      attachments: Array.isArray(attachments) ? attachments : [],
+    }
+  }
+
+  /** 原子保存附件元数据与 Blob；事件不存在或附件 ID 冲突时返回 false。 */
+  async addAttachment(
+    eventId: string,
+    attachment: EventEvidenceMetadata,
+    blob: Blob,
+  ): Promise<boolean> {
+    const dataset = await this.#ensureDataset()
+    if (!dataset.events.some(({ id }) => id === eventId)) return false
+    const details = await this.loadEventDetails(eventId)
+    if (details.attachments.some(({ id }) => id === attachment.id)) return false
+
+    const attachments = [...details.attachments, structuredClone(attachment)]
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    await this.#store.setMany([
+      [this.#attachmentsKey(eventId), attachments],
+      [this.#attachmentBlobKey(eventId, attachment.id), blob],
+      [METADATA_KEY, metadata],
+    ])
+    this.#dataset = { ...dataset, metadata, storageState: this.state }
+    return true
+  }
+
+  /** 删除附件时以 null 覆盖 Blob，避免异步删除失败留下无元数据的孤儿文件。 */
+  async removeAttachment(eventId: string, attachmentId: string): Promise<boolean> {
+    const dataset = await this.#ensureDataset()
+    const details = await this.loadEventDetails(eventId)
+    if (!details.attachments.some(({ id }) => id === attachmentId)) return false
+
+    const attachments = details.attachments.filter(({ id }) => id !== attachmentId)
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, dataset.events.length)
+    await this.#store.setMany([
+      [this.#attachmentsKey(eventId), attachments],
+      [this.#attachmentBlobKey(eventId, attachmentId), null],
+      [METADATA_KEY, metadata],
+    ])
+    this.#dataset = { ...dataset, metadata, storageState: this.state }
+    return true
+  }
+
+  /** 返回持久化 Blob；缺失 Key 或 null 墓碑统一解释为不存在。 */
+  async loadAttachmentBlob(eventId: string, attachmentId: string): Promise<Blob | null> {
+    const value = await this.#store.get<Blob | null>(this.#attachmentBlobKey(eventId, attachmentId))
+    return value instanceof Blob ? value : null
+  }
+
+  /** 删除事件并级联清理区域引用、详情和所有附件 Blob；不存在时返回 false。 */
+  async removeEvent(eventId: string): Promise<boolean> {
+    const dataset = await this.#ensureDataset()
+    if (!dataset.events.some(({ id }) => id === eventId)) return false
+
+    const details = await this.loadEventDetails(eventId)
+    const nextEvents = dataset.events.filter(({ id }) => id !== eventId)
+    const shardIndex = getEventShardIndex(eventId)
+    const shard = nextEvents.filter((event) => getEventShardIndex(event.id) === shardIndex)
+    const regions = dataset.regions.map((region) => ({
+      ...region,
+      eventIds: region.eventIds?.filter((id) => id !== eventId) ?? null,
+    }))
+    const metadata = this.#createUpdatedMetadata(dataset.metadata, nextEvents.length)
+    await this.#store.setMany([
+      [getEventShardKey(shardIndex), shard],
+      [REGIONS_KEY, regions],
+      [METADATA_KEY, metadata],
+      [this.#assigneeKey(eventId), null],
+      [this.#activitiesKey(eventId), null],
+      [this.#activitySequenceKey(eventId), null],
+      [this.#attachmentsKey(eventId), null],
+      ...details.attachments.map(
+        ({ id }) => [this.#attachmentBlobKey(eventId, id), null] as const,
+      ),
+    ])
+    this.#dataset = {
+      ...dataset,
+      metadata,
+      events: nextEvents,
+      regions,
+      storageState: this.state,
+    }
+    return true
   }
 
   close(): void {
     this.#store.close()
+  }
+
+  async #ensureDataset(): Promise<PersistedGisDataset> {
+    if (!this.#dataset) await this.loadOrInitialize()
+    return this.#dataset!
+  }
+
+  #createUpdatedMetadata(
+    metadata: GisDatasetMetadata,
+    currentEventCount: number,
+  ): GisDatasetMetadata {
+    return {
+      ...metadata,
+      currentEventCount,
+      updatedAt: this.#now().toISOString(),
+    }
+  }
+
+  async #createActivityMutation(
+    eventId: string,
+    type: EventActivityType,
+    description: string,
+  ): Promise<{ activity: EventActivity; entries: Array<readonly [string, unknown]> }> {
+    const [storedSequence, storedActivities] = await Promise.all([
+      this.#store.get<number | null>(this.#activitySequenceKey(eventId)),
+      this.#store.get<EventActivity[] | null>(this.#activitiesKey(eventId)),
+    ])
+    const activities = Array.isArray(storedActivities) ? storedActivities : []
+    // 序号 Key 是跨刷新真值；兼容旧数据缺少序号时，以现有活动数量作为安全下界。
+    const nextSequence = Math.max(
+      typeof storedSequence === 'number' ? storedSequence : 0,
+      activities.length,
+    ) + 1
+    const activity: EventActivity = {
+      id: `${eventId}-activity-${nextSequence}`,
+      type,
+      description,
+      occurredAt: this.#now().toISOString(),
+    }
+    return {
+      activity,
+      entries: [
+        [this.#activitiesKey(eventId), [...activities, activity]],
+        [this.#activitySequenceKey(eventId), nextSequence],
+      ],
+    }
+  }
+
+  #assigneeKey(eventId: string): string {
+    return `event:${eventId}:assignee`
+  }
+
+  #activitiesKey(eventId: string): string {
+    return `event:${eventId}:activities`
+  }
+
+  #activitySequenceKey(eventId: string): string {
+    return `event:${eventId}:activity-sequence`
+  }
+
+  #attachmentsKey(eventId: string): string {
+    return `event:${eventId}:attachments`
+  }
+
+  #attachmentBlobKey(eventId: string, attachmentId: string): string {
+    return `event:${eventId}:attachment:${attachmentId}:blob`
   }
 
   #isCurrentMetadata(metadata: GisDatasetMetadata): boolean {

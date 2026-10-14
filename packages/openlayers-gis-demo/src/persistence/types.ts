@@ -1,5 +1,7 @@
 import type { StorageRuntimeState } from '@blog/indexed-db'
 import type { InspectionEvent } from '../types/inspection-event'
+import type { EventActivity } from '../types/inspection-event'
+import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { InspectionRegion } from '../types/region'
 import type { GisDatasetScale } from './dataset-scale'
 
@@ -23,4 +25,13 @@ export interface PersistedGisDataset {
   events: InspectionEvent[]
   regions: InspectionRegion[]
   storageState: StorageRuntimeState
+}
+
+export interface PersistedEventDetails {
+  /** null 表示事件尚未分派，或历史分派已随事件删除。 */
+  assignee: string | null
+  /** 不包含由事件 createdAt 派生的 CREATED 活动，仅保存用户操作增量。 */
+  activities: EventActivity[]
+  /** 附件展示元数据；Blob 通过 Repository 单独读取，禁止持久化页面 Blob URL。 */
+  attachments: EventEvidenceMetadata[]
 }

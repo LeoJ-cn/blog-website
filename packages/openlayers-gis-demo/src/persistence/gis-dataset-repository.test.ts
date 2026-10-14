@@ -177,3 +177,192 @@ describe('GIS persistence initialization', () => {
     repository.close()
   })
 })
+
+describe('GIS persisted business mutations', () => {
+  it('adds and edits an event without changing its identity or double-counting it', async () => {
+    const databaseName = createDatabaseName('single-mutation')
+    const repository = await GisDatasetRepository.create('1k', {
+      databaseName,
+      now: () => new Date('2026-10-14T03:00:00.000Z'),
+    })
+    await repository.loadOrInitialize()
+    const addedEvent = createEvent('USER-000001')
+
+    expect(await repository.addEvent(addedEvent)).toBe(true)
+    expect(await repository.addEvent(addedEvent)).toBe(false)
+    expect(
+      await repository.updateEvent(addedEvent.id, {
+        type: 'LIGHT_FAILURE',
+        level: 'HIGH',
+        lng: 121.5,
+        lat: 31.2,
+        address: '用户编辑后的地址',
+      }),
+    ).toMatchObject({
+      id: addedEvent.id,
+      status: 'PENDING',
+      type: 'LIGHT_FAILURE',
+      level: 'HIGH',
+      address: '用户编辑后的地址',
+    })
+    repository.close()
+
+    const reopened = await GisDatasetRepository.create('1k', { databaseName })
+    const restored = await reopened.loadOrInitialize()
+    expect(restored.metadata.currentEventCount).toBe(1_001)
+    expect(restored.events.find(({ id }) => id === addedEvent.id)).toMatchObject({
+      type: 'LIGHT_FAILURE',
+      address: '用户编辑后的地址',
+    })
+    reopened.close()
+  })
+
+  it('persists assignee, monotonic activities, status transitions, and regions', async () => {
+    const databaseName = createDatabaseName('business-details')
+    let timestampHour = 4
+    const repository = await GisDatasetRepository.create('1k', {
+      databaseName,
+      now: () => new Date(`2026-10-14T${String(timestampHour++).padStart(2, '0')}:00:00.000Z`),
+    })
+    const initialized = await repository.loadOrInitialize()
+    const targetEvent = initialized.events.find(({ status }) => status === 'PENDING')!
+    const targetId = targetEvent.id
+
+    expect(await repository.setAssignee(targetId, '  张工  ')).toBe(true)
+    expect((await repository.advanceEventStatus(targetId))?.status).toBe('PROCESSING')
+    expect((await repository.advanceEventStatus(targetId))?.status).toBe('DONE')
+    expect(await repository.advanceEventStatus(targetId)).toBeNull()
+    const region = {
+      id: 'REGION-USER-1',
+      name: '用户区域',
+      geometry: {
+        type: 'Circle' as const,
+        center: [121.4737, 31.2304] as const,
+        radiusMeters: 500,
+      },
+      eventIds: [targetId],
+      createdAt: '2026-10-14T04:00:00.000Z',
+    }
+    await repository.saveRegions([region])
+    repository.close()
+
+    const reopened = await GisDatasetRepository.create('1k', { databaseName })
+    const restored = await reopened.loadOrInitialize()
+    const details = await reopened.loadEventDetails(targetId)
+    expect(restored.events.find(({ id }) => id === targetId)?.status).toBe('DONE')
+    expect(restored.regions).toEqual([region])
+    expect(details.assignee).toBe('张工')
+    expect(details.activities.map(({ id }) => id)).toEqual([
+      `${targetId}-activity-1`,
+      `${targetId}-activity-2`,
+      `${targetId}-activity-3`,
+    ])
+    reopened.close()
+  })
+
+  it('advances matching events across shards in one persisted operation', async () => {
+    const databaseName = createDatabaseName('batch-status')
+    const repository = await GisDatasetRepository.create('1k', { databaseName })
+    const initialized = await repository.loadOrInitialize()
+    const targetIds = initialized.events
+      .filter(({ status }) => status === 'PENDING')
+      .slice(0, 3)
+      .map(({ id }) => id)
+
+    const updated = await repository.advanceEventStatuses(targetIds, 'PENDING')
+    expect(updated).toHaveLength(3)
+    repository.close()
+
+    const reopened = await GisDatasetRepository.create('1k', { databaseName })
+    const restored = await reopened.loadOrInitialize()
+    expect(
+      restored.events
+        .filter(({ id }) => targetIds.includes(id))
+        .every(({ status }) => status === 'PROCESSING'),
+    ).toBe(true)
+    reopened.close()
+  })
+
+  it('cascades event deletion through regions, details, attachment metadata, and Blob tombstones', async () => {
+    const databaseName = createDatabaseName('delete-cascade')
+    const repository = await GisDatasetRepository.create('1k', { databaseName })
+    await repository.loadOrInitialize()
+    const event = createEvent('USER-DELETE-1')
+    await repository.addEvent(event)
+    await repository.setAssignee(event.id, '李工')
+    await repository.saveRegions([
+      {
+        id: 'REGION-DELETE-1',
+        name: '删除级联区域',
+        geometry: { type: 'Circle', center: [121.4737, 31.2304], radiusMeters: 300 },
+        eventIds: [event.id, 'EVT-000001'],
+        createdAt: '2026-10-14T06:00:00.000Z',
+      },
+    ])
+    const firstAttachment = {
+      id: 'ATTACHMENT-1',
+      name: 'before.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 6,
+      addedAt: '2026-10-14T06:00:00.000Z',
+    }
+    const secondAttachment = { ...firstAttachment, id: 'ATTACHMENT-2', name: 'after.jpg' }
+    await repository.addAttachment(event.id, firstAttachment, new Blob(['before']))
+    await repository.addAttachment(event.id, secondAttachment, new Blob(['after!']))
+    expect(await repository.removeAttachment(event.id, firstAttachment.id)).toBe(true)
+    expect(await repository.loadAttachmentBlob(event.id, firstAttachment.id)).toBeNull()
+
+    expect(await repository.removeEvent(event.id)).toBe(true)
+    repository.close()
+
+    const reopened = await GisDatasetRepository.create('1k', { databaseName })
+    const restored = await reopened.loadOrInitialize()
+    expect(restored.metadata.currentEventCount).toBe(1_000)
+    expect(restored.events.some(({ id }) => id === event.id)).toBe(false)
+    expect(restored.regions[0]?.eventIds).toEqual(['EVT-000001'])
+    expect(await reopened.loadEventDetails(event.id)).toEqual({
+      assignee: null,
+      activities: [],
+      attachments: [],
+    })
+    expect(await reopened.loadAttachmentBlob(event.id, secondAttachment.id)).toBeNull()
+    reopened.close()
+  })
+
+  it('does not commit an in-memory event snapshot when persistence fails', async () => {
+    const databaseName = createDatabaseName('mutation-failure')
+    let rejectBatch = false
+    const storeFactory = async (options: CreateKeyValueStoreOptions): Promise<KeyValueStore> => {
+      const store = await createKeyValueStore(options)
+      return {
+        get state() {
+          return store.state
+        },
+        get: store.get.bind(store),
+        set: store.set.bind(store),
+        has: store.has.bind(store),
+        delete: store.delete.bind(store),
+        keys: store.keys.bind(store),
+        entries: store.entries.bind(store),
+        async setMany(entries) {
+          if (rejectBatch) throw new Error('模拟业务批写失败')
+          await store.setMany(entries)
+        },
+        deleteMany: store.deleteMany.bind(store),
+        clear: store.clear.bind(store),
+        close: store.close.bind(store),
+      }
+    }
+    const repository = await GisDatasetRepository.create('1k', { databaseName, storeFactory })
+    const before = await repository.loadOrInitialize()
+    rejectBatch = true
+
+    await expect(repository.addEvent(createEvent('USER-FAIL-1'))).rejects.toThrow(
+      '模拟业务批写失败',
+    )
+    const after = await repository.loadOrInitialize()
+    expect(after.metadata.currentEventCount).toBe(before.metadata.currentEventCount)
+    expect(after.events).toEqual(before.events)
+    repository.close()
+  })
+})

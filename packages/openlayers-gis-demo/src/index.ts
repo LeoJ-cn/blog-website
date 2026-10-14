@@ -30,11 +30,16 @@ export type { DrawGeometryType, MapMode } from './map/interactions/SpatialIntera
 export type { GisDatasetScale } from './persistence/dataset-scale'
 export type {
   GisDatasetRepositoryOptions,
+  InspectionEventEditableFields,
 } from './persistence/gis-dataset-repository'
 export type {
   GisSettingsRepositoryOptions,
 } from './persistence/gis-settings-repository'
-export type { GisDatasetMetadata, PersistedGisDataset } from './persistence/types'
+export type {
+  GisDatasetMetadata,
+  PersistedEventDetails,
+  PersistedGisDataset,
+} from './persistence/types'
 // 业务领域协议：事件、轨迹和可序列化区域均不暴露 OpenLayers 运行时对象。
 export type {
   EventLevel,
@@ -45,6 +50,7 @@ export type {
   InspectionEvent,
   InspectionEventFilter,
 } from './types/inspection-event'
+export type { EventEvidenceMetadata } from './types/event-evidence'
 export type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from './types/track'
 export type { InspectionRegion, RegionGeometry, Wgs84Coordinate } from './types/region'
 export type {
