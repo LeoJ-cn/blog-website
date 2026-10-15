@@ -23,7 +23,6 @@ import { useGisStore } from '../stores/gis'
 import type { EventLevel, EventStatus, EventType, InspectionEvent } from '../types/inspection-event'
 import type { EventEvidenceMetadata } from '../types/event-evidence'
 import type { Wgs84Coordinate } from '../types/region'
-import type { TrackPlaybackSpeed, TrackPlaybackStatus, TrackPoint } from '../types/track'
 import { ViewportQueryController } from '../viewport/viewport-query-controller'
 import { mergeViewportQueryState } from '../viewport/viewport-state'
 import type { ViewportDatasetBuildStats, ViewportQueryState, Wgs84Bbox } from '../viewport/types'
@@ -37,6 +36,8 @@ import OperationsSummary from './workspace/OperationsSummary.vue'
 import GisWorkspaceStatus from './workspace/GisWorkspaceStatus.vue'
 import { useGisWorkspace } from '../composables/useGisWorkspace'
 import type { WorkspaceScene } from './workspace/workspace-types'
+import TrackPlaybackControls from './replay/TrackPlaybackControls.vue'
+import { formatTrackDuration, useTrackPlayback } from '../composables/useTrackPlayback'
 
 interface Props {
   /** 由宿主配置层注入的天地图浏览器端 Token；组件不会记录或展示其内容。 */
@@ -463,78 +464,14 @@ const currentViewportBbox = ref<Wgs84Bbox | null>(null)
 const mapMode = ref<MapMode>('select')
 /** Draw 默认创建 Polygon，可切换为 Point 或 Circle。 */
 const drawType = ref<DrawGeometryType>('Polygon')
-/** 轨迹倍速是相对原始时间轴的倍率，允许值由 TrackPlaybackSpeed 协议限定。 */
-const trackSpeed = ref<TrackPlaybackSpeed>(1)
-/** idle、playing、paused、finished 由 TrackPlaybackController 回调维护。 */
-const trackStatus = ref<TrackPlaybackStatus>('idle')
-/** 当前轨迹时间是 Unix 毫秒时间戳，默认定位到首个采样点。 */
-const trackTime = ref(mockInspectionTrack[0]?.timestamp ?? 0)
-/** range input 最新待提交进度，闭区间为 [0, 1]；null 表示没有待处理输入。 */
-let pendingTrackSeekRatio: number | null = null
-/** 合并同一绘制帧内连续 seek 的 requestAnimationFrame 句柄。 */
-let trackSeekFrameId: number | null = null
-const formattedTrackTime = computed(() =>
-  new Intl.DateTimeFormat('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(trackTime.value),
-)
-const trackProgressPercent = computed(() => {
-  const start = mockInspectionTrack[0]?.timestamp ?? 0
-  const end = mockInspectionTrack.at(-1)?.timestamp ?? start
-  if (end <= start) return 0
-  return Math.min(100, Math.max(0, ((trackTime.value - start) / (end - start)) * 100))
-})
-const trackTotalDurationMs = computed(() => {
-  const start = mockInspectionTrack[0]?.timestamp ?? 0
-  const end = mockInspectionTrack.at(-1)?.timestamp ?? start
-  return Math.max(0, end - start)
-})
-const trackElapsedMs = computed(() => {
-  const start = mockInspectionTrack[0]?.timestamp ?? 0
-  return Math.min(trackTotalDurationMs.value, Math.max(0, trackTime.value - start))
-})
-const trackActiveGridSequence = computed(() => {
-  let activeSequence = 0
-  for (let index = 0; index < mockInspectionTrack.length; index += 1) {
-    if (trackTime.value < mockInspectionTrack[index]!.timestamp) break
-    activeSequence = index
-  }
-  // 零基序号对应蛇形轨迹采样点，也对应责任网格的 gridSequence。
-  return activeSequence
-})
-const trackCoveredGridCount = computed(() =>
-  Math.min(mockInspectionTrack.length, trackActiveGridSequence.value + 1),
-)
-const trackActiveGridLabel = computed(() => {
-  return formatTrackGridLabel(trackActiveGridSequence.value)
-})
-const trackTotalDistanceKm = computed(() => calculateTrackDistanceKm(mockInspectionTrack))
-const trackCompletedDistanceKm = computed(() => {
-  if (mockInspectionTrack.length < 2) return 0
-  let completedKilometers = 0
-  for (let index = 0; index < mockInspectionTrack.length - 1; index += 1) {
-    const start = mockInspectionTrack[index]!
-    const end = mockInspectionTrack[index + 1]!
-    if (trackTime.value >= end.timestamp) {
-      completedKilometers += calculateSegmentDistanceKm(start, end)
-      continue
-    }
-    if (trackTime.value > start.timestamp) {
-      // 当前采样段按时间比例估算已完成距离，比例限制在闭区间 [0, 1]。
-      const ratio = Math.min(
-        1,
-        Math.max(0, (trackTime.value - start.timestamp) / (end.timestamp - start.timestamp)),
-      )
-      completedKilometers += calculateSegmentDistanceKm(start, end) * ratio
-    }
-    break
-  }
-  return completedKilometers
-})
 let mapManager: MapManager | null = null
+const {
+  trackSpeed, trackStatus, formattedTrackTime, trackProgressPercent,
+  trackTotalDurationMs, trackElapsedMs, trackActiveGridSequence, trackCoveredGridCount,
+  trackActiveGridLabel, trackTotalDistanceKm, trackCompletedDistanceKm,
+  play: playTrack, pause: pauseTrack, reset: resetTrack, changeSpeed: changeTrackSpeed,
+  seek: seekTrack, seekCheckpoint: seekTrackCheckpoint, updateState: updateTrackState,
+} = useTrackPlayback({ points: mockInspectionTrack, getController: () => mapManager })
 let gisApi: GisApi | null = null
 let settingsRepository: GisSettingsRepository | null = null
 let viewportQueryController: ViewportQueryController | null = null
@@ -765,43 +702,6 @@ function formatEventCreatedAt(isoTime: string): string {
   const timestamp = Date.parse(isoTime)
   // 导入数据虽已校验时间，但展示层仍保留降级文案，避免异常业务数据污染整页渲染。
   return Number.isFinite(timestamp) ? EVENT_CREATED_AT_FORMATTER.format(timestamp) : '时间未知'
-}
-
-/** 使用 Haversine 公式计算相邻 WGS84 坐标的地表距离，返回单位为千米。 */
-function calculateSegmentDistanceKm(start: TrackPoint, end: TrackPoint): number {
-  const earthRadiusKm = 6371.0088
-  const toRadians = (degrees: number) => (degrees * Math.PI) / 180
-  const latitudeDelta = toRadians(end.lat - start.lat)
-  const longitudeDelta = toRadians(end.lng - start.lng)
-  const startLatitude = toRadians(start.lat)
-  const endLatitude = toRadians(end.lat)
-  const haversine =
-    Math.sin(latitudeDelta / 2) ** 2 +
-    Math.cos(startLatitude) * Math.cos(endLatitude) * Math.sin(longitudeDelta / 2) ** 2
-  return 2 * earthRadiusKm * Math.asin(Math.sqrt(haversine))
-}
-
-function calculateTrackDistanceKm(points: readonly TrackPoint[]): number {
-  let distanceKilometers = 0
-  for (let index = 0; index < points.length - 1; index += 1) {
-    distanceKilometers += calculateSegmentDistanceKm(points[index]!, points[index + 1]!)
-  }
-  return distanceKilometers
-}
-
-function formatTrackDuration(durationMs: number): string {
-  const totalSeconds = Math.round(Math.max(0, durationMs) / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-}
-
-function formatTrackGridLabel(sequence: number): string {
-  const row = Math.floor(sequence / 4)
-  const routeColumn = sequence % 4
-  // 奇数行按蛇形路线从东向西行进，转换回网格从西向东的一基列号。
-  const column = row % 2 === 0 ? routeColumn : 3 - routeColumn
-  return `GRID-${row + 1}-${column + 1}`
 }
 
 function formatFileSize(sizeBytes: number): string {
@@ -1446,32 +1346,6 @@ function changeRenderMode(mode: RenderMode) {
   mapManager?.setRenderMode(mode)
 }
 
-function changeTrackSpeed(speed: TrackPlaybackSpeed) {
-  trackSpeed.value = speed
-  mapManager?.setTrackSpeed(speed)
-}
-
-function seekTrack(event: Event) {
-  const input = event.currentTarget as HTMLInputElement
-  pendingTrackSeekRatio = Number(input.value) / 100
-  if (trackSeekFrameId !== null) return
-
-  // range input 可能在同一绘制帧内连续触发；只提交最新进度，避免地图和 Vue 重复刷新造成闪动。
-  trackSeekFrameId = requestAnimationFrame(() => {
-    trackSeekFrameId = null
-    const progressRatio = pendingTrackSeekRatio
-    pendingTrackSeekRatio = null
-    if (progressRatio !== null) mapManager?.seekTrack(progressRatio)
-  })
-}
-
-function seekTrackCheckpoint(sequence: number) {
-  const lastSequence = mockInspectionTrack.length - 1
-  if (lastSequence <= 0) return
-  // 节点序号从 0 开始，除以末节点序号得到闭区间 [0, 1] 的回放进度。
-  mapManager?.seekTrack(sequence / lastSequence)
-}
-
 async function initializeWorkspace() {
   initializationState.value = 'loading'
   initializationError.value = ''
@@ -1547,8 +1421,7 @@ async function initializeWorkspace() {
     trackPoints: mockInspectionTrack,
     // timestamp 为 Unix 毫秒；status 由轨迹控制器的播放状态机产生。
     onTrackTimeChange: (timestamp, status) => {
-      trackTime.value = timestamp
-      trackStatus.value = status
+      updateTrackState(timestamp, status)
     },
   })
   mapManager.setRenderMode(renderMode.value)
@@ -1570,10 +1443,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  // 依次释放帧回调、Blob URL、请求控制器、完整 Mock 数据集和 OpenLayers 实例。
-  if (trackSeekFrameId !== null) cancelAnimationFrame(trackSeekFrameId)
-  trackSeekFrameId = null
-  pendingTrackSeekRatio = null
+  // 依次释放 Blob URL、请求控制器、完整 Mock 数据集和 OpenLayers 实例。
   releaseAllEventEvidence()
   viewportQueryController?.destroy()
   viewportQueryController = null
@@ -2437,52 +2307,20 @@ onBeforeUnmount(() => {
       <span v-else-if="viewportQueryState.status === 'empty'">当前视口没有匹配事件</span>
       <span v-else-if="viewportQueryState.status === 'loading'">正在加载，地图保留上一结果</span>
     </div>
-    <div class="track-controls">
-      <strong>轨迹回放</strong>
-      <button @click="mapManager?.playTrack()">播放</button>
-      <button @click="mapManager?.pauseTrack()">暂停</button>
-      <button @click="mapManager?.resetTrack()">重置</button>
-      <div class="track-timeline">
-        <input
-          class="track-progress"
-          type="range"
-          min="0"
-          max="100"
-          step="0.1"
-          :value="trackProgressPercent"
-          aria-label="巡检轨迹播放进度"
-          @input="seekTrack"
-        />
-        <div class="track-checkpoints" aria-label="巡检网格节点快捷跳转">
-          <button
-            v-for="(_, sequence) in mockInspectionTrack"
-            :key="sequence"
-            type="button"
-            :class="{
-              active: sequence === trackActiveGridSequence,
-              visited: sequence < trackActiveGridSequence,
-            }"
-            :aria-label="`跳转到 ${formatTrackGridLabel(sequence)}，第 ${sequence + 1} 个节点`"
-            @click="seekTrackCheckpoint(sequence)"
-          >
-            {{ sequence + 1 }}
-          </button>
-        </div>
-      </div>
-      <button :class="{ active: trackSpeed === 1 }" @click="changeTrackSpeed(1)">1x</button>
-      <button :class="{ active: trackSpeed === 2 }" @click="changeTrackSpeed(2)">2x</button>
-      <button :class="{ active: trackSpeed === 8 }" @click="changeTrackSpeed(8)">8x</button>
-      <div class="track-playback-meta" aria-live="off">
-        <span>
-          当前巡检时间：
-          <b>{{ formattedTrackTime }}</b>
-        </span>
-        <span>
-          状态：
-          <b>{{ trackStatus }}</b>
-        </span>
-      </div>
-    </div>
+    <TrackPlaybackControls
+      :speed="trackSpeed"
+      :status="trackStatus"
+      :formatted-time="formattedTrackTime"
+      :progress-percent="trackProgressPercent"
+      :active-sequence="trackActiveGridSequence"
+      :checkpoint-count="mockInspectionTrack.length"
+      @play="playTrack"
+      @pause="pauseTrack"
+      @reset="resetTrack"
+      @change-speed="changeTrackSpeed"
+      @seek="seekTrack"
+      @seek-checkpoint="seekTrackCheckpoint"
+    />
     <GisWorkspaceStatus
       :event-count="store.events.length"
       :filtered-count="scopedEvents.length"
@@ -4372,55 +4210,6 @@ onBeforeUnmount(() => {
   background: #0d1729;
   font-size: 12px;
 }
-.track-controls {
-  min-height: 46px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 0 16px;
-  border-top: 1px solid #20314c;
-  background: #0a1322;
-  font-size: 12px;
-}
-.track-progress {
-  width: 100%;
-  margin: 0;
-  accent-color: #38bdf8;
-}
-.track-timeline {
-  flex: 1 1 260px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 220px;
-  padding: 4px 8px 2px;
-}
-.track-playback-meta {
-  flex: 0 0 250px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 18px;
-  min-width: 0;
-  color: #71809a;
-  white-space: nowrap;
-}
-.track-controls .track-playback-meta span {
-  margin-left: 0;
-}
-.track-playback-meta b {
-  display: inline-block;
-  min-width: 54px;
-  color: #94a3b8;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-.track-playback-meta span:last-child b {
-  min-width: 48px;
-}
-.track-checkpoints {
-  display: flex;
-  justify-content: space-between;
-}
 .performance-metrics {
   min-height: 42px;
   display: flex;
@@ -4452,13 +4241,11 @@ onBeforeUnmount(() => {
   color: #fecaca;
   cursor: pointer;
 }
-.performance-controls span,
-.track-controls span {
+.performance-controls span {
   margin-left: 12px;
   color: #71809a;
 }
-.performance-controls button,
-.track-controls button {
+.performance-controls button {
   padding: 6px 10px;
   border: 1px solid #2a3d5c;
   border-radius: 5px;
@@ -4466,33 +4253,10 @@ onBeforeUnmount(() => {
   color: #94a3b8;
   cursor: pointer;
 }
-.performance-controls button.active,
-.track-controls button.active {
+.performance-controls button.active {
   border-color: #38bdf8;
   color: #7dd3fc;
   background: #0c2d46;
-}
-.track-checkpoints button {
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  color: #64748b;
-  background: #111827;
-  border: 1px solid #4c1d95;
-  border-radius: 50%;
-  font-size: 8px;
-  line-height: 14px;
-}
-.track-checkpoints button.visited {
-  color: #ede9fe;
-  background: #6d28d9;
-  border-color: #a78bfa;
-}
-.track-checkpoints button.active {
-  color: #1c1917;
-  background: #fbbf24;
-  border-color: #fef3c7;
-  box-shadow: 0 0 0 3px #fbbf2433;
 }
 @media (max-width: 1000px) {
   .operations-summary > * {
