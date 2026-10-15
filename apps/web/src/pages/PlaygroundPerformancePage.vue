@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Test from '@/components/Test.vue'
 import { ref } from 'vue'
+import { isPlaygroundContentTabVisible } from '../data/playground-content-tabs'
 
 const tabs = [
   { id: 'demo', label: 'Demo' },
@@ -42,17 +43,18 @@ const activeTab = ref<(typeof tabs)[number]['id']>('demo')
     </div>
 
     <nav class="content-tabs" aria-label="技术内容" role="tablist">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        type="button"
-        :class="{ 'is-active': activeTab === tab.id }"
-        :aria-selected="activeTab === tab.id"
-        role="tab"
-        @click="activeTab = tab.id"
-      >
-        {{ tab.label }}
-      </button>
+      <template v-for="tab in tabs" :key="tab.id">
+        <button
+          v-if="isPlaygroundContentTabVisible(tab.id)"
+          type="button"
+          :class="{ 'is-active': activeTab === tab.id }"
+          :aria-selected="activeTab === tab.id"
+          role="tab"
+          @click="activeTab = tab.id"
+        >
+          {{ tab.label }}
+        </button>
+      </template>
     </nav>
 
     <section v-if="activeTab === 'source'" class="tab-panel" role="tabpanel">

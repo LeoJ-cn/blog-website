@@ -1664,7 +1664,25 @@ onBeforeUnmount(() => {
       </aside>
       <main class="map-panel">
         <div ref="mapTarget" class="map-canvas"></div>
-        <section v-if="workspaceScene === 'analysis'" class="analysis-workbench" aria-label="空间分析工具">
+        <div class="map-left-overlays">
+          <section class="map-legend" aria-label="地图点位图例">
+            <strong>点位图例</strong>
+            <div class="legend-group">
+              <span class="legend-title">处置状态</span>
+              <span v-for="item in statusLegend" :key="item.label" class="legend-item">
+                <i class="legend-level" :style="{ '--legend-color': item.color }"></i>
+                {{ item.label }}
+              </span>
+            </div>
+            <div class="legend-group">
+              <span class="legend-title">当前选择</span>
+              <span class="legend-item">
+                <i class="legend-status legend-selection" :style="selectionLegendStyle"></i>
+                青色光圈
+              </span>
+            </div>
+          </section>
+          <section v-if="workspaceScene === 'analysis'" class="analysis-workbench" aria-label="空间分析工具">
           <header><strong>空间分析</strong><small>{{ analysisState.status }}</small></header>
           <div class="analysis-tools">
             <button v-for="(label, kind) in ANALYSIS_TOOL_LABELS" :key="kind" type="button" :class="{ active: store.activeAnalysisKind === kind }" :disabled="analysisState.status === 'running'" @click="selectAnalysisTool(kind)">{{ label }}</button>
@@ -1699,7 +1717,8 @@ onBeforeUnmount(() => {
               <button type="button" aria-label="删除分析" @click="removeSavedAnalysis(item)">×</button>
             </div>
           </section>
-        </section>
+          </section>
+        </div>
         <output class="map-zoom-indicator" aria-label="当前地图缩放级别">
           Zoom {{ stats.zoom.toFixed(1) }}x
         </output>
@@ -1710,23 +1729,6 @@ onBeforeUnmount(() => {
           <span>当前场景</span>
           <strong>{{ activeSceneMeta.label }}</strong>
           <small>{{ activeSceneMeta.description }}</small>
-        </section>
-        <section class="map-legend" aria-label="地图点位图例">
-          <strong>点位图例</strong>
-          <div class="legend-group">
-            <span class="legend-title">处置状态</span>
-            <span v-for="item in statusLegend" :key="item.label" class="legend-item">
-              <i class="legend-level" :style="{ '--legend-color': item.color }"></i>
-              {{ item.label }}
-            </span>
-          </div>
-          <div class="legend-group">
-            <span class="legend-title">当前选择</span>
-            <span class="legend-item">
-              <i class="legend-status legend-selection" :style="selectionLegendStyle"></i>
-              青色光圈
-            </span>
-          </div>
         </section>
         <section class="layer-panel" aria-label="地图图层控制">
           <strong>图层控制</strong>
@@ -2886,16 +2888,28 @@ onBeforeUnmount(() => {
   height: 100%;
   background: #dbe4ec;
 }
-.analysis-workbench {
+.map-left-overlays {
+  /* 图例高度会随内容变化，共用纵向容器可避免分析面板依赖易失效的固定 top 偏移。 */
   position: absolute;
-  top: 76px;
+  top: 12px;
+  bottom: 12px;
   left: 12px;
   z-index: 35;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: calc(100% - 24px);
+  pointer-events: none;
+}
+.analysis-workbench {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   gap: 10px;
   width: 286px;
-  max-height: calc(100% - 100px);
+  max-width: 100%;
   box-sizing: border-box;
   padding: 12px;
   overflow: auto;
@@ -2905,6 +2919,7 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   box-shadow: 0 8px 24px #02061766;
   font-size: 11px;
+  pointer-events: auto;
 }
 .analysis-workbench header,
 .analysis-save,
@@ -3064,10 +3079,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 .map-legend {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 2;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 8px;

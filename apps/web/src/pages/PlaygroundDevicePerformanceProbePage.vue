@@ -6,6 +6,7 @@ import {
   renderPerformanceReport,
   type PerformanceProbeResult,
 } from '../components/test-ua/test-ua'
+import { isPlaygroundContentTabVisible } from '../data/playground-content-tabs'
 import { projects } from '../data/projects'
 
 const project = projects.find((item) => item.slug === 'device-performance-probe')!
@@ -93,6 +94,7 @@ onMounted(runProbe)
         实现原理
       </button>
       <button
+        v-if="isPlaygroundContentTabVisible('source')"
         type="button"
         :class="{ 'is-active': activeTab === 'source' }"
         @click="activeTab = 'source'"
@@ -100,6 +102,7 @@ onMounted(runProbe)
         源码
       </button>
       <button
+        v-if="isPlaygroundContentTabVisible('compatibility')"
         type="button"
         :class="{ 'is-active': activeTab === 'compatibility' }"
         @click="activeTab = 'compatibility'"
