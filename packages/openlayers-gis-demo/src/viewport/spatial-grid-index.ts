@@ -79,7 +79,12 @@ export class SpatialGridIndex {
       for (const [key, bucket] of this.#buckets) {
         const [gridX, gridY] = key.split(':').map(Number)
         if (gridX < minGridX || gridX > maxGridX || gridY < minGridY || gridY > maxGridY) continue
-        candidates.push(...bucket)
+        for (const event of bucket) {
+          // 扫描占用桶的优化路径必须与逐网格路径保持相同的稳定业务 ID 去重语义。
+          if (seenEventIds.has(event.id)) continue
+          seenEventIds.add(event.id)
+          candidates.push(event)
+        }
       }
       return candidates
     }
