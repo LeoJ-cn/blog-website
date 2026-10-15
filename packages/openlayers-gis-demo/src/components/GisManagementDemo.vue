@@ -13,7 +13,7 @@ import {
   EVENT_STATUS_VISUALS,
 } from '../map/styles/event-visual'
 import { mockInspectionTrack } from '../mock/tracks'
-import { GIS_DATASET_SCALES, type GisDatasetScale } from '../persistence/dataset-scale'
+import type { GisDatasetScale } from '../persistence/dataset-scale'
 import { GisSettingsRepository } from '../persistence/gis-settings-repository'
 import {
   parseInspectionEventsGeoJson,
@@ -32,6 +32,11 @@ import type { SpatialAnalysisControllerState } from '../analysis/spatial-analysi
 import type { AnalysisGeometry, SpatialAnalysisInput, SpatialAnalysisKind, SpatialAnalysisResult } from '../types/spatial-analysis'
 import type { PersistedSpatialAnalysis, SpatialAnalysisSummary } from '../persistence/types'
 import { parseSpatialAnalysisGeoJson, serializeSpatialAnalysisToGeoJson } from '../services/spatial-analysis'
+import GisWorkspaceHeader from './workspace/GisWorkspaceHeader.vue'
+import OperationsSummary from './workspace/OperationsSummary.vue'
+import GisWorkspaceStatus from './workspace/GisWorkspaceStatus.vue'
+import { useGisWorkspace } from '../composables/useGisWorkspace'
+import type { WorkspaceScene } from './workspace/workspace-types'
 
 interface Props {
   /** 由宿主配置层注入的天地图浏览器端 Token；组件不会记录或展示其内容。 */
@@ -74,17 +79,6 @@ const EVENT_STATUS_PRIORITY: Record<EventStatus, number> = { PENDING: 0, PROCESS
 const EVENT_SLA_HOURS: Record<EventLevel, number> = { HIGH: 2, MEDIUM: 4, LOW: 8 }
 /** 演示环境可分派人员白名单；姓名同时作为下拉值和工作量统计键。 */
 const INSPECTOR_NAMES = ['张建国', '李敏', '王磊', '陈静', '赵强', '周宁'] as const
-type WorkspaceScene =
-  | 'realtime' // 日常监控事件、轨迹和处置状态。
-  | 'dispatch' // 展示责任网格并突出任务分派与区域处置。
-  | 'replay' // 隐藏事件点，突出巡检轨迹和时间轴复盘。
-  | 'analysis' // 绘制几何并执行空间分析，展示结果和已保存记录。
-const WORKSPACE_SCENE_META: Record<WorkspaceScene, { label: string; description: string }> = {
-  realtime: { label: '实时态势', description: '事件聚合、在线轨迹与处置状态' },
-  dispatch: { label: '任务调度', description: '责任网格、精确点位与人员分派' },
-  replay: { label: '巡检复盘', description: '巡检路线、时间定位与覆盖核查' },
-  analysis: { label: '空间分析', description: '测量、缓冲区、最近事件与区域洞察' },
-}
 const ANALYSIS_TOOL_LABELS: Readonly<Record<SpatialAnalysisKind, string>> = {
   DISTANCE: '测距', AREA: '测面积', BUFFER: '缓冲区', NEAREST_EVENTS: '最近事件',
   REGION_STATISTICS: '区域统计', REGION_COMPARISON: '区域对比',
@@ -178,9 +172,6 @@ const isPickingEventLocation = ref(false)
 const deleteCandidateId = ref<string | null>(null)
 /** 详情面板中的待提交责任人；空字符串表示尚未选择。 */
 const dispatchAssignee = ref('')
-/** 默认进入实时态势场景，场景会联动图层显隐和交互模式。 */
-const workspaceScene = ref<WorkspaceScene>('realtime')
-const activeSceneMeta = computed(() => WORKSPACE_SCENE_META[workspaceScene.value])
 /** GeoJSON 导入结果；null 表示无需展示反馈。 */
 const importFeedback = ref<{ message: string; error: boolean } | null>(null)
 /** 现场凭证 metadata 与 Blob 持久化；此处仅按事件保存当前页面可用的 Blob URL。 */
@@ -403,11 +394,22 @@ const layerVisibility = reactive<Record<LayerControlId, boolean>>({
   region: true,
   selection: true,
 })
-const activeDatasetScale = ref<GisDatasetScale>('10k')
-const pendingDatasetScale = ref<GisDatasetScale>('10k')
-const initializationState = ref<'loading' | 'ready' | 'error'>('loading')
-const initializationError = ref('')
-const persistenceFeedback = ref('')
+const {
+  workspaceScene,
+  activeSceneMeta,
+  activeDatasetScale,
+  pendingDatasetScale,
+  initializationState,
+  initializationError,
+  persistenceFeedback,
+  changeWorkspaceScene,
+  changeDatasetScale,
+  retryWorkspaceInitialization,
+} = useGisWorkspace({
+  applyScene: applyWorkspaceScene,
+  persistDatasetScale,
+  retryInitialization: () => void initializeWorkspace(),
+})
 const analysisRadiusMeters = ref(500)
 const analysisNearestLimit = ref(10)
 const analysisName = ref('')
@@ -844,7 +846,7 @@ async function assignSelectedEvent() {
   }
 }
 
-function changeWorkspaceScene(scene: WorkspaceScene) {
+function applyWorkspaceScene(scene: WorkspaceScene) {
   const restoresAllAssignees = scene !== 'dispatch' && assigneeFilter.value !== 'ALL'
   if (
     scene !== 'analysis' &&
@@ -858,7 +860,6 @@ function changeWorkspaceScene(scene: WorkspaceScene) {
     mapManager?.clearActiveAnalysis()
   }
   if (restoresAllAssignees) assigneeFilter.value = 'ALL'
-  workspaceScene.value = scene
   // 每个场景只声明需要覆盖的图层，其余图层沿用用户当前开关状态。
   const visibilityByScene: Record<WorkspaceScene, Partial<Record<LayerControlId, boolean>>> = {
     // 实时态势展示事件与轨迹，关闭分析覆盖层。
@@ -893,10 +894,6 @@ function changeWorkspaceScene(scene: WorkspaceScene) {
     eventListPage.value = 1
     syncVisibleEvents()
   }
-}
-
-function changeWorkspaceSceneFromSelect(event: Event) {
-  changeWorkspaceScene((event.target as HTMLSelectElement).value as WorkspaceScene)
 }
 
 function applyAssigneeQuickFilter(assignee: string) {
@@ -1562,21 +1559,10 @@ async function initializeWorkspace() {
   initializationState.value = 'ready'
 }
 
-function retryWorkspaceInitialization() {
-  if (initializationState.value === 'loading') return
-  void initializeWorkspace()
-}
-
-async function changeDatasetScale() {
-  const previousScale = activeDatasetScale.value
-  if (!settingsRepository || pendingDatasetScale.value === previousScale) return
-  try {
-    await settingsRepository.setActiveScale(pendingDatasetScale.value)
-    window.location.reload()
-  } catch {
-    pendingDatasetScale.value = previousScale
-    initializationError.value = '数据量级保存失败，页面未刷新'
-  }
+async function persistDatasetScale(nextScale: GisDatasetScale) {
+  if (!settingsRepository) return
+  await settingsRepository.setActiveScale(nextScale)
+  window.location.reload()
 }
 
 onMounted(() => {
@@ -1604,129 +1590,28 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="gis-shell">
-    <header class="gis-header">
-      <div class="gis-brand">
-        <small>URBAN INSPECTION CENTER</small>
-        <div class="gis-title-row">
-          <h2>城市巡检运营工作台</h2>
-          <label class="dataset-scale-select">
-            <span>数据量级</span>
-            <select
-              v-model="pendingDatasetScale"
-              :disabled="initializationState !== 'ready'"
-              @change="changeDatasetScale"
-            >
-              <option v-for="scale in GIS_DATASET_SCALES" :key="scale" :value="scale">
-                {{ scale }}
-              </option>
-            </select>
-          </label>
-        </div>
-      </div>
-      <nav class="gis-primary-nav" aria-label="GIS 工作台导航">
-        <button
-          type="button"
-          :class="{ active: workspaceScene === 'realtime' }"
-          @click="changeWorkspaceScene('realtime')"
-        >
-          实时态势
-        </button>
-        <button
-          type="button"
-          :class="{ active: workspaceScene === 'dispatch' }"
-          @click="changeWorkspaceScene('dispatch')"
-        >
-          任务调度
-        </button>
-        <button
-          type="button"
-          :class="{ active: workspaceScene === 'replay' }"
-          @click="changeWorkspaceScene('replay')"
-        >
-          巡检复盘
-        </button>
-        <button type="button" :class="{ active: workspaceScene === 'analysis' }" @click="changeWorkspaceScene('analysis')">
-          空间分析
-        </button>
-      </nav>
-      <label class="gis-mobile-scene-select">
-        <span>当前场景</span>
-        <select :value="workspaceScene" @change="changeWorkspaceSceneFromSelect">
-          <option v-for="(meta, scene) in WORKSPACE_SCENE_META" :key="scene" :value="scene">
-            {{ meta.label }}
-          </option>
-        </select>
-      </label>
-      <span v-if="isMemoryStorage" class="storage-warning">内存模式 · 刷新后数据丢失</span>
-      <span v-else class="online">● 系统在线</span>
-    </header>
-    <div v-if="initializationState !== 'ready'" class="initialization-status" role="status">
-      <span v-if="initializationState === 'loading'">正在恢复本地数据…</span>
-      <template v-else>
-        <span>初始化失败：{{ initializationError || '无法打开本地数据' }}</span>
-        <button type="button" @click="retryWorkspaceInitialization">重试</button>
-      </template>
-    </div>
-    <div v-if="persistenceFeedback" class="persistence-feedback" role="alert">
-      <span>{{ persistenceFeedback }}</span>
-      <button type="button" @click="persistenceFeedback = ''">关闭</button>
-    </div>
-    <section class="operations-summary" aria-label="今日巡检态势">
-      <button
-        type="button"
-        :class="{ active: filterDraft.status === '' && slaView === 'ALL' }"
-        @click="applyStatusQuickFilter(null)"
-      >
-        <span>今日新增</span>
-        <strong>{{ todayNewCount.toLocaleString() }}</strong>
-        <small>点击查看全部</small>
-      </button>
-      <button
-        class="pending"
-        type="button"
-        :class="{ active: filterDraft.status === 'PENDING' && slaView === 'ALL' }"
-        @click="applyStatusQuickFilter('PENDING')"
-      >
-        <span>待处置</span>
-        <strong>{{ statusCounts.PENDING.toLocaleString() }}</strong>
-        <small>点击筛选</small>
-      </button>
-      <button
-        class="processing"
-        type="button"
-        :class="{ active: filterDraft.status === 'PROCESSING' && slaView === 'ALL' }"
-        @click="applyStatusQuickFilter('PROCESSING')"
-      >
-        <span>处理中</span>
-        <strong>{{ statusCounts.PROCESSING.toLocaleString() }}</strong>
-        <small>点击筛选</small>
-      </button>
-      <button
-        class="overdue"
-        type="button"
-        :class="{ active: slaView === 'OVERDUE' }"
-        @click="applyStatusQuickFilter(null, true)"
-      >
-        <span>已超时</span>
-        <strong>{{ overdueCount.toLocaleString() }}</strong>
-        <small>点击优先处置</small>
-      </button>
-      <article>
-        <span>在线人员</span>
-        <strong>{{ onlinePersonnelCount.toLocaleString() }}</strong>
-        <small>模拟值守</small>
-      </article>
-      <button
-        class="completed"
-        type="button"
-        :class="{ active: filterDraft.status === 'DONE' && slaView === 'ALL' }"
-        @click="applyStatusQuickFilter('DONE')"
-      >
-        <span>今日闭环率</span>
-        <strong>{{ completionRate }}%</strong>
-        <small>点击查看已完成</small>
-      </button>
-    </section>
+    <GisWorkspaceHeader
+      :dataset-scale="pendingDatasetScale"
+      :scene="workspaceScene"
+      :initialization-state="initializationState"
+      :initialization-error="initializationError"
+      :persistence-feedback="persistenceFeedback"
+      :memory-storage="isMemoryStorage"
+      @change-scale="pendingDatasetScale = $event; changeDatasetScale()"
+      @change-scene="changeWorkspaceScene"
+      @retry="retryWorkspaceInitialization"
+      @close-feedback="persistenceFeedback = ''"
+    />
+    <OperationsSummary
+      :active-status="filterDraft.status"
+      :overdue-only="slaView === 'OVERDUE'"
+      :today-new-count="todayNewCount"
+      :status-counts="statusCounts"
+      :overdue-count="overdueCount"
+      :online-personnel-count="onlinePersonnelCount"
+      :completion-rate="completionRate"
+      @filter-status="applyStatusQuickFilter"
+    />
     <div class="gis-workspace">
       <aside ref="eventListElement" class="event-list">
         <header>
@@ -2598,15 +2483,15 @@ onBeforeUnmount(() => {
         </span>
       </div>
     </div>
-    <footer class="gis-status">
-      <span>数据量：{{ store.events.length.toLocaleString() }}</span>
-      <span>筛选结果：{{ scopedEvents.length.toLocaleString() }}</span>
-      <span>渲染模式：{{ stats.renderMode === 'cluster' ? 'Cluster' : '普通点位' }}</span>
-      <span>Zoom：{{ stats.zoom }}</span>
-      <span>经纬度：{{ formattedPointerCoordinate }}</span>
-      <span>当前 Feature：{{ stats.featureCount.toLocaleString() }}</span>
-      <span>框选事件：{{ (store.regionEventIds?.length ?? 0).toLocaleString() }}</span>
-    </footer>
+    <GisWorkspaceStatus
+      :event-count="store.events.length"
+      :filtered-count="scopedEvents.length"
+      :render-mode-label="stats.renderMode === 'cluster' ? 'Cluster' : '普通点位'"
+      :zoom="stats.zoom"
+      :coordinate="formattedPointerCoordinate"
+      :feature-count="stats.featureCount"
+      :region-event-count="store.regionEventIds?.length ?? 0"
+    />
   </section>
 </template>
 
