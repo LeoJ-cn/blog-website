@@ -2,7 +2,7 @@
 
 ## 背景
 
-`@blog/monitoring` 当前通过 `requestAnimationFrame` 输出 `fps`、`maxFrameInterval` 和 `droppedFrames`。实现可以支持现有 Demo，但指标语义混合了采样窗口值与累计值，并默认用 60 FPS 预算解释“掉帧”。在 90Hz、120Hz、144Hz 等设备以及页面后台恢复、多订阅者和业务监听器异常场景下，这套协议不足以作为大型项目的稳定监控基础。
+`@white55/monitoring` 当前通过 `requestAnimationFrame` 输出 `fps`、`maxFrameInterval` 和 `droppedFrames`。实现可以支持现有 Demo，但指标语义混合了采样窗口值与累计值，并默认用 60 FPS 预算解释“掉帧”。在 90Hz、120Hz、144Hz 等设备以及页面后台恢复、多订阅者和业务监听器异常场景下，这套协议不足以作为大型项目的稳定监控基础。
 
 浏览器没有可靠的跨浏览器 API 返回显示器当前刷新率。因此 V2 不把推算刷新率作为准确性依据，而是区分：浏览器实际交付的帧节奏、项目显式配置的性能目标、浏览器提供的 Long Animation Frame 诊断数据。
 
@@ -134,7 +134,7 @@ runtime.emitLongAnimationFrame({ duration: 80, blockingDuration: 30 })
 
 ### 确定性单元测试
 
-为 `@blog/monitoring` 增加独立测试命令，使用 Fake Runtime 覆盖：
+为 `@white55/monitoring` 增加独立测试命令，使用 Fake Runtime 覆盖：
 
 - 60、90、120、144、165、240 FPS 稳定序列；
 - 目标 FPS 低于、等于和高于实际 FPS；
@@ -211,9 +211,9 @@ Frame Monitor V2 已按本文协议落地：公共 API、可注入 Runtime、Fak
 验证命令如下：
 
 ```sh
-pnpm --filter @blog/monitoring test
-pnpm --filter @blog/monitoring test:coverage
-pnpm --filter @blog/monitoring test:soak
+pnpm --filter @white55/monitoring test
+pnpm --filter @white55/monitoring test:coverage
+pnpm --filter @white55/monitoring test:soak
 pnpm test:e2e
 pnpm typecheck
 pnpm lint

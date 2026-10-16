@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { createFramePerformanceMonitor } from '@blog/monitoring'
+import { createFramePerformanceMonitor } from '@white55/monitoring'
 import { onUnmounted, ref } from 'vue'
 import { usePerformancePanel } from '../../composables/use-performance-panel'
 import {

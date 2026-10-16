@@ -13,7 +13,7 @@ import {
   type LogicEditorLifecycleBinding,
   type LogicEditorSavePayload,
   type Method,
-} from '@blog/low-code'
+} from '@white55/low-code'
 import { ElButton } from 'element-plus'
 import { computed, onMounted, reactive, ref, shallowRef } from 'vue'
 

@@ -62,28 +62,28 @@ importers:
 
   apps/web:
     dependencies:
-      '@blog/config':
+      '@white55/config':
         specifier: workspace:*
         version: link:../../packages/config
-      '@blog/http':
+      '@white55/http':
         specifier: workspace:^
         version: link:../../packages/http
-      '@blog/low-code':
+      '@white55/low-code':
         specifier: workspace:2.0.0
         version: link:../../packages/low-code
-      '@blog/monitoring':
+      '@white55/monitoring':
         specifier: workspace:^
         version: link:../../packages/monitoring
-      '@blog/openlayers-gis-demo':
+      '@white55/openlayers-gis-demo':
         specifier: workspace:^
         version: link:../../packages/openlayers-gis-demo
-      '@blog/react-vue-migration-demo':
+      '@white55/react-vue-migration-demo':
         specifier: workspace:*
         version: link:../../packages/react-vue-migration-demo
-      '@blog/ui':
+      '@white55/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@blog/websocket':
+      '@white55/websocket':
         specifier: workspace:^
         version: link:../../packages/websocket
       bowser:
@@ -267,7 +267,7 @@ importers:
 
   packages/openlayers-gis-demo:
     dependencies:
-      '@blog/indexed-db':
+      '@white55/indexed-db':
         specifier: workspace:2.0.0
         version: link:../indexed-db
       ol:

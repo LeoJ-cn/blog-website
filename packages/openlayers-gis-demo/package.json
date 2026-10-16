@@ -1,5 +1,5 @@
 {
-  "name": "@blog/openlayers-gis-demo",
+  "name": "@white55/openlayers-gis-demo",
   "version": "2.0.0",
   "private": true,
   "type": "module",
@@ -7,10 +7,10 @@
   "types": "./src/index.ts",
   "scripts": {
     "test": "vitest run --config vitest.config.ts",
-    "typecheck": "pnpm --filter @blog/web exec vue-tsc --noEmit -p ../../packages/openlayers-gis-demo/tsconfig.json"
+    "typecheck": "pnpm --filter @white55/web exec vue-tsc --noEmit -p ../../packages/openlayers-gis-demo/tsconfig.json"
   },
   "dependencies": {
-    "@blog/indexed-db": "workspace:2.0.0",
+    "@white55/indexed-db": "workspace:2.0.0",
     "ol": "10.10.0"
   },
   "devDependencies": {

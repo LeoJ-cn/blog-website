@@ -1,6 +1,6 @@
-# @blog/low-code
+# @white55/low-code
 
-`@blog/low-code` 用于承载本仓库的全部低代码能力。当前阶段首先等价迁移旧逻辑编辑器，包括图交互、节点配置、图数据保存恢复，以及 `SimpleProcessData[]/blockData` 生成逻辑。
+`@white55/low-code` 用于承载本仓库的全部低代码能力。当前阶段首先等价迁移旧逻辑编辑器，包括图交互、节点配置、图数据保存恢复，以及 `SimpleProcessData[]/blockData` 生成逻辑。
 
 ## 边界
 
@@ -29,7 +29,7 @@
 ## 使用方式
 
 ```ts
-import { LogicEditor, createLowCodeContext } from '@blog/low-code'
+import { LogicEditor, createLowCodeContext } from '@white55/low-code'
 
 const context = createLowCodeContext({
   methods,

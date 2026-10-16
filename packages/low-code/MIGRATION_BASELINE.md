@@ -364,7 +364,7 @@ models/page/ProcessPageModel
 ### 协议与构建
 
 - `BlockNames_DTS`、`AnchorTag_DTS`、`SideQuests_DTS`、`DescInfo_DTS`、锚点索引及 `SimpleProcessData` 字段沿用源值；转换仅调整 import 和宿主适配入口。
-- `pnpm --filter @blog/web typecheck`：通过。
+- `pnpm --filter @white55/web typecheck`：通过。
 - `pnpm lint`：通过；清理了迁移后不再需要的 `no-require-imports` 抑制注释。
 - `pnpm build:vite`：通过。构建保留了源逻辑中的动态表达式 `eval`，Rollup 会给出安全/压缩提示；这是旧 operation 配置和值输入语义的一部分，本次未改写。
 - 未运行任何 Webpack 命令，也未启动页面或执行浏览器自动化。

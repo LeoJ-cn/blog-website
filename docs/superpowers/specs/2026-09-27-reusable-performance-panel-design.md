@@ -4,19 +4,19 @@
 
 高级图片加载 Demo 当前通过 `moving-box-manager.ts` 同时管理 Moving Box 动画、CPU 压力模拟、帧性能采集和面板录制事件。`MovingBoxPerformancePanel.vue` 又直接依赖该 Manager，导致性能面板无法被其他 Demo 直接复用。
 
-本次只完成第一版小范围拆分：在现有 `apps/web` 内复用 Vue 性能面板，并把框架无关的帧性能采集能力加入已有的 `@blog/monitoring`。本次不创建新的 Workspace Package。
+本次只完成第一版小范围拆分：在现有 `apps/web` 内复用 Vue 性能面板，并把框架无关的帧性能采集能力加入已有的 `@white55/monitoring`。本次不创建新的 Workspace Package。
 
 ## 目标
 
 - 其他 Demo 可以复用同一个性能面板，不依赖 Moving Box 业务。
-- FPS、最大帧间隔和累计掉帧采集由 `@blog/monitoring` 提供。
+- FPS、最大帧间隔和累计掉帧采集由 `@white55/monitoring` 提供。
 - Moving Box Manager 只管理动画对象和 CPU 压力模拟。
 - 页面作为组合层，显式连接 Demo 状态、性能监控和面板操作。
 - 保持现有面板的视觉样式和主要交互。
 
 ## 非目标
 
-- 不创建 `@blog/monitoring-vue`。
+- 不创建 `@white55/monitoring-vue`。
 - 不把性能面板加入 `packages/ui`。
 - 不引入 Pinia、事件总线或新的第三方依赖。
 - 不重新设计面板视觉样式。
@@ -52,7 +52,7 @@ apps/web/src/
 
 ## 架构边界
 
-### `@blog/monitoring`
+### `@white55/monitoring`
 
 新增的帧监控模块保持 framework-agnostic，不依赖 Vue 或应用代码。它负责：
 
@@ -123,7 +123,7 @@ Composable 负责 Vue 状态和生命周期适配：
 - 暴露 `startRecording()`；
 - 卸载时取消订阅并清理定时器。
 
-录制逻辑不放入 `@blog/monitoring`，因为它属于当前面板的展示交互，而不是底层采集协议。
+录制逻辑不放入 `@white55/monitoring`，因为它属于当前面板的展示交互，而不是底层采集协议。
 
 ### `moving-box-manager.ts`
 
@@ -160,7 +160,7 @@ Manager 移除：
 PlaygroundAdvancedImagePage
 ├── PerformancePanel
 ├── usePerformancePanel
-│   └── @blog/monitoring
+│   └── @white55/monitoring
 └── movingBoxManager
 ```
 
@@ -177,7 +177,7 @@ PlaygroundAdvancedImagePage
 
 ## 迁移顺序
 
-1. 在 `@blog/monitoring` 增加帧监控协议和实现，并从公共入口导出。
+1. 在 `@white55/monitoring` 增加帧监控协议和实现，并从公共入口导出。
 2. 新增 `use-performance-panel.ts`。
 3. 将旧面板迁移为通用 `PerformancePanel.vue`，保持现有样式。
 4. 精简 Moving Box Manager，并增加最小 Demo 状态订阅。
@@ -210,4 +210,4 @@ pnpm build:vite
 
 ## 后续演进条件
 
-只有当至少两个使用方验证了稳定的 Props、事件和样式需求，并且组件需要被 `apps/web` 之外的应用复用时，才考虑创建 `@blog/monitoring-vue`。监控领域组件不进入泛化的 `packages/ui`。
+只有当至少两个使用方验证了稳定的 Props、事件和样式需求，并且组件需要被 `apps/web` 之外的应用复用时，才考虑创建 `@white55/monitoring-vue`。监控领域组件不进入泛化的 `packages/ui`。

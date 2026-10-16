@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { env } from '@blog/config'
-import { GisManagementDemo } from '@blog/openlayers-gis-demo'
+import { env } from '@white55/config'
+import { GisManagementDemo } from '@white55/openlayers-gis-demo'
 </script>
 
 <template>

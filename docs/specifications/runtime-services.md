@@ -6,7 +6,7 @@
 
 ## Runtime Config
 
-共享配置位于 `@blog/config`：
+共享配置位于 `@white55/config`：
 
 - `env.apiBaseUrl`：HTTP API 地址
 - `env.wsUrl`：WebSocket 地址

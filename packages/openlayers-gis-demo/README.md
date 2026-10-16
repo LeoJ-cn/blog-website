@@ -1,6 +1,6 @@
 # 城市巡检 GIS 综合管理平台
 
-`@blog/openlayers-gis-demo` 是面向城市巡检业务的 OpenLayers 综合管理项目。它不是 API 示例集合，而是一个具备地图架构、海量点位、空间交互、业务状态联动和轨迹回放能力的独立 Feature Package。
+`@white55/openlayers-gis-demo` 是面向城市巡检业务的 OpenLayers 综合管理项目。它不是 API 示例集合，而是一个具备地图架构、海量点位、空间交互、业务状态联动和轨迹回放能力的独立 Feature Package。
 
 应用入口：`/playground/solutions/openlayers-gis`
 
@@ -125,7 +125,7 @@ GisManagementDemo.vue
 
 ## 本地持久化
 
-- 浏览器只创建一个物理数据库 `blog-gis`，由 `@blog/indexed-db` 的 `entries` object store 保存数据。
+- 浏览器只创建一个物理数据库 `blog-gis`，由 `@white55/indexed-db` 的 `entries` object store 保存数据。
 - 逻辑 namespace 为 `settings`、`dataset:1k`、`dataset:10k`、`dataset:50k`、`dataset:100k`；量级之间的用户修改互相隔离。
 - 固定数据满足 `1k ⊂ 10k ⊂ 50k ⊂ 100k`，相同事件 ID 在各量级内容一致。首次进入某量级时完整生成并写入；后续刷新直接恢复，不覆盖用户修改。
 - 每个数据集固定使用 128 个事件 shard。单事件写入只重写目标 shard 与 metadata；批量导入和状态推进一次原子提交所有受影响 shard。
@@ -317,7 +317,7 @@ http://127.0.0.1:4173/#/playground/solutions/openlayers-gis
 静态检查：
 
 ```bash
-pnpm --filter @blog/openlayers-gis-demo typecheck
+pnpm --filter @white55/openlayers-gis-demo typecheck
 pnpm typecheck
 pnpm lint
 pnpm build:vite

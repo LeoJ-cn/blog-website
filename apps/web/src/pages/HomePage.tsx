@@ -1,6 +1,6 @@
 import { defineComponent } from 'vue'
 import { RouterLink } from 'vue-router'
-import { buildInfo } from '@blog/config'
+import { buildInfo } from '@white55/config'
 import { getProjectPath, projects } from '../data/projects'
 
 const featuredProjects = projects.filter((project) => project.featured)

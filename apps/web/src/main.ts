@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { startMonitoring } from '@blog/monitoring'
+import { startMonitoring } from '@white55/monitoring'
 import 'element-plus/dist/index.css'
 
 import App from './app/App.vue'

@@ -9,10 +9,10 @@
     "jsxImportSource": "vue",
     "paths": {
       "@/*": ["./src/*"],
-      "@blog/config": ["../../packages/config/src/index.ts"],
-      "@blog/types": ["../../packages/types/src/index.ts"],
-      "@blog/shared": ["../../packages/shared/src/index.ts"],
-      "@blog/ui": ["../../packages/ui/src/index.ts"]
+      "@white55/config": ["../../packages/config/src/index.ts"],
+      "@white55/types": ["../../packages/types/src/index.ts"],
+      "@white55/shared": ["../../packages/shared/src/index.ts"],
+      "@white55/ui": ["../../packages/ui/src/index.ts"]
     }
   },
   // 当前应用源码检查范围；未来技术组件目录暂不纳入入口扫描。

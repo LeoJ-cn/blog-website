@@ -3,7 +3,7 @@ import {
   type CreateKeyValueStoreOptions,
   type KeyValueStore,
   type StorageRuntimeState,
-} from '@blog/indexed-db'
+} from '@white55/indexed-db'
 import {
   DEFAULT_GIS_DATASET_SCALE,
   isGisDatasetScale,

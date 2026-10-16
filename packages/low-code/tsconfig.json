@@ -4,10 +4,10 @@
     "jsx": "preserve",
     "jsxImportSource": "vue",
     "paths": {
-      "@blog/config": ["../../packages/config/src/index.ts"],
-      "@blog/types": ["../../packages/types/src/index.ts"],
-      "@blog/shared": ["../../packages/shared/src/index.ts"],
-      "@blog/ui": ["../../packages/ui/src/index.ts"]
+      "@white55/config": ["../../packages/config/src/index.ts"],
+      "@white55/types": ["../../packages/types/src/index.ts"],
+      "@white55/shared": ["../../packages/shared/src/index.ts"],
+      "@white55/ui": ["../../packages/ui/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],

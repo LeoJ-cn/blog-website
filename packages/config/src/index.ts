@@ -1,4 +1,4 @@
-import type { BuildInfo } from '@blog/types'
+import type { BuildInfo } from '@white55/types'
 
 export interface RuntimeConfig {
   apiBaseUrl: string

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ReactVueMigrationDemo } from '@blog/react-vue-migration-demo'
+import { ReactVueMigrationDemo } from '@white55/react-vue-migration-demo'
 import CodeBlock from '../components/CodeBlock.vue'
 import { isPlaygroundContentTabVisible } from '../data/playground-content-tabs'
 import { projects } from '../data/projects'

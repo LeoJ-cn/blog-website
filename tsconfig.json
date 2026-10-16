@@ -26,10 +26,10 @@
     "useDefineForClassFields": true,
     // 路径值相对当前配置文件解析；子项目需要合并维护自己的 @/*。
     "paths": {
-      "@blog/config": ["./packages/config/src/index.ts"],
-      "@blog/types": ["./packages/types/src/index.ts"],
-      "@blog/shared": ["./packages/shared/src/index.ts"],
-      "@blog/ui": ["./packages/ui/src/index.ts"]
+      "@white55/config": ["./packages/config/src/index.ts"],
+      "@white55/types": ["./packages/types/src/index.ts"],
+      "@white55/shared": ["./packages/shared/src/index.ts"],
+      "@white55/ui": ["./packages/ui/src/index.ts"]
     }
   },
   // 根配置作为共享基础配置，不直接扫描整个仓库。

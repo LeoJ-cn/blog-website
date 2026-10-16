@@ -1,4 +1,4 @@
-import type { FramePerformanceMonitor, FramePerformanceSnapshot } from '@blog/monitoring'
+import type { FramePerformanceMonitor, FramePerformanceSnapshot } from '@white55/monitoring'
 import { onUnmounted, readonly, ref, type Ref } from 'vue'
 
 const DEFAULT_RECORDING_DURATION = 5

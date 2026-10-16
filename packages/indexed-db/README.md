@@ -1,4 +1,4 @@
-# `@blog/indexed-db`
+# `@white55/indexed-db`
 
 通用的浏览器异步 Key-Value 存储 Package。它优先使用 IndexedDB；IndexedDB 不可用、打开失败、打开受阻或连接异常终止时，会切换到当前页面生命周期内共享的内存存储。
 
@@ -19,7 +19,7 @@
 Package 内部固定使用精确版本 `idb@7.1.1`，调用方只从公共入口导入：
 
 ```ts
-import { createKeyValueStore, KeyValueStorageError, type KeyValueStore } from '@blog/indexed-db'
+import { createKeyValueStore, KeyValueStorageError, type KeyValueStore } from '@white55/indexed-db'
 ```
 
 不要依赖 `src/indexed-db`、`src/memory` 或其他内部文件。
@@ -162,4 +162,4 @@ export class LocalGisApi implements GisApi {
 }
 ```
 
-当前由 `LocalGisApi` 使用本 Package；未来实现 `HttpGisApi` 后替换 Feature 层依赖注入即可。真实后端接口、鉴权、重试和网络错误不属于 `@blog/indexed-db`。
+当前由 `LocalGisApi` 使用本 Package；未来实现 `HttpGisApi` 后替换 Feature 层依赖注入即可。真实后端接口、鉴权、重试和网络错误不属于 `@white55/indexed-db`。

@@ -1,4 +1,4 @@
-import type { StorageRuntimeState } from '@blog/indexed-db'
+import type { StorageRuntimeState } from '@white55/indexed-db'
 import type { InspectionEvent } from '../types/inspection-event'
 import type { EventActivity } from '../types/inspection-event'
 import type { EventEvidenceMetadata } from '../types/event-evidence'

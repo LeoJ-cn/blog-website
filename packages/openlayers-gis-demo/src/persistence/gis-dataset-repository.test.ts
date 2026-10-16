@@ -3,7 +3,7 @@ import {
   createKeyValueStore,
   type CreateKeyValueStoreOptions,
   type KeyValueStore,
-} from '@blog/indexed-db'
+} from '@white55/indexed-db'
 import type { InspectionEvent } from '../types/inspection-event'
 import {
   GIS_EVENT_SHARD_COUNT,

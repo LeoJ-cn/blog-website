@@ -1,4 +1,4 @@
-# @blog/react-vue-migration-demo
+# @white55/react-vue-migration-demo
 
 在现有 Vue Blog 中展示真实 React → Vue 渐进迁移过程的独立技术 Demo Package。
 
@@ -31,7 +31,7 @@ Package 只导出一个适合 Vue 宿主使用的组件：
 
 ```vue
 <script setup lang="ts">
-import { ReactVueMigrationDemo } from '@blog/react-vue-migration-demo'
+import { ReactVueMigrationDemo } from '@white55/react-vue-migration-demo'
 </script>
 
 <template>
@@ -143,10 +143,10 @@ React 完全迁移完成后，生产项目删除 Legacy Code 与 Migration Tempo
 
 ```bash
 # 子包单元测试
-pnpm --filter @blog/react-vue-migration-demo test
+pnpm --filter @white55/react-vue-migration-demo test
 
 # 子包类型检查
-pnpm --filter @blog/react-vue-migration-demo typecheck
+pnpm --filter @white55/react-vue-migration-demo typecheck
 
 # 全仓 Lint
 pnpm lint

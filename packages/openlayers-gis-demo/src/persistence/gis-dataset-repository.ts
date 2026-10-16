@@ -3,7 +3,7 @@ import {
   type CreateKeyValueStoreOptions,
   type KeyValueStore,
   type StorageRuntimeState,
-} from '@blog/indexed-db'
+} from '@white55/indexed-db'
 import { generateInspectionEvents } from '../mock/generate-events'
 import { mockInspectionRegions } from '../mock/regions'
 import type {

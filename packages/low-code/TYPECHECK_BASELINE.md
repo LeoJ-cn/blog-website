@@ -160,4 +160,4 @@
 
 ### Gate 评估
 
-经用户确认，根 `pnpm typecheck` 已串行执行 Web 应用的 `vue-tsc` 与 `@blog/low-code` 的独立类型检查。任何一侧失败都会使根命令以非 0 退出，从而避免常规检查遗漏 low-code 回归。
+经用户确认，根 `pnpm typecheck` 已串行执行 Web 应用的 `vue-tsc` 与 `@white55/low-code` 的独立类型检查。任何一侧失败都会使根命令以非 0 退出，从而避免常规检查遗漏 low-code 回归。
