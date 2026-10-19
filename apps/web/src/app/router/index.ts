@@ -16,6 +16,22 @@ const router = createRouter({
       redirect: '/playground/solutions',
       children: [
         {
+          path: 'ui',
+          redirect: '/playground/ui/docs',
+        },
+        {
+          path: 'ui/docs/:component?',
+          name: 'ui-docs',
+          component: () => import('ui-docs').then((module) => module.UiDocsPage),
+          props: true,
+        },
+        {
+          path: 'ui/playground/:component?',
+          name: 'ui-playground',
+          component: () => import('ui-playground').then((module) => module.UiPlaygroundPage),
+          props: true,
+        },
+        {
           path: 'solutions',
           redirect: '/playground/solutions/openlayers-gis',
         },
@@ -87,6 +103,23 @@ const router = createRouter({
       component: () => import('../../pages/NotFoundPage.vue'),
     },
   ],
+})
+
+function isPlaygroundPath(path: string): boolean {
+  return path === '/playground' || path.startsWith('/playground/')
+}
+
+router.beforeEach((to, from) => {
+  // 全屏状态写在 URL 中；站内切换技术点时继承它，同页退出全屏和离开 Playground 不受影响。
+  if (
+    from.query.display === 'fullscreen' &&
+    to.query.display === undefined &&
+    from.path !== to.path &&
+    isPlaygroundPath(from.path) &&
+    isPlaygroundPath(to.path)
+  ) {
+    return { path: to.path, query: { ...to.query, display: 'fullscreen' }, hash: to.hash }
+  }
 })
 
 export default router

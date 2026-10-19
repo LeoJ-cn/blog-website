@@ -1,0 +1,4 @@
+.ui-dialog {
+  --el-dialog-bg-color: var(--ui-surface);
+  --el-dialog-border-radius: var(--ui-radius-panel);
+}

@@ -1,0 +1,8 @@
+.ui-table {
+  --el-table-bg-color: var(--ui-surface);
+  --el-table-tr-bg-color: var(--ui-surface);
+  --el-table-header-bg-color: var(--ui-surface-raised);
+  --el-table-border-color: var(--ui-border);
+  --el-table-text-color: var(--ui-text);
+  --el-table-header-text-color: var(--ui-text);
+}

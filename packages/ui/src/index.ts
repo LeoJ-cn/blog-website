@@ -1,3 +1,13 @@
 export { default as AppLoading } from './components/AppLoading.vue'
 export { default as AppError } from './components/AppError.vue'
 export { default as EmptyState } from './components/EmptyState.vue'
+export { default as UiButton } from './components/UiButton.vue'
+export { default as UiInput } from './components/UiInput.vue'
+export { default as UiSelect } from './components/UiSelect.vue'
+export { default as UiDialog } from './components/UiDialog.vue'
+export { default as UiLoading } from './components/UiLoading.vue'
+export { default as UiEmptyState } from './components/UiEmptyState.vue'
+export { default as UiForm } from './components/UiForm.vue'
+export { default as UiTable } from './components/UiTable.vue'
+// 组合组件的子项继续使用 Element Plus 原协议，避免复制校验和列定义状态机。
+export { ElFormItem as UiFormItem, ElOption as UiOption, ElTableColumn as UiTableColumn } from 'element-plus'

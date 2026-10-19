@@ -15,6 +15,11 @@ const categories = (Object.keys(categoryMetadata) as ProjectCategory[]).map((slu
   projects: getProjectsByCategory(slug),
 }))
 
+// 分类和项目入口可能重定向，详情页也会增加子路径；按完整路径段判断归属，避免相似前缀误高亮。
+function isCurrentPath(path: string): boolean {
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
+
 function enterFullscreen() {
   // 使用 URL 保存展示模式，使刷新、分享链接和浏览器前进后退都能恢复相同布局。
   void router.replace({ query: { ...route.query, display: 'fullscreen' } })
@@ -53,7 +58,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleFullscreenShor
       <aside class="playground-sidebar" aria-label="技术点导航">
         <nav class="playground-nav">
           <div v-for="category in categories" :key="category.slug" class="playground-nav__group">
-            <RouterLink :to="`/playground/${category.slug}`" class="playground-nav__category">
+            <RouterLink
+              :to="`/playground/${category.slug}`"
+              class="playground-nav__category"
+              :class="{ 'router-link-active': isCurrentPath(`/playground/${category.slug}`) }"
+            >
               <span>
                 <strong>{{ category.name }}</strong>
                 <small>{{ category.hint }}</small>
@@ -65,6 +74,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleFullscreenShor
               :key="project.slug"
               :to="getProjectPath(category.slug, project.slug)"
               class="playground-nav__project"
+              :class="{ 'router-link-active': isCurrentPath(getProjectPath(category.slug, project.slug)) }"
             >
               {{ project.title }}
             </RouterLink>

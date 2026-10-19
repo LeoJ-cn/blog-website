@@ -15,9 +15,12 @@ const tabs = [
   { id: 'compatibility', label: '兼容性' },
 ] as const
 
+// 性能指标内容暂未开放导航，状态协议仍保留该分支供后续启用。
+type ContentTabId = (typeof tabs)[number]['id'] | 'metrics'
+
 const project = projects.find((item) => item.slug === 'advanced-image-loader')!
 const renderMode = ref<'normal' | 'optimized'>('optimized')
-const activeTab = ref<(typeof tabs)[number]['id']>('demo')
+const activeTab = ref<ContentTabId>('demo')
 const activeSourceIndex = ref(0)
 const activeSource = computed(() => project.sources[activeSourceIndex.value])
 const performancePanel = ref<InstanceType<typeof PerformancePanel> | null>(null)

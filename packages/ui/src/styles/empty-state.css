@@ -1,0 +1,19 @@
+.ui-empty-state {
+  align-items: center;
+  color: var(--ui-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-content);
+  padding: var(--ui-space-panel);
+  text-align: center;
+}
+
+.ui-empty-state__title {
+  color: var(--ui-text);
+  font-size: 18px;
+  margin: 0;
+}
+
+.ui-empty-state__description {
+  margin: 0;
+}

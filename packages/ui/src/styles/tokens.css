@@ -1,0 +1,19 @@
+/* 基础 Token 只定义原始设计值；组件不得直接依赖这一层。 */
+:root {
+  --ui-base-mint-400: #62e6b5;
+  --ui-base-mint-500: #28bd89;
+  --ui-base-slate-950: #0b1020;
+  --ui-base-slate-900: #141c30;
+  --ui-base-slate-800: #26334a;
+  --ui-base-slate-500: #8e9bb8;
+  --ui-base-slate-100: #e8edf7;
+  --ui-base-white: #fff;
+  --ui-base-red-500: #e85b76;
+  --ui-base-space-1: 4px;
+  --ui-base-space-2: 8px;
+  --ui-base-space-3: 12px;
+  --ui-base-space-4: 16px;
+  --ui-base-space-6: 24px;
+  --ui-base-radius-sm: 6px;
+  --ui-base-radius-md: 10px;
+}

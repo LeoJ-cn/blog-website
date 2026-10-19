@@ -25,6 +25,11 @@ export const categoryMetadata: Record<
     hint: '复杂业务解决方案',
     description: '展示面向真实业务场景的模块设计、状态联动和综合工程能力。',
   },
+  ui: {
+    title: 'UI 组件库',
+    hint: '组件文档与交互展示',
+    description: '基于 Element Plus 的组件设计、主题规范与交互演示。',
+  },
   engineering: {
     title: 'Engineering',
     hint: '架构与迁移',
@@ -43,6 +48,30 @@ export const categoryMetadata: Record<
 }
 
 export const projects: ProjectDefinition[] = [
+  {
+    slug: 'docs',
+    title: '组件文档',
+    summary: '组件用法、API 与主题规范',
+    description: '查看组件定位、公共 API、主题变量和无障碍说明。',
+    category: 'ui',
+    status: 'active',
+    tags: ['Vue 3', 'Element Plus', 'Design System'],
+    featured: false,
+    updatedAt: '2026-10-19',
+    sources: [],
+  },
+  {
+    slug: 'playground',
+    title: '交互演示',
+    summary: '组件状态与交互实验',
+    description: '通过可操作示例查看组件状态与主题效果。',
+    category: 'ui',
+    status: 'active',
+    tags: ['Vue 3', 'Element Plus', 'Playground'],
+    featured: false,
+    updatedAt: '2026-10-19',
+    sources: [],
+  },
   {
     slug: 'openlayers-gis',
     title: '城市巡检 GIS 平台',

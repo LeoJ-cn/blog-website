@@ -1,0 +1,54 @@
+/* 语义 Token 由主题赋值，Element Plus 变量只在此处单向映射。 */
+.ui-theme,
+.ui-theme[data-ui-theme='dark'],
+:root[data-ui-theme='dark'] {
+  --ui-surface: var(--ui-base-slate-900);
+  --ui-surface-raised: var(--ui-base-slate-800);
+  --ui-text: var(--ui-base-slate-100);
+  --ui-text-muted: var(--ui-base-slate-500);
+  --ui-border: #40506d;
+  --ui-action: var(--ui-base-mint-400);
+  --ui-action-hover: var(--ui-base-mint-500);
+  --ui-danger: var(--ui-base-red-500);
+  --ui-focus: var(--ui-base-mint-400);
+  --ui-radius-control: var(--ui-base-radius-sm);
+  --ui-radius-panel: var(--ui-base-radius-md);
+  --ui-space-inline: var(--ui-base-space-2);
+  --ui-space-content: var(--ui-base-space-3);
+  --ui-space-panel: var(--ui-base-space-6);
+  --ui-icon-size: 16px;
+  --el-color-primary: var(--ui-action);
+  --el-color-primary-light-3: #80edc6;
+  --el-color-primary-light-5: #a7f3d7;
+  --el-color-primary-light-7: #cef9e9;
+  --el-color-primary-light-8: #dffbef;
+  --el-color-primary-light-9: #effdf7;
+  --el-color-primary-dark-2: var(--ui-action-hover);
+  --el-color-danger: var(--ui-danger);
+  --el-text-color-primary: var(--ui-text);
+  --el-text-color-regular: var(--ui-text-muted);
+  --el-bg-color: var(--ui-surface);
+  --el-bg-color-overlay: var(--ui-surface-raised);
+  --el-border-color: var(--ui-border);
+
+  color: var(--ui-text);
+}
+
+.ui-theme[data-ui-theme='light'],
+:root[data-ui-theme='light'] {
+  --ui-surface: var(--ui-base-white);
+  --ui-surface-raised: #f2f5fa;
+  --ui-text: #1c2940;
+  --ui-text-muted: #57647a;
+  --ui-border: #c9d2df;
+  --ui-action: #16835f;
+  --ui-action-hover: #126d50;
+  --ui-danger: #c73550;
+  --ui-focus: #16835f;
+  --el-color-primary-light-3: #59a98c;
+  --el-color-primary-light-5: #8ac1ad;
+  --el-color-primary-light-7: #bad9ce;
+  --el-color-primary-light-8: #d0e6de;
+  --el-color-primary-light-9: #e8f3ef;
+  --el-color-primary-dark-2: var(--ui-action-hover);
+}

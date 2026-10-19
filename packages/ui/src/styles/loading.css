@@ -1,0 +1,21 @@
+.ui-loading {
+  align-items: center;
+  color: var(--ui-text-muted);
+  display: inline-flex;
+  gap: var(--ui-space-inline);
+}
+
+.ui-loading__spinner {
+  animation: ui-loading-spin 0.8s linear infinite;
+  border: 2px solid var(--ui-border);
+  border-radius: 50%;
+  border-top-color: var(--ui-action);
+  height: var(--ui-icon-size);
+  width: var(--ui-icon-size);
+}
+
+@keyframes ui-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

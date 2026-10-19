@@ -8,6 +8,7 @@ export default tseslint.config(
     ignores: [
       'dist-vite/**',
       'dist-webpack/**',
+      '**/dist/**',
       'node_modules/**',
       'coverage/**',
       '待加入项目/**',

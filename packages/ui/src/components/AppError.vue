@@ -7,10 +7,12 @@
 </template>
 
 <script setup lang="ts">
+import type { PropType } from 'vue'
+
 const props = defineProps({
   title: { type: String, default: '出现了一点问题' },
   message: { type: String, default: '请稍后再试。' },
-  retry: { type: Function, default: undefined },
+  retry: { type: Function as PropType<() => void>, default: undefined },
 })
 </script>
 
