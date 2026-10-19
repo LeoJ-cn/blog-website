@@ -1,0 +1,1 @@
+System.register(["./chunk-legacy-BJCDrwzK.js"],function(e,t){"use strict";var r,s;return{setters:[e=>{r=e.G,s=e.u}],execute:function(){e("u",({from:e,replacement:t,scope:c,version:n,ref:u,type:i="API"},m)=>{r(()=>s(m),e=>{},{immediate:!0})})}}});
