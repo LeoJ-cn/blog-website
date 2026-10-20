@@ -53,10 +53,10 @@
 
   "files.exclude": {
     "**/.git": true,
-    "**/.DS_Store": true,
-    "**/dist": true,
-    "**/dist-vite": true,
-    "**/dist-webpack": true
+    "**/.DS_Store": true
+    // "**/dist": true,
+    // "**/dist-vite": true,
+    // "**/dist-webpack": true
   },
 
   "search.exclude": {

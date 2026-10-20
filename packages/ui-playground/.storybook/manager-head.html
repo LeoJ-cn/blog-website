@@ -1,0 +1,26 @@
+<script>
+  // Storybook 在切换 story 时会重写浏览器标题；统一保持站点品牌标题。
+  ;(() => {
+    const pageTitle = 'Leoj的组件库'
+
+    const keepTitle = () => {
+      if (document.title !== pageTitle) document.title = pageTitle
+    }
+
+    const start = () => {
+      keepTitle()
+      // Manager 可能替换整个 title 节点，因此监听 head 而不是旧节点本身。
+      new MutationObserver(keepTitle).observe(document.head, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      })
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start, { once: true })
+    } else {
+      start()
+    }
+  })()
+</script>

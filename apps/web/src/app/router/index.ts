@@ -22,14 +22,12 @@ const router = createRouter({
         {
           path: 'ui/docs/:component?',
           name: 'ui-docs',
-          component: () => import('ui-docs').then((module) => module.UiDocsPage),
-          props: true,
+          component: () => import('../../pages/PlaygroundUiDocsPage.vue'),
         },
         {
           path: 'ui/playground/:component?',
-          name: 'ui-playground',
-          component: () => import('ui-playground').then((module) => module.UiPlaygroundPage),
-          props: true,
+          // 旧演示书签统一回到简介页；组件目录与示例由 Storybook 维护。
+          redirect: '/playground/ui/docs',
         },
         {
           path: 'solutions',

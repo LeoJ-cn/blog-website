@@ -1,0 +1,17 @@
+.ui-docs-page {
+  color: #e8edf7;
+}
+
+.ui-docs-page__eyebrow {
+  color: #62e6b5;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ui-docs-page header > a {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 12px;
+  color: #62e6b5;
+}
