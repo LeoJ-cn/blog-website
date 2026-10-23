@@ -39,6 +39,24 @@ const router = createRouter({
           component: () => import('../../pages/PlaygroundGisPage.vue'),
         },
         {
+          path: 'visualization',
+          redirect: '/playground/visualization/echarts',
+        },
+        {
+          path: 'visualization/echarts',
+          name: 'playground-echarts-day01',
+          component: () => import('../../pages/PlaygroundEChartsDay01Page.vue'),
+        },
+        {
+          path: 'visualization/dashboard',
+          name: 'playground-visualization-dashboard',
+          component: () => import('../../pages/PlaygroundVisualizationDashboardPage.vue'),
+        },
+        {
+          path: 'solutions/echarts-day01',
+          redirect: '/playground/visualization/echarts',
+        },
+        {
           path: 'solutions/low-code',
           name: 'playground-low-code',
           component: () => import('../../pages/PlaygroundLowCodePage.vue'),
@@ -94,6 +112,10 @@ const router = createRouter({
           component: () => import('../../pages/PlaygroundTextLabelingPage.vue'),
         },
       ],
+    },
+    {
+      path: '/echarts/day01',
+      redirect: '/playground/visualization/echarts',
     },
     {
       path: '/:pathMatch(.*)*',

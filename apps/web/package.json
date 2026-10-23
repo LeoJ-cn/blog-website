@@ -37,6 +37,7 @@
     "webpack-dev-server": "5.2.0"
   },
   "dependencies": {
+    "@white55/visualization": "workspace:0.1.0",
     "@white55/config": "workspace:*",
     "@white55/http": "workspace:^",
     "@white55/low-code": "workspace:2.0.0",
