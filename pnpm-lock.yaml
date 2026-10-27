@@ -62,9 +62,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@white55/visualization':
-        specifier: workspace:0.1.0
-        version: link:../../packages/visualization
       '@white55/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -86,6 +83,9 @@ importers:
       '@white55/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@white55/visualization':
+        specifier: workspace:0.1.0
+        version: link:../../packages/visualization
       '@white55/websocket':
         specifier: workspace:^
         version: link:../../packages/websocket
@@ -331,6 +331,18 @@ importers:
         version: 2.2.0(typescript@5.6.3)
 
   packages/shared: {}
+
+  packages/threejs-demo:
+    devDependencies:
+      typescript:
+        specifier: 5.6.3
+        version: 5.6.3
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.6.3)
+      vue-tsc:
+        specifier: 2.2.0
+        version: 2.2.0(typescript@5.6.3)
 
   packages/types: {}
 

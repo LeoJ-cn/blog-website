@@ -130,3 +130,6 @@ Codex 通常从仓库根目录工作，因此不能依赖子目录 `AGENTS.md` �
 ## Git 原则
 
 当前开发分支为 `feature/v2-blog-website`。提交信息遵循 Conventional Commits，但当前不将格式作为阻断性 Gate。
+
+- 只有用户在当前请求中明确要求使用 Git worktree 时，Agent 才允许创建、切换或迁移到 worktree；不得因实施计划、Skill 建议、隔离开发惯例或仓库已有 worktree 而推定用户授权。
+- 用户未明确要求 worktree 时，所有分析、修改和验证均在当前工作目录与当前分支内完成；若适用流程将 worktree 列为必需步骤，应跳过该步骤并如实说明。
