@@ -1,1 +1,0 @@
-import{c as e,d as o,a as s,b as a,l as c}from"./chunk-use-form-common-props-Cq7buZJo.js";const l=o([String,Object,Function]),n={Close:e},i={validating:c,success:a,error:s};export{n as C,i as V,l as i};

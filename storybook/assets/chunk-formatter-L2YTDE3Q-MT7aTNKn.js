@@ -1,0 +1,1 @@
+import{a as i}from"./chunk-DocsRenderer-JROSPFPF-0yPSLBAI.js";import{e as m,f as a}from"./entry-iframe-BG0HnIjD.js";import"./chunk-preload-helper-C1FmrZbK.js";var o=a(i(),1),s=(0,o.default)(2)(async(e,r)=>e===!1?r:m(r));export{s as formatter};
