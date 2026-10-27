@@ -9,5 +9,8 @@ export { default as UiLoading } from './components/UiLoading.vue'
 export { default as UiEmptyState } from './components/UiEmptyState.vue'
 export { default as UiForm } from './components/UiForm.vue'
 export { default as UiTable } from './components/UiTable.vue'
+export { default as UiCheckbox } from './components/UiCheckbox.vue'
+export { default as UiRate } from './components/UiRate.vue'
+export { default as UiIcon } from './components/UiIcon.vue'
 // 组合组件的子项继续使用 Element Plus 原协议，避免复制校验和列定义状态机。
 export { ElFormItem as UiFormItem, ElOption as UiOption, ElTableColumn as UiTableColumn } from 'element-plus'

@@ -20,6 +20,9 @@
     "./empty-state": "./src/entries/empty-state.ts",
     "./form": "./src/entries/form.ts",
     "./table": "./src/entries/table.ts",
+    "./checkbox": "./src/entries/checkbox.ts",
+    "./rate": "./src/entries/rate.ts",
+    "./icon": "./src/entries/icon.ts",
     "./tokens.css": "./src/styles/tokens.css",
     "./theme.css": "./src/styles/theme.css",
     "./button.css": "./src/styles/button.css",
@@ -29,7 +32,10 @@
     "./loading.css": "./src/styles/loading.css",
     "./empty-state.css": "./src/styles/empty-state.css",
     "./form.css": "./src/styles/form.css",
-    "./table.css": "./src/styles/table.css"
+    "./table.css": "./src/styles/table.css",
+    "./checkbox.css": "./src/styles/checkbox.css",
+    "./rate.css": "./src/styles/rate.css",
+    "./icon.css": "./src/styles/icon.css"
   },
   "sideEffects": ["./src/styles/*.css"],
   "files": ["dist"],

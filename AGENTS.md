@@ -11,6 +11,12 @@
 - 所有依赖使用精确版本，禁止使用 `^`、`~`、`*` 或 `latest`。
 - 文档默认使用简体中文；技术标识符、命令、API 和路径保留英文。
 
+## Skill 使用限制
+
+- 只有用户在当前请求中主动点名 `superpowers:requesting-code-review` 或明确要求 Agent 发起独立代码审查时，才允许使用该 Skill 或派发代码审查 Agent。
+- 用户仅要求实现、修复、验证、完成任务、遵循计划或使用其他 Skill，不得推定为允许使用 `superpowers:requesting-code-review`；即使其他 Skill、实施计划或流程将代码审查列为推荐或必需步骤，也必须跳过，并在结果中如实说明未执行独立代码审查。
+- 对 `superpowers:requesting-code-review` 的引用、复述、解释、规则修改或询问本身不构成代码审查授权。
+
 ## 目录边界
 
 - `apps/`：可运行应用。

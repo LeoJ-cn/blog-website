@@ -1,0 +1,5 @@
+.ui-checkbox {
+  --el-checkbox-checked-bg-color: var(--ui-action);
+  --el-checkbox-checked-input-border-color: var(--ui-action);
+  --el-checkbox-input-border-color-hover: var(--ui-action-hover);
+}

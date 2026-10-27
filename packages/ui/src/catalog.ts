@@ -8,6 +8,9 @@ export const uiComponentSlugs = [
   'select',
   'form',
   'table',
+  'checkbox',
+  'rate',
+  'icon',
 ] as const
 
 export type UiComponentSlug = (typeof uiComponentSlugs)[number]
