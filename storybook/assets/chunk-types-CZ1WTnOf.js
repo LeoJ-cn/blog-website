@@ -1,0 +1,1 @@
+import{b as n}from"./chunk-install-C6AfjDcU.js";function s(e){return e==null}const i=e=>e===void 0,r=e=>typeof e=="boolean",o=e=>typeof e=="number",a=e=>typeof Element>"u"?!1:e instanceof Element,f=e=>s(e),u=e=>n(e)?!Number.isNaN(Number(e)):!1;export{o as a,u as b,i as c,s as d,r as e,f,a as i};
