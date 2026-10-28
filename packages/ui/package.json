@@ -23,6 +23,19 @@
     "./checkbox": "./src/entries/checkbox.ts",
     "./rate": "./src/entries/rate.ts",
     "./icon": "./src/entries/icon.ts",
+    "./icons": "./src/entries/icons.ts",
+    "./card": "./src/entries/card.ts",
+    "./avatar": "./src/entries/avatar.ts",
+    "./menu": "./src/entries/menu.ts",
+    "./sub-menu": "./src/entries/sub-menu.ts",
+    "./breadcrumb": "./src/entries/breadcrumb.ts",
+    "./tabs": "./src/entries/tabs.ts",
+    "./dropdown": "./src/entries/dropdown.ts",
+    "./statistic": "./src/entries/statistic.ts",
+    "./trend": "./src/entries/trend.ts",
+    "./progress": "./src/entries/progress.ts",
+    "./list": "./src/entries/list.ts",
+    "./tooltip": "./src/entries/tooltip.ts",
     "./tokens.css": "./src/styles/tokens.css",
     "./theme.css": "./src/styles/theme.css",
     "./button.css": "./src/styles/button.css",
@@ -35,15 +48,33 @@
     "./table.css": "./src/styles/table.css",
     "./checkbox.css": "./src/styles/checkbox.css",
     "./rate.css": "./src/styles/rate.css",
-    "./icon.css": "./src/styles/icon.css"
+    "./icon.css": "./src/styles/icon.css",
+    "./card.css": "./src/styles/card.css",
+    "./avatar.css": "./src/styles/avatar.css",
+    "./menu.css": "./src/styles/menu.css",
+    "./sub-menu.css": "./src/styles/menu.css",
+    "./breadcrumb.css": "./src/styles/breadcrumb.css",
+    "./tabs.css": "./src/styles/tabs.css",
+    "./dropdown.css": "./src/styles/dropdown.css",
+    "./statistic.css": "./src/styles/statistic.css",
+    "./trend.css": "./src/styles/trend.css",
+    "./progress.css": "./src/styles/progress.css",
+    "./list.css": "./src/styles/list.css",
+    "./tooltip.css": "./src/styles/tooltip.css"
   },
-  "sideEffects": ["./src/styles/*.css"],
-  "files": ["dist"],
+  "sideEffects": [
+    "./src/styles/*.css"
+  ],
+  "files": [
+    "dist"
+  ],
   "peerDependencies": {
+    "@element-plus/icons-vue": "2.3.2",
     "element-plus": "2.9.5",
     "vue": "3.5.13"
   },
   "devDependencies": {
+    "@element-plus/icons-vue": "2.3.2",
     "@vitejs/plugin-vue": "5.2.1",
     "element-plus": "2.9.5",
     "typescript": "5.6.3",

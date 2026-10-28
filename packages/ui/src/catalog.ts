@@ -11,6 +11,18 @@ export const uiComponentSlugs = [
   'checkbox',
   'rate',
   'icon',
+  'card',
+  'avatar',
+  'menu',
+  'sub-menu',
+  'breadcrumb',
+  'tabs',
+  'dropdown',
+  'statistic',
+  'trend',
+  'progress',
+  'list',
+  'tooltip',
 ] as const
 
 export type UiComponentSlug = (typeof uiComponentSlugs)[number]

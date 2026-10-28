@@ -1,0 +1,34 @@
+.ui-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-trend__indicator {
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+.ui-trend__direction {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ui-trend--up .ui-trend__indicator {
+  color: var(--ui-color-success);
+}
+
+.ui-trend--down .ui-trend__indicator {
+  color: var(--ui-color-danger);
+}
+
+.ui-trend--flat .ui-trend__indicator {
+  color: var(--ui-color-text-muted);
+}

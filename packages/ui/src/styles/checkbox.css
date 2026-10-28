@@ -1,5 +1,15 @@
 .ui-checkbox {
-  --el-checkbox-checked-bg-color: var(--ui-action);
-  --el-checkbox-checked-input-border-color: var(--ui-action);
-  --el-checkbox-input-border-color-hover: var(--ui-action-hover);
+  --el-checkbox-checked-bg-color: var(--ui-color-text);
+  --el-checkbox-checked-input-border-color: var(--ui-color-text);
+  --el-checkbox-checked-text-color: var(--ui-color-text);
+  --el-checkbox-input-border-color-hover: var(--ui-color-border-strong);
+  --el-checkbox-text-color: var(--ui-color-text-secondary);
+}
+
+.ui-checkbox .el-checkbox__inner {
+  border-radius: 4px;
+}
+
+.ui-checkbox:focus-within .el-checkbox__inner {
+  box-shadow: 0 0 0 3px var(--ui-color-focus);
 }

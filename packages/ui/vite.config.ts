@@ -24,13 +24,27 @@ export default defineConfig({
         checkbox: entry('checkbox'),
         rate: entry('rate'),
         icon: entry('icon'),
+        icons: entry('icons'),
+        card: entry('card'),
+        avatar: entry('avatar'),
+        menu: entry('menu'),
+        'sub-menu': entry('sub-menu'),
+        breadcrumb: entry('breadcrumb'),
+        tabs: entry('tabs'),
+        dropdown: entry('dropdown'),
+        statistic: entry('statistic'),
+        trend: entry('trend'),
+        progress: entry('progress'),
+        list: entry('list'),
+        tooltip: entry('tooltip'),
       },
       formats: ['es'],
       fileName: (_format, name) => `${name}.js`,
     },
     rollupOptions: {
       // Vue 与 Element Plus 由宿主提供，避免组件库重复打包运行时。
-      external: (id) => id === 'vue' || id.startsWith('element-plus'),
+      external: (id) =>
+        id === 'vue' || id.startsWith('element-plus') || id.startsWith('@element-plus/icons-vue'),
     },
   },
 })

@@ -1,5 +1,12 @@
 .ui-form {
-  --el-color-danger: var(--ui-danger);
+  --el-color-danger: var(--ui-color-danger);
+  --el-text-color-regular: var(--ui-color-text-secondary);
+}
+
+.ui-form .el-form-item__label {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-font-size-sm);
+  font-weight: 500;
 }
 
 .ui-form .el-form-item__error {

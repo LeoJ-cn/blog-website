@@ -1,0 +1,67 @@
+{
+  "request": {
+    "fileKey": "nNucEWzFynloGtIBf1B0Bc",
+    "nodeId": "549:8646",
+    "clientFrameworks": "vue",
+    "clientLanguages": "typescript,html,css"
+  },
+  "initialResponse": {
+    "content": [
+      {
+        "type": "text",
+        "payloadFormat": "XML-like sparse metadata",
+        "rootNode": {
+          "id": "549:8646",
+          "name": "Dashboard Overview",
+          "type": "frame",
+          "width": 1440,
+          "height": 1024
+        }
+      },
+      {
+        "type": "text",
+        "payloadFormat": "instruction",
+        "summary": "设计过大，服务器要求按子节点继续调用 get_design_context。"
+      }
+    ],
+    "isError": false,
+    "status": "SPARSE"
+  },
+  "childRequests": [
+    "24155:24868",
+    "24155:24888",
+    "40380:23816"
+  ],
+  "childResponseObservedBlocks": [
+    {
+      "type": "text",
+      "payloadFormat": "React/TSX code",
+      "observedFeatures": [
+        "export default function",
+        "Tailwind-style className",
+        "data-node-id",
+        "temporary Figma asset URL constants"
+      ]
+    },
+    {
+      "type": "text",
+      "payloadFormat": "implementation guidance"
+    },
+    {
+      "type": "text",
+      "payloadFormat": "style summary"
+    },
+    {
+      "type": "text",
+      "payloadFormat": "component descriptions and documentation links"
+    },
+    {
+      "type": "image",
+      "mimeType": "image/png",
+      "data": "[OMITTED_BASE64]"
+    }
+  ],
+  "isError": false,
+  "status": "PARTIAL",
+  "partialReason": "客户端报告三次子节点调用的合并可见输出被截断，因此没有把截断内容保存成完整原始响应。"
+}

@@ -1,0 +1,20 @@
+.ui-menu {
+  --el-menu-bg-color: transparent;
+  --el-menu-text-color: var(--ui-color-text-secondary);
+  --el-menu-hover-bg-color: var(--ui-color-hover);
+  --el-menu-active-color: var(--ui-color-text);
+  --el-menu-item-height: 42px;
+  --el-menu-sub-item-height: 40px;
+  border: 0;
+}
+
+.ui-menu .el-menu-item,
+.ui-menu .el-sub-menu__title {
+  margin-block: 2px;
+  border-radius: var(--ui-radius-control);
+}
+
+.ui-menu .el-menu-item.is-active {
+  background: var(--ui-color-active);
+  font-weight: 600;
+}

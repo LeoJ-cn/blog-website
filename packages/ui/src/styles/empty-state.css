@@ -1,6 +1,6 @@
 .ui-empty-state {
   align-items: center;
-  color: var(--ui-text-muted);
+  color: var(--ui-color-text-muted);
   display: flex;
   flex-direction: column;
   gap: var(--ui-space-content);
@@ -9,11 +9,22 @@
 }
 
 .ui-empty-state__title {
-  color: var(--ui-text);
-  font-size: 18px;
+  color: var(--ui-color-text);
+  font-size: var(--ui-font-size-lg);
+  font-weight: 600;
   margin: 0;
 }
 
 .ui-empty-state__description {
+  max-width: 32rem;
   margin: 0;
+  color: var(--ui-color-text-secondary);
+  line-height: 1.6;
+}
+
+.ui-empty-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ui-space-inline);
 }

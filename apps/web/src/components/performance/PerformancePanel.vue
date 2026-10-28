@@ -63,7 +63,9 @@ function getFrameIntervalLevel(interval: number) {
 </script>
 
 <template>
+  <!-- TODO:zm 暂时关闭盘· -->
   <aside
+    v-if="false"
     class="performance-panel"
     :class="{ 'performance-panel--minimized': minimized }"
     aria-label="动画性能监控"

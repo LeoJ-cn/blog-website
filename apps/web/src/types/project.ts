@@ -1,6 +1,6 @@
 export type ProjectCategory =
   | 'solutions' // 具备完整业务场景和多模块协作的综合解决方案。
-  | 'visualization' // 图表、大屏与数据可视化专项学习实验。
+  // | 'visualization' // 图表、大屏与数据可视化专项学习实验。
   | 'ui' // UI 组件文档与 Storybook 外链，和复杂解决方案平级。
   | 'engineering' // 框架迁移、工程边界与架构演进实践。
   | 'performance' // 加载、调度与运行时性能优化实践。

@@ -1,6 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import type { Component } from 'vue'
+import { computed, markRaw, shallowRef } from 'vue'
 import { UiIcon } from '@white55/ui/icon'
+import * as ElementPlusIcons from '@white55/ui/icons'
+import { UiInput } from '@white55/ui/input'
 import '@white55/ui/icon.css'
+import '@white55/ui/input.css'
+
+const iconEntries = Object.entries(ElementPlusIcons)
+  .map(([name, component]) => ({
+    name,
+    component: markRaw(component as Component),
+  }))
+  .sort((left, right) => left.name.localeCompare(right.name))
 
 const meta = {
   title: '基础组件/Icon',
@@ -11,19 +23,20 @@ const meta = {
     color: '#2563eb',
   },
   render: (args) => ({
-    components: { UiIcon },
+    components: {
+      UiIcon,
+      Search: ElementPlusIcons.Search,
+    },
     setup() {
-      return { args }
+      return { args, searchIcon: ElementPlusIcons.Search }
     },
     template: `
-      <UiIcon v-bind="args" aria-label="收藏">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            fill="currentColor"
-            d="m12 17.27 5.18 3.13-1.37-5.89 4.57-3.96-6.02-.51L12 4.5 9.64 10.04l-6.02.51 4.57 3.96-1.37 5.89L12 17.27Z"
-          />
-        </svg>
-      </UiIcon>
+      <div class="ui-story__row">
+        <UiIcon v-bind="args" :icon="searchIcon" aria-label="搜索" />
+        <UiIcon v-bind="args" aria-label="搜索">
+          <Search />
+        </UiIcon>
+      </div>
     `,
   }),
 } satisfies Meta<typeof UiIcon>
@@ -38,4 +51,40 @@ export const CustomSizeAndColor: Story = {
     size: '2rem',
     color: '#7c3aed',
   },
+}
+
+export const IconCollection: Story = {
+  render: () => ({
+    components: { UiIcon, UiInput },
+    setup() {
+      const keyword = shallowRef('')
+      const filteredIcons = computed(() => {
+        const normalizedKeyword = keyword.value.trim().toLocaleLowerCase()
+
+        if (!normalizedKeyword) return iconEntries
+
+        return iconEntries.filter(({ name }) => name.toLocaleLowerCase().includes(normalizedKeyword))
+      })
+
+      return { filteredIcons, keyword }
+    },
+    template: `
+      <div class="ui-story">
+        <UiInput
+          v-model="keyword"
+          class="ui-story__field"
+          clearable
+          placeholder="搜索图标名称"
+          aria-label="搜索图标名称"
+        />
+        <p class="ui-icon-gallery__summary">共 {{ filteredIcons.length }} 个图标</p>
+        <div class="ui-icon-gallery">
+          <div v-for="item in filteredIcons" :key="item.name" class="ui-icon-gallery__item">
+            <UiIcon :icon="item.component" :size="24" aria-hidden="true" />
+            <span>{{ item.name }}</span>
+          </div>
+        </div>
+      </div>
+    `,
+  }),
 }

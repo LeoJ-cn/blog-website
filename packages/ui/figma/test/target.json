@@ -1,0 +1,31 @@
+{
+  "sourceUrl": "https://www.figma.com/design/nNucEWzFynloGtIBf1B0Bc/Dashboard-UI-Kit---Dashboard--Free-Admin-Dashboard--Community-?node-id=549-8646&t=NjGjZnWGviDkRKMi-0",
+  "fileKey": "nNucEWzFynloGtIBf1B0Bc",
+  "nodeId": "549:8646",
+  "name": "Dashboard Overview",
+  "type": "FRAME",
+  "widthPx": 1440,
+  "heightPx": 1024,
+  "observedSubtreeNodeCount": 880,
+  "scope": "仅包含 549:8646 及其后代节点；不包含同一 Page 的兄弟节点。",
+  "freshReadAttempt": {
+    "date": "2026-10-28",
+    "sessionCreated": true,
+    "requestedTools": [
+      "get_metadata",
+      "get_variable_defs",
+      "get_screenshot"
+    ],
+    "status": "BLOCKED_BY_FIGMA_MCP_STARTER_LIMIT",
+    "mcpIsError": true,
+    "errorCode": "INVALID_ARGUMENT",
+    "remoteMutation": false
+  },
+  "completeness": {
+    "metadata": "OBSERVED_FROM_EARLIER_READ",
+    "variables": "OBSERVED_FROM_EARLIER_READ",
+    "screenshotMetadata": "OBSERVED_FROM_EARLIER_READ",
+    "designContext": "PARTIAL_CLIENT_TRUNCATION",
+    "fullPluginApiLayoutAndStyles": "NOT_EXPORTED_RATE_LIMIT"
+  }
+}

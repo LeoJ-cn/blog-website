@@ -1,0 +1,28 @@
+.ui-tabs {
+  --el-tabs-header-height: 40px;
+}
+
+.ui-tabs .el-tabs__header {
+  margin-bottom: 18px;
+}
+
+.ui-tabs .el-tabs__item {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-font-size);
+  font-weight: 500;
+}
+
+.ui-tabs .el-tabs__item:hover,
+.ui-tabs .el-tabs__item.is-active {
+  color: var(--ui-color-text);
+}
+
+.ui-tabs .el-tabs__active-bar {
+  height: 2px;
+  background: var(--ui-color-text);
+}
+
+.ui-tabs .el-tabs__nav-wrap::after {
+  height: 1px;
+  background: var(--ui-color-divider);
+}

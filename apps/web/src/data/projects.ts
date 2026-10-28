@@ -25,11 +25,11 @@ export const categoryMetadata: Record<
     hint: '复杂业务解决方案',
     description: '展示面向真实业务场景的模块设计、状态联动和综合工程能力。',
   },
-  visualization: {
-    title: '可视化',
-    hint: '图表与数据大屏',
-    description: '聚合 ECharts 核心实验、数据大屏布局和可视化工程实践。',
-  },
+  // visualization: {
+  //   title: '可视化',
+  //   hint: '图表与数据大屏',
+  //   description: '聚合 ECharts 核心实验、数据大屏布局和可视化工程实践。',
+  // },
   ui: {
     title: 'UI 组件库',
     hint: '组件文档与 Storybook',

@@ -1,3 +1,20 @@
 .ui-input {
   --el-input-border-radius: var(--ui-radius-control);
+  --el-input-height: var(--ui-height-control);
+  --el-input-bg-color: var(--ui-color-surface);
+  --el-input-border-color: var(--ui-color-border);
+  --el-input-hover-border-color: var(--ui-color-border-strong);
+  --el-input-focus-border-color: var(--ui-color-primary);
+  --el-input-text-color: var(--ui-color-text);
+}
+
+.ui-input .el-input__wrapper,
+.ui-input .el-textarea__inner {
+  box-shadow: 0 0 0 1px var(--ui-color-border) inset;
+  transition: box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.ui-input .el-input__wrapper.is-focus,
+.ui-input .el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--ui-color-primary) inset, 0 0 0 3px var(--ui-color-focus);
 }

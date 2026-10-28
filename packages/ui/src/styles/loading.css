@@ -1,15 +1,16 @@
 .ui-loading {
   align-items: center;
-  color: var(--ui-text-muted);
+  color: var(--ui-color-text-secondary);
   display: inline-flex;
   gap: var(--ui-space-inline);
+  font-size: var(--ui-font-size-sm);
 }
 
 .ui-loading__spinner {
   animation: ui-loading-spin 0.8s linear infinite;
-  border: 2px solid var(--ui-border);
+  border: 2px solid var(--ui-color-border);
   border-radius: 50%;
-  border-top-color: var(--ui-action);
+  border-top-color: var(--ui-color-primary);
   height: var(--ui-icon-size);
   width: var(--ui-icon-size);
 }

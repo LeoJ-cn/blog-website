@@ -1,0 +1,22 @@
+.ui-card {
+  --el-card-bg-color: var(--ui-color-surface);
+  --el-card-border-color: var(--ui-color-border-soft);
+  --el-card-border-radius: var(--ui-radius-panel);
+  color: var(--ui-color-text);
+}
+
+.ui-card.el-card {
+  overflow: hidden;
+  box-shadow: var(--ui-shadow-panel);
+}
+
+.ui-card .el-card__header,
+.ui-card .el-card__footer {
+  padding: 18px 22px;
+  border-color: var(--ui-color-divider);
+  font-weight: 600;
+}
+
+.ui-card .el-card__body {
+  padding: 22px;
+}

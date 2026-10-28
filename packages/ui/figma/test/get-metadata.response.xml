@@ -1,0 +1,63 @@
+<frame id="549:8646" name="Dashboard Overview" x="954" y="0" width="1440" height="1024">
+  <instance id="24155:24864" name="Sidebar" x="0" y="0" width="212" height="1024" />
+  <instance id="24155:24865" name="RightSidebar" x="1160" y="0" width="280" height="1024" />
+  <instance id="24155:24866" name="Header" x="212" y="0" width="948" height="68" />
+  <frame id="24155:24867" name="Frame" x="240" y="140" width="892" height="1086">
+    <frame id="24155:24868" name="Card" x="0" y="0" width="202" height="112">
+      <instance id="24155:24869" name="Text" x="24" y="24" width="154" height="20" />
+      <frame id="24155:24870" name="Content" x="24" y="52" width="154" height="36">
+        <instance id="24155:24871" name="Rolling number" x="0" y="0" width="72" height="36" />
+        <instance id="24155:24872" name="IconText" x="72" y="10" width="82" height="16" />
+      </frame>
+    </frame>
+    <frame id="24155:24873" name="Card" x="230" y="0" width="202" height="112">
+      <instance id="68213:21039" name="Text" x="24" y="24" width="154" height="20" />
+      <frame id="24155:24875" name="Content" x="24" y="52" width="154" height="36">
+        <instance id="24155:24876" name="Rolling number" x="0" y="0" width="72" height="36" />
+        <instance id="24155:24877" name="IconText" x="72" y="10" width="82" height="16" />
+      </frame>
+    </frame>
+    <frame id="24155:24878" name="Card" x="460" y="0" width="202" height="112">
+      <instance id="24155:24879" name="Text" x="24" y="24" width="154" height="20" />
+      <frame id="24155:24880" name="Content" x="24" y="52" width="154" height="36">
+        <instance id="24155:24881" name="Rolling number" x="0" y="0" width="48" height="36" />
+        <instance id="24155:24882" name="IconText" x="48" y="10" width="106" height="16" />
+      </frame>
+    </frame>
+    <frame id="24155:24883" name="Card" x="690" y="0" width="202" height="112">
+      <instance id="68213:21042" name="Text" x="24" y="24" width="154" height="20" />
+      <frame id="24155:24885" name="Content" x="24" y="52" width="154" height="36">
+        <instance id="24155:24886" name="Rolling number" x="0" y="0" width="72" height="36" />
+        <instance id="24155:24887" name="IconText" x="72" y="10" width="82" height="16" />
+      </frame>
+    </frame>
+    <frame id="24155:24888" name="Block" x="0" y="140" width="662" height="330">
+      <instance id="24155:24889" name="Group" x="24" y="24" width="614" height="20" />
+      <instance id="24155:24890" name="ChartMotion" x="24" y="60" width="614" height="246" />
+    </frame>
+    <frame id="24155:24891" name="Block" x="690" y="140" width="202" height="330">
+      <instance id="24155:24892" name="Text" x="24" y="24" width="154" height="20" />
+      <frame id="24155:24893" name="Frame" x="24" y="60" width="154" height="246">
+        <instance id="24155:24894" name="Text" x="0" y="0" width="57" height="246" />
+        <instance id="24155:24895" name="Horizontal 03" x="73" y="0" width="80" height="246" />
+      </frame>
+    </frame>
+    <frame id="40380:23813" name="Block" x="0" y="498" width="432" height="280">
+      <instance id="40380:23814" name="Text" x="24" y="24" width="384" height="20" />
+      <instance id="80927:21730" name="ChartMotion" x="24" y="60" width="384" height="196" />
+    </frame>
+    <frame id="40380:23816" name="Block" x="460" y="498" width="432" height="280">
+      <instance id="40380:23817" name="Text" x="24" y="24" width="384" height="20" />
+      <frame id="40380:23818" name="Frame" x="24" y="60" width="384" height="196">
+        <instance id="80927:21819" name="DonutChart" x="20" y="37.999996185302734" width="119.99998474121094" height="120.00000762939453" />
+        <instance id="40380:23820" name="Card" x="179.99998474121094" y="40" width="184.00001525878906" height="116" />
+      </frame>
+    </frame>
+    <frame id="40380:23821" name="Block" x="0" y="806" width="892" height="280">
+      <instance id="40380:23822" name="Text" x="24" y="24" width="844" height="20" />
+      <instance id="80927:21849" name="ChartMotion" x="24" y="60" width="844" height="196" />
+    </frame>
+  </frame>
+  <instance id="24155:24907" name="Button" x="1061" y="96" width="71" height="24" />
+  <instance id="24155:24908" name="Text" x="240" y="96" width="81" height="28" />
+</frame>

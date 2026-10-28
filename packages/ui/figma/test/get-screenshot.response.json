@@ -1,0 +1,23 @@
+{
+  "mcpEnvelope": {
+    "content": [
+      {
+        "type": "text",
+        "textEncoding": "JSON string"
+      },
+      {
+        "type": "text",
+        "textEncoding": "download instructions"
+      }
+    ],
+    "isError": false
+  },
+  "parsedTextPayload": {
+    "image_url": "[REDACTED_SHORT_LIVED_URL]",
+    "width": 1024,
+    "height": 729,
+    "format": "png",
+    "original_width": 1440,
+    "original_height": 1024
+  }
+}

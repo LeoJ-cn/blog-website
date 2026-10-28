@@ -1,0 +1,13 @@
+.ui-progress {
+  --el-color-primary: var(--ui-color-primary);
+  --el-fill-color-light: var(--ui-color-surface-muted);
+  --el-text-color-regular: var(--ui-color-text-secondary);
+}
+
+.ui-progress .el-progress-bar__outer {
+  background: var(--ui-color-surface-muted);
+}
+
+.ui-progress .el-progress-bar__inner {
+  transition: width 240ms ease;
+}
