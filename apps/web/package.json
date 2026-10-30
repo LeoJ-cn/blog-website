@@ -44,7 +44,7 @@
     "@white55/monitoring": "workspace:^",
     "@white55/openlayers-gis-demo": "workspace:^",
     "@white55/react-vue-migration-demo": "workspace:*",
-    "@white55/ui": "workspace:*",
+    "@white55/ui": "workspace:0.1.0",
     "@white55/websocket": "workspace:^",
     "bowser": "2.10.0",
     "element-plus": "2.9.5",

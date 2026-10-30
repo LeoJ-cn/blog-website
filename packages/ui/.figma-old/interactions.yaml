@@ -1,0 +1,1276 @@
+- source_node: 11:10532
+  source_name: Property 1=hover
+  trigger: MOUSE_LEAVE
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10533
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10532
+  source_name: Property 1=hover
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:4991
+  transition: null
+  evidence: figma-rest
+- source_node: 11:10537
+  source_name: check-icon
+  trigger: MOUSE_LEAVE
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10533
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10537
+  source_name: check-icon
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:4991
+  transition: null
+  evidence: figma-rest
+- source_node: 11:10558
+  source_name: Property 1=hover
+  trigger: MOUSE_LEAVE
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10557
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_IN
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10562
+  source_name: table-header
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10558
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10662
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10682
+  source_name: Property 1=hover
+  trigger: MOUSE_LEAVE
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10683
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10687
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10930
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10952
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:10974
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:11018
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:11249
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:11420
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:11443
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 11:11467
+  source_name: table-detail
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10682
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 16:4976
+  source_name: close
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:4979
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_IN
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 16:4983
+  source_name: Input-search
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:4978
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 16:53284
+  source_name: radio
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:53281
+  transition: null
+  evidence: figma-rest
+- source_node: 16:53287
+  source_name: radio
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:53281
+  transition: null
+  evidence: figma-rest
+- source_node: 16:5395
+  source_name: folder/default
+  trigger: ON_CLICK
+  action: NODE
+  navigation: NAVIGATE
+  target_node: 16:5413
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 16:5427
+  source_name: Input-search
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:4978
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 16:5445
+  source_name: toggle-text
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10714
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_IN_AND_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 16:5760
+  source_name: close
+  trigger: ON_CLICK
+  action: NODE
+  navigation: NAVIGATE
+  target_node: null
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 16:5794
+  source_name: Input-box
+  trigger: ON_CLICK
+  action: NODE
+  navigation: NAVIGATE
+  target_node: 19:5911
+  transition: null
+  evidence: figma-rest
+- source_node: 19:5146
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5162
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5183
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5206
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5230
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5254
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5275
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5299
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5322
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5345
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5876
+  source_name: Component 1
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 19:5873
+  transition: null
+  evidence: figma-rest
+- source_node: 19:5925
+  source_name: Input-search
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:4978
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:5945
+  source_name: toggle-text
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10714
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_IN_AND_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6018
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6034
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6052
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6070
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6088
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6106
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6124
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6142
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6160
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6178
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6202
+  source_name: close
+  trigger: ON_CLICK
+  action: NODE
+  navigation: NAVIGATE
+  target_node: null
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6214
+  source_name: radio
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:53282
+  transition: null
+  evidence: figma-rest
+- source_node: 19:6219
+  source_name: radio
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:53281
+  transition: null
+  evidence: figma-rest
+- source_node: 19:6229
+  source_name: Component 1
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 19:5873
+  transition: null
+  evidence: figma-rest
+- source_node: 19:6237
+  source_name: button
+  trigger: ON_CLICK
+  action: NODE
+  navigation: NAVIGATE
+  target_node: 19:6296
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6296
+  source_name: dropbox/overlay/filled
+  trigger: AFTER_TIMEOUT
+  action: NODE
+  navigation: NAVIGATE
+  target_node: 19:6686
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6310
+  source_name: Input-search
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:4978
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6330
+  source_name: toggle-text
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10714
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_IN_AND_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6403
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6419
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6437
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6455
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6473
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6491
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6509
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6527
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6545
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6563
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6587
+  source_name: close
+  trigger: ON_CLICK
+  action: NODE
+  navigation: NAVIGATE
+  target_node: null
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6599
+  source_name: radio
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:53282
+  transition: null
+  evidence: figma-rest
+- source_node: 19:6604
+  source_name: radio
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:53281
+  transition: null
+  evidence: figma-rest
+- source_node: 19:6614
+  source_name: Component 1
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 19:5873
+  transition: null
+  evidence: figma-rest
+- source_node: 19:6700
+  source_name: Input-search
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 16:4978
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6716
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6718
+  source_name: toggle-text
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10714
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_IN_AND_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6719
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6720
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6721
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6727
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6728
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6729
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:6761
+  source_name: table-header
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10558
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:7129
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:7154
+  source_name: button
+  trigger: ON_CLICK
+  action: NODE
+  navigation: OVERLAY
+  target_node: 16:5373
+  transition: null
+  evidence: figma-rest
+- source_node: 19:7186
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:7224
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:7262
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:7300
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:7338
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 19:7409
+  source_name: go back
+  trigger: ON_CLICK
+  action: NODE
+  navigation: NAVIGATE
+  target_node: null
+  transition:
+    type: DISSOLVE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10698
+  source_name: down-chevron
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10713
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10728
+  source_name: toggle-text
+  trigger: ON_CLICK
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10714
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_IN_AND_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10760
+  source_name: Property 1=hover
+  trigger: MOUSE_LEAVE
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10761
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10775
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10778
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10781
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10784
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10794
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10797
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10808
+  source_name: sidenav-link
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 7:10760
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: 7:10973
+  source_name: button
+  trigger: ON_CLICK
+  action: NODE
+  navigation: OVERLAY
+  target_node: null
+  transition: null
+  evidence: figma-rest
+- source_node: I11:10562;11:10539
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:10687;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:10930;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:10952;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:10974;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:11018;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:11249;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:11420;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:11443;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I11:11467;11:10640
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest
+- source_node: I19:6761;11:10539
+  source_name: check-icon
+  trigger: MOUSE_ENTER
+  action: NODE
+  navigation: CHANGE_TO
+  target_node: 11:10532
+  transition:
+    type: SMART_ANIMATE
+    easing:
+      type: EASE_OUT
+    duration: 0.30000001192092896
+  evidence: figma-rest

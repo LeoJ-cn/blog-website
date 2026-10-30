@@ -1,69 +1,275 @@
 {
   "name": "@white55/ui",
-  "version": "2.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
   "scripts": {
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
-    "build:vite": "vite build --config vite.config.ts && vue-tsc -p tsconfig.build.json && node scripts/copy-styles.mjs"
+    "build:vite": "vite build --config vite.config.ts && vue-tsc -p tsconfig.build.json && node scripts/copy-styles.mjs",
+    "prepack": "pnpm typecheck && pnpm build:vite"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./catalog": "./src/catalog.ts",
-    "./button": "./src/entries/button.ts",
-    "./input": "./src/entries/input.ts",
-    "./select": "./src/entries/select.ts",
-    "./dialog": "./src/entries/dialog.ts",
-    "./loading": "./src/entries/loading.ts",
-    "./empty-state": "./src/entries/empty-state.ts",
-    "./form": "./src/entries/form.ts",
-    "./table": "./src/entries/table.ts",
-    "./checkbox": "./src/entries/checkbox.ts",
-    "./rate": "./src/entries/rate.ts",
-    "./icon": "./src/entries/icon.ts",
-    "./icons": "./src/entries/icons.ts",
-    "./card": "./src/entries/card.ts",
-    "./avatar": "./src/entries/avatar.ts",
-    "./menu": "./src/entries/menu.ts",
-    "./sub-menu": "./src/entries/sub-menu.ts",
-    "./breadcrumb": "./src/entries/breadcrumb.ts",
-    "./tabs": "./src/entries/tabs.ts",
-    "./dropdown": "./src/entries/dropdown.ts",
-    "./statistic": "./src/entries/statistic.ts",
-    "./trend": "./src/entries/trend.ts",
-    "./progress": "./src/entries/progress.ts",
-    "./list": "./src/entries/list.ts",
-    "./tooltip": "./src/entries/tooltip.ts",
-    "./tokens.css": "./src/styles/tokens.css",
-    "./theme.css": "./src/styles/theme.css",
-    "./button.css": "./src/styles/button.css",
-    "./input.css": "./src/styles/input.css",
-    "./select.css": "./src/styles/select.css",
-    "./dialog.css": "./src/styles/dialog.css",
-    "./loading.css": "./src/styles/loading.css",
-    "./empty-state.css": "./src/styles/empty-state.css",
-    "./form.css": "./src/styles/form.css",
-    "./table.css": "./src/styles/table.css",
-    "./checkbox.css": "./src/styles/checkbox.css",
-    "./rate.css": "./src/styles/rate.css",
-    "./icon.css": "./src/styles/icon.css",
-    "./card.css": "./src/styles/card.css",
-    "./avatar.css": "./src/styles/avatar.css",
-    "./menu.css": "./src/styles/menu.css",
-    "./sub-menu.css": "./src/styles/menu.css",
-    "./breadcrumb.css": "./src/styles/breadcrumb.css",
-    "./tabs.css": "./src/styles/tabs.css",
-    "./dropdown.css": "./src/styles/dropdown.css",
-    "./statistic.css": "./src/styles/statistic.css",
-    "./trend.css": "./src/styles/trend.css",
-    "./progress.css": "./src/styles/progress.css",
-    "./list.css": "./src/styles/list.css",
-    "./tooltip.css": "./src/styles/tooltip.css"
+    ".": {
+      "white-source": "./src/index.ts",
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./catalog": {
+      "white-source": "./src/catalog.ts",
+      "types": "./dist/types/catalog.d.ts",
+      "import": "./dist/catalog.js",
+      "default": "./dist/catalog.js"
+    },
+    "./button": {
+      "white-source": "./src/entries/button.ts",
+      "types": "./dist/types/entries/button.d.ts",
+      "import": "./dist/button.js",
+      "default": "./dist/button.js"
+    },
+    "./input": {
+      "white-source": "./src/entries/input.ts",
+      "types": "./dist/types/entries/input.d.ts",
+      "import": "./dist/input.js",
+      "default": "./dist/input.js"
+    },
+    "./select": {
+      "white-source": "./src/entries/select.ts",
+      "types": "./dist/types/entries/select.d.ts",
+      "import": "./dist/select.js",
+      "default": "./dist/select.js"
+    },
+    "./dialog": {
+      "white-source": "./src/entries/dialog.ts",
+      "types": "./dist/types/entries/dialog.d.ts",
+      "import": "./dist/dialog.js",
+      "default": "./dist/dialog.js"
+    },
+    "./loading": {
+      "white-source": "./src/entries/loading.ts",
+      "types": "./dist/types/entries/loading.d.ts",
+      "import": "./dist/loading.js",
+      "default": "./dist/loading.js"
+    },
+    "./empty-state": {
+      "white-source": "./src/entries/empty-state.ts",
+      "types": "./dist/types/entries/empty-state.d.ts",
+      "import": "./dist/empty-state.js",
+      "default": "./dist/empty-state.js"
+    },
+    "./form": {
+      "white-source": "./src/entries/form.ts",
+      "types": "./dist/types/entries/form.d.ts",
+      "import": "./dist/form.js",
+      "default": "./dist/form.js"
+    },
+    "./table": {
+      "white-source": "./src/entries/table.ts",
+      "types": "./dist/types/entries/table.d.ts",
+      "import": "./dist/table.js",
+      "default": "./dist/table.js"
+    },
+    "./checkbox": {
+      "white-source": "./src/entries/checkbox.ts",
+      "types": "./dist/types/entries/checkbox.d.ts",
+      "import": "./dist/checkbox.js",
+      "default": "./dist/checkbox.js"
+    },
+    "./rate": {
+      "white-source": "./src/entries/rate.ts",
+      "types": "./dist/types/entries/rate.d.ts",
+      "import": "./dist/rate.js",
+      "default": "./dist/rate.js"
+    },
+    "./icon": {
+      "white-source": "./src/entries/icon.ts",
+      "types": "./dist/types/entries/icon.d.ts",
+      "import": "./dist/icon.js",
+      "default": "./dist/icon.js"
+    },
+    "./icons": {
+      "white-source": "./src/entries/icons.ts",
+      "types": "./dist/types/entries/icons.d.ts",
+      "import": "./dist/icons.js",
+      "default": "./dist/icons.js"
+    },
+    "./card": {
+      "white-source": "./src/entries/card.ts",
+      "types": "./dist/types/entries/card.d.ts",
+      "import": "./dist/card.js",
+      "default": "./dist/card.js"
+    },
+    "./avatar": {
+      "white-source": "./src/entries/avatar.ts",
+      "types": "./dist/types/entries/avatar.d.ts",
+      "import": "./dist/avatar.js",
+      "default": "./dist/avatar.js"
+    },
+    "./menu": {
+      "white-source": "./src/entries/menu.ts",
+      "types": "./dist/types/entries/menu.d.ts",
+      "import": "./dist/menu.js",
+      "default": "./dist/menu.js"
+    },
+    "./sub-menu": {
+      "white-source": "./src/entries/sub-menu.ts",
+      "types": "./dist/types/entries/sub-menu.d.ts",
+      "import": "./dist/sub-menu.js",
+      "default": "./dist/sub-menu.js"
+    },
+    "./breadcrumb": {
+      "white-source": "./src/entries/breadcrumb.ts",
+      "types": "./dist/types/entries/breadcrumb.d.ts",
+      "import": "./dist/breadcrumb.js",
+      "default": "./dist/breadcrumb.js"
+    },
+    "./tabs": {
+      "white-source": "./src/entries/tabs.ts",
+      "types": "./dist/types/entries/tabs.d.ts",
+      "import": "./dist/tabs.js",
+      "default": "./dist/tabs.js"
+    },
+    "./dropdown": {
+      "white-source": "./src/entries/dropdown.ts",
+      "types": "./dist/types/entries/dropdown.d.ts",
+      "import": "./dist/dropdown.js",
+      "default": "./dist/dropdown.js"
+    },
+    "./statistic": {
+      "white-source": "./src/entries/statistic.ts",
+      "types": "./dist/types/entries/statistic.d.ts",
+      "import": "./dist/statistic.js",
+      "default": "./dist/statistic.js"
+    },
+    "./trend": {
+      "white-source": "./src/entries/trend.ts",
+      "types": "./dist/types/entries/trend.d.ts",
+      "import": "./dist/trend.js",
+      "default": "./dist/trend.js"
+    },
+    "./progress": {
+      "white-source": "./src/entries/progress.ts",
+      "types": "./dist/types/entries/progress.d.ts",
+      "import": "./dist/progress.js",
+      "default": "./dist/progress.js"
+    },
+    "./list": {
+      "white-source": "./src/entries/list.ts",
+      "types": "./dist/types/entries/list.d.ts",
+      "import": "./dist/list.js",
+      "default": "./dist/list.js"
+    },
+    "./tooltip": {
+      "white-source": "./src/entries/tooltip.ts",
+      "types": "./dist/types/entries/tooltip.d.ts",
+      "import": "./dist/tooltip.js",
+      "default": "./dist/tooltip.js"
+    },
+    "./tokens.css": {
+      "white-source": "./src/styles/tokens.css",
+      "default": "./dist/styles/tokens.css"
+    },
+    "./theme.css": {
+      "white-source": "./src/styles/theme.css",
+      "default": "./dist/styles/theme.css"
+    },
+    "./button.css": {
+      "white-source": "./src/styles/button.css",
+      "default": "./dist/styles/button.css"
+    },
+    "./input.css": {
+      "white-source": "./src/styles/input.css",
+      "default": "./dist/styles/input.css"
+    },
+    "./select.css": {
+      "white-source": "./src/styles/select.css",
+      "default": "./dist/styles/select.css"
+    },
+    "./dialog.css": {
+      "white-source": "./src/styles/dialog.css",
+      "default": "./dist/styles/dialog.css"
+    },
+    "./loading.css": {
+      "white-source": "./src/styles/loading.css",
+      "default": "./dist/styles/loading.css"
+    },
+    "./empty-state.css": {
+      "white-source": "./src/styles/empty-state.css",
+      "default": "./dist/styles/empty-state.css"
+    },
+    "./form.css": {
+      "white-source": "./src/styles/form.css",
+      "default": "./dist/styles/form.css"
+    },
+    "./table.css": {
+      "white-source": "./src/styles/table.css",
+      "default": "./dist/styles/table.css"
+    },
+    "./checkbox.css": {
+      "white-source": "./src/styles/checkbox.css",
+      "default": "./dist/styles/checkbox.css"
+    },
+    "./rate.css": {
+      "white-source": "./src/styles/rate.css",
+      "default": "./dist/styles/rate.css"
+    },
+    "./icon.css": {
+      "white-source": "./src/styles/icon.css",
+      "default": "./dist/styles/icon.css"
+    },
+    "./card.css": {
+      "white-source": "./src/styles/card.css",
+      "default": "./dist/styles/card.css"
+    },
+    "./avatar.css": {
+      "white-source": "./src/styles/avatar.css",
+      "default": "./dist/styles/avatar.css"
+    },
+    "./menu.css": {
+      "white-source": "./src/styles/menu.css",
+      "default": "./dist/styles/menu.css"
+    },
+    "./sub-menu.css": {
+      "white-source": "./src/styles/menu.css",
+      "default": "./dist/styles/menu.css"
+    },
+    "./breadcrumb.css": {
+      "white-source": "./src/styles/breadcrumb.css",
+      "default": "./dist/styles/breadcrumb.css"
+    },
+    "./tabs.css": {
+      "white-source": "./src/styles/tabs.css",
+      "default": "./dist/styles/tabs.css"
+    },
+    "./dropdown.css": {
+      "white-source": "./src/styles/dropdown.css",
+      "default": "./dist/styles/dropdown.css"
+    },
+    "./statistic.css": {
+      "white-source": "./src/styles/statistic.css",
+      "default": "./dist/styles/statistic.css"
+    },
+    "./trend.css": {
+      "white-source": "./src/styles/trend.css",
+      "default": "./dist/styles/trend.css"
+    },
+    "./progress.css": {
+      "white-source": "./src/styles/progress.css",
+      "default": "./dist/styles/progress.css"
+    },
+    "./list.css": {
+      "white-source": "./src/styles/list.css",
+      "default": "./dist/styles/list.css"
+    },
+    "./tooltip.css": {
+      "white-source": "./src/styles/tooltip.css",
+      "default": "./dist/styles/tooltip.css"
+    },
+    "./ui.css": "./dist/ui.css"
   },
   "sideEffects": [
-    "./src/styles/*.css"
+    "**/*.css"
   ],
   "files": [
     "dist"
@@ -81,5 +287,12 @@
     "vite": "6.0.11",
     "vue": "3.5.13",
     "vue-tsc": "2.2.0"
+  },
+  "license": "MIT",
+  "description": "基于 Vue 3 与 Element Plus 的 UI 组件库",
+  "module": "./dist/index.js",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

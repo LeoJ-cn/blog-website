@@ -9,6 +9,14 @@ const config: StorybookConfig = {
   viteFinal: async (viteConfig) => ({
     ...viteConfig,
     base: './',
+    resolve: {
+      ...viteConfig.resolve,
+      // Storybook 始终消费 Workspace 源码，发布包默认入口仍为 dist。
+      conditions: [
+        'white-source',
+        ...(viteConfig.resolve?.conditions ?? ['module', 'browser', 'development|production']),
+      ],
+    },
     build: {
       ...viteConfig.build,
       rollupOptions: {

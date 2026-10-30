@@ -62,7 +62,8 @@ export const createViteCommonConfig = (): UserConfig => ({
     alias: { '@': fileURLToPath(new URL('../../src', import.meta.url)) },
     dedupe: ['vue', 'vue-router', 'pinia'],
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
-    conditions: ['module', 'import', 'browser', 'default'],
+    // Workspace 开发与站点构建直接使用 UI 源码，保留组件热更新。
+    conditions: ['white-source', 'module', 'import', 'browser', 'default'],
     preserveSymlinks: false,
   },
   // 开发服务器启动前的依赖预构建设置。

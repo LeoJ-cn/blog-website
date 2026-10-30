@@ -81,7 +81,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/react-vue-migration-demo
       '@white55/ui':
-        specifier: workspace:*
+        specifier: workspace:0.1.0
         version: link:../../packages/ui
       '@white55/visualization':
         specifier: workspace:0.1.0
@@ -373,7 +373,7 @@ importers:
   packages/ui-playground:
     dependencies:
       '@white55/ui':
-        specifier: workspace:2.0.0
+        specifier: workspace:0.1.0
         version: link:../ui
       element-plus:
         specifier: 2.9.5

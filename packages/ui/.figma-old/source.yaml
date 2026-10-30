@@ -1,0 +1,13 @@
+version: '1'
+
+figma:
+  url: 'https://www.figma.com/design/VyIFQ4ytosxTpdojuMxeUo/Dropbox-Dashboard-B2B-Prototype---5-UI-Screens--Community-?node-id=5-2189'
+  file_key: 'VyIFQ4ytosxTpdojuMxeUo'
+  node_id: '5:2189'
+
+auth:
+  mcp: 'figma_8359'
+  token_env: 'FIGMA_TOKEN_8359'
+
+output:
+  directory: '.figma'

@@ -1,0 +1,57 @@
+以下是 OpenAI 官方 [`.curated`](https://github.com/openai/skills/tree/main/skills/.curated?utm_source=chatgpt.com)[ 精选目录](https://github.com/openai/skills/tree/main/skills/.curated?utm_source=chatgpt.com) 中的 39 个 Skill，根据你的 Vue3、Figma、私有组件库、Playwright、Codex、Node.js 和工程化开发需求，统一按照安装优先级排序。
+
+| 排名 | 优先级 | Skill                                                                                                                                                  | 主要作用                       | 推荐理由                    |
+| -- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- | ----------------------- |
+| 1  | P0  | [figma](https://github.com/openai/skills/tree/main/skills/.curated/figma?utm_source=chatgpt.com)                                                       | Figma MCP 获取设计数据、截图、变量     | 设计稿读取核心能力               |
+| 2  | P0  | [figma-implement-design](https://github.com/openai/skills/tree/main/skills/.curated/figma-implement-design?utm_source=chatgpt.com)                     | 根据 Figma 生成页面及组件代码         | 页面还原核心流程                |
+| 3  | P0  | [figma-code-connect-components](https://github.com/openai/skills/tree/main/skills/.curated/figma-code-connect-components?utm_source=chatgpt.com)       | Figma 组件与代码组件映射            | 对接私有组件库                 |
+| 4  | P0  | [figma-create-design-system-rules](https://github.com/openai/skills/tree/main/skills/.curated/figma-create-design-system-rules?utm_source=chatgpt.com) | 生成设计系统和项目规范                | 约束 AI 优先使用私有组件          |
+| 5  | P0  | [playwright](https://github.com/openai/skills/tree/main/skills/.curated/playwright?utm_source=chatgpt.com)                                             | 浏览器自动化、截图、交互测试             | UI 验证与自动修复              |
+| 6  | P0  | [openai-docs](https://github.com/openai/skills/tree/main/skills/.curated/openai-docs?utm_source=chatgpt.com)                                           | Codex、MCP、OpenAI API 官方文档  | Codex 配置与问题排查           |
+| 7  | P1  | [playwright-interactive](https://github.com/openai/skills/tree/main/skills/.curated/playwright-interactive?utm_source=chatgpt.com)                     | 持久化浏览器交互式调试                | 复杂页面连续验证                |
+| 8  | P1  | [security-best-practices](https://github.com/openai/skills/tree/main/skills/.curated/security-best-practices?utm_source=chatgpt.com)                   | JS/TS 安全检查与修复建议            | 前后端安全治理                 |
+| 9  | P1  | [gh-fix-ci](https://github.com/openai/skills/tree/main/skills/.curated/gh-fix-ci?utm_source=chatgpt.com)                                               | 排查 GitHub Actions CI 失败    | 自动定位构建和测试故障             |
+| 10 | P1  | [cli-creator](https://github.com/openai/skills/tree/main/skills/.curated/cli-creator?utm_source=chatgpt.com)                                           | 根据 API 文档开发可复用 CLI         | SDK、脚手架、自动化工具           |
+| 11 | P1  | [screenshot](https://github.com/openai/skills/tree/main/skills/.curated/screenshot?utm_source=chatgpt.com)                                             | 桌面和应用截图                    | 补充浏览器以外的 UI 验证          |
+| 12 | P1  | [security-threat-model](https://github.com/openai/skills/tree/main/skills/.curated/security-threat-model?utm_source=chatgpt.com)                       | 系统架构安全威胁建模                 | NestJS、认证和权限设计          |
+| 13 | P1  | [gh-address-comments](https://github.com/openai/skills/tree/main/skills/.curated/gh-address-comments?utm_source=chatgpt.com)                           | 处理 GitHub PR Review 意见     | AI 辅助代码审查               |
+| 14 | P1  | [define-goal](https://github.com/openai/skills/tree/main/skills/.curated/define-goal?utm_source=chatgpt.com)                                           | 明确任务目标、范围和交付标准             | 改善复杂任务执行质量              |
+| 15 | P2  | [figma-use](https://github.com/openai/skills/tree/main/skills/.curated/figma-use?utm_source=chatgpt.com)                                               | 通过 Figma Plugin API 操作设计文件 | 需要编辑设计稿时使用              |
+| 16 | P2  | [figma-generate-library](https://github.com/openai/skills/tree/main/skills/.curated/figma-generate-library?utm_source=chatgpt.com)                     | 创建或生成 Figma 组件库            | 建设设计系统时使用               |
+| 17 | P2  | [figma-generate-design](https://github.com/openai/skills/tree/main/skills/.curated/figma-generate-design?utm_source=chatgpt.com)                       | AI 辅助生成设计稿                 | 需要 AI 参与 UI 设计时使用       |
+| 18 | P2  | [figma-create-new-file](https://github.com/openai/skills/tree/main/skills/.curated/figma-create-new-file?utm_source=chatgpt.com)                       | 创建新的 Figma 文件              | 自动化创建设计稿                |
+| 19 | P2  | [sentry](https://github.com/openai/skills/tree/main/skills/.curated/sentry?utm_source=chatgpt.com)                                                     | 分析 Sentry 异常和监控数据          | 接入 Sentry 后价值较高         |
+| 20 | P2  | [security-ownership-map](https://github.com/openai/skills/tree/main/skills/.curated/security-ownership-map?utm_source=chatgpt.com)                     | 分析安全敏感代码的维护责任              | 大型团队安全治理                |
+| 21 | P2  | [migrate-to-codex](https://github.com/openai/skills/tree/main/skills/.curated/migrate-to-codex?utm_source=chatgpt.com)                                 | 从其他 AI 编程工具迁移到 Codex       | 迁移开发工作流时使用              |
+| 22 | P2  | [yeet](https://github.com/openai/skills/tree/main/skills/.curated/yeet?utm_source=chatgpt.com)                                                         | Git 提交、推送及 PR 交付           | 简化 Git 工作流              |
+| 23 | P2  | [cloudflare-deploy](https://github.com/openai/skills/tree/main/skills/.curated/cloudflare-deploy?utm_source=chatgpt.com)                               | Cloudflare 平台部署            | 使用 Cloudflare 时安装       |
+| 24 | P2  | [vercel-deploy](https://github.com/openai/skills/tree/main/skills/.curated/vercel-deploy?utm_source=chatgpt.com)                                       | Vercel 项目部署                | 前端项目部署                  |
+| 25 | P2  | [netlify-deploy](https://github.com/openai/skills/tree/main/skills/.curated/netlify-deploy?utm_source=chatgpt.com)                                     | Netlify 项目部署               | 静态网站部署                  |
+| 26 | P2  | [render-deploy](https://github.com/openai/skills/tree/main/skills/.curated/render-deploy?utm_source=chatgpt.com)                                       | Render 应用部署                | Node.js 服务部署            |
+| 27 | P2  | [pdf](https://github.com/openai/skills/tree/main/skills/.curated/pdf?utm_source=chatgpt.com)                                                           | PDF 读取、生成和处理               | 技术文档、需求文档               |
+| 28 | P2  | [jupyter-notebook](https://github.com/openai/skills/tree/main/skills/.curated/jupyter-notebook?utm_source=chatgpt.com)                                 | Python Notebook 开发与分析      | Python、AI 数据实验          |
+| 29 | P2  | [notion-spec-to-implementation](https://github.com/openai/skills/tree/main/skills/.curated/notion-spec-to-implementation?utm_source=chatgpt.com)       | Notion 需求转开发计划             | 需求驱动开发                  |
+| 30 | P2  | [notion-research-documentation](https://github.com/openai/skills/tree/main/skills/.curated/notion-research-documentation?utm_source=chatgpt.com)       | Notion 技术资料整理              | 技术研究与知识沉淀               |
+| 31 | P2  | [notion-knowledge-capture](https://github.com/openai/skills/tree/main/skills/.curated/notion-knowledge-capture?utm_source=chatgpt.com)                 | 保存项目决策及知识                  | 团队知识库管理                 |
+| 32 | P2  | [transcribe](https://github.com/openai/skills/tree/main/skills/.curated/transcribe?utm_source=chatgpt.com)                                             | 音频转文本                      | 会议、课程录音转写               |
+| 33 | P3  | [aspnet-core](https://github.com/openai/skills/tree/main/skills/.curated/aspnet-core?utm_source=chatgpt.com)                                           | ASP.NET Core 开发            | 当前主要使用 NestJS           |
+| 34 | P3  | [chatgpt-apps](https://github.com/openai/skills/tree/main/skills/.curated/chatgpt-apps?utm_source=chatgpt.com)                                         | 开发 ChatGPT Apps            | 暂无自建 ChatGPT 应用需求       |
+| 35 | P3  | [linear](https://github.com/openai/skills/tree/main/skills/.curated/linear?utm_source=chatgpt.com)                                                     | Linear 项目任务管理              | 未明确使用 Linear            |
+| 36 | P3  | [notion-meeting-intelligence](https://github.com/openai/skills/tree/main/skills/.curated/notion-meeting-intelligence?utm_source=chatgpt.com)           | Notion 会议准备与整理             | 非当前主要工作流                |
+| 37 | P3  | [speech](https://github.com/openai/skills/tree/main/skills/.curated/speech?utm_source=chatgpt.com)                                                     | 语音生成与处理                    | 暂无相关需求                  |
+| 38 | P3  | [winui-app](https://github.com/openai/skills/tree/main/skills/.curated/winui-app?utm_source=chatgpt.com)                                               | Windows WinUI 原生应用开发       | 当前使用 macOS、Vue、Electron |
+| 39 | P3  | [hatch-pet](https://github.com/openai/skills/tree/main/skills/.curated/hatch-pet?utm_source=chatgpt.com)                                               | 趣味互动类 Skill                | 与工程开发无关                 |
+
+## 安装优先级总结
+
+| 优先级 | 数量 | 安装建议             |
+| --- | -- | ---------------- |
+| P0  | 6  | 优先安装，直接服务当前研发流程  |
+| P1  | 8  | 推荐安装，提高工程化和测试能力  |
+| P2  | 18 | 可以全部安装，但实际使用按需调用 |
+| P3  | 7  | 暂不需要，安装收益较低      |
+| 合计  | 39 |                  |
+
+建议你安装 P0 + P1，共 14 个 Skill。 如果希望以后不再反复安装，也可以把全部 39 个安装到 `~/.agents/skills/`。单纯安装不会导致 Token 异常消耗，主要开销来自 Agent 加载 Skill 内容、工具调用和反复执行任务。
+
+安装前还应检查 `openai-docs` 等 Skill 是否已经由 Codex 内置，并确认 `~/.agents/skills/` 能被当前 Codex 版本发现。

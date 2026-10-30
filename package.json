@@ -48,7 +48,8 @@
     "format": "使用 Prettier 格式化项目文件",
     "test:e2e": "执行 Playwright 端到端测试",
     "verify:ci:docker": "在 Docker Linux 环境中模拟 CI 安装和 Vite 构建",
-    "prepare": "初始化 Husky Git hooks"
+    "prepare": "初始化 Husky Git hooks",
+    "build:ui": "独立构建 UI npm 包的 ESM、类型声明和样式"
   },
   "scripts": {
     "dev": "pnpm dev:vite",
@@ -73,7 +74,8 @@
     "lint:script": "eslint .",
     "lint:staged": "lint-staged",
     "format": "prettier --write .",
-    "test:e2e": "pnpm --filter @white55/web e2e"
+    "test:e2e": "pnpm --filter @white55/web e2e",
+    "build:ui": "pnpm --filter @white55/ui build:vite"
   },
   "pnpm": {
     "overrides": {

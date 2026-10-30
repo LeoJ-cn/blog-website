@@ -8,7 +8,7 @@
     "build:vite": "storybook build -o ../../dist-vite/storybook"
   },
   "dependencies": {
-    "@white55/ui": "workspace:2.0.0",
+    "@white55/ui": "workspace:0.1.0",
     "element-plus": "2.9.5",
     "vue": "3.5.13"
   },

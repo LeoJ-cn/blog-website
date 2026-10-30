@@ -6,6 +6,8 @@
     "module": "ESNext",
     // 使用适配 pnpm、exports 和 bundler 的模块解析方式。
     "moduleResolution": "Bundler",
+    // 仅仓库内启用源码条件；npm 消费方默认解析 dist 声明和运行时代码。
+    "customConditions": ["white-source"],
     // 所有源码启用严格类型检查。
     "strict": true,
     // 不重复检查第三方声明文件，提升大型项目检查速度。

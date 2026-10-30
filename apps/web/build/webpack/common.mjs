@@ -26,6 +26,8 @@ export function createWebpackCommonConfig() {
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.vue', '.json'],
       symlinks: true,
+      // 与 Vite 保持同一份 UI 源码解析；不要求预先构建组件库。
+      conditionNames: ['white-source', '...'],
       alias: {
         '@': path.resolve(root, 'src'),
         vue$: require.resolve('vue/dist/vue.runtime.esm-bundler.js'),

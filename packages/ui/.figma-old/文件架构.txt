@@ -1,0 +1,16 @@
+project/
+├── .figma/
+│   ├── source.yaml            # 开发者配置：Figma URL、File Key、Node ID、MCP账号、Token环境变量名、输出路径
+│   ├── fetch.sh               # Shell执行：读取source.yaml，调用REST，发现关联状态、提取交互、下载素材
+│   │
+│   ├── raw/
+│   │   ├── index.json         # REST写入：文件元数据、Pages、顶层Frames索引
+│   │   ├── target.json        # REST写入：目标节点完整结构、布局、样式、组件引用
+│   │   └── related.json       # REST写入：关联页面、弹窗、组件Variants、多状态节点
+│   │
+│   ├── assets/                # REST写入：设计截图、图片、SVG、图标素材
+│   ├── interactions.yaml      # fetch.sh写入：Prototype触发事件、动作、目标节点、状态切换
+│   └── context.md             # Codex + MCP写入：变量语义、复杂布局、组件代码映射
+│
+├── AGENTS.md                  # 开发者维护：Codex工作流规则
+└── src/                       # Codex写入：Vue页面、组件及交互代码
