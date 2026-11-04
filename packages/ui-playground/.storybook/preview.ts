@@ -1,7 +1,5 @@
 import type { Preview } from '@storybook/vue3-vite'
-import 'element-plus/dist/index.css'
-import '@white55/ui/tokens.css'
-import '@white55/ui/theme.css'
+import '@white55/ui/style.css'
 import '../src/storybook.css'
 
 const preview: Preview = {

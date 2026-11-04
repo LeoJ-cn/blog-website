@@ -9,3 +9,4 @@ dist-webpack
 .env.local
 .env.*.local
 !.env.example
+.DS_Store

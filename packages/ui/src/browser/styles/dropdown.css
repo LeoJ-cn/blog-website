@@ -1,0 +1,10 @@
+/* 内部基础样式先加载，white55 主题与覆盖随后生效。 */
+@import 'element-plus/theme-chalk/base.css';
+@import 'element-plus/theme-chalk/el-button.css';
+@import 'element-plus/theme-chalk/el-button-group.css';
+@import 'element-plus/theme-chalk/el-popper.css';
+@import 'element-plus/theme-chalk/el-scrollbar.css';
+@import 'element-plus/theme-chalk/el-dropdown.css';
+@import '../../styles/tokens.css';
+@import '../../styles/theme.css';
+@import '../../styles/dropdown.css';

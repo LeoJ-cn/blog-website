@@ -1,0 +1,6 @@
+/* 内部基础样式先加载，white55 主题与覆盖随后生效。 */
+@import 'element-plus/theme-chalk/base.css';
+@import 'element-plus/theme-chalk/el-form.css';
+@import '../../styles/tokens.css';
+@import '../../styles/theme.css';
+@import '../../styles/form.css';

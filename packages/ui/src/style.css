@@ -1,0 +1,26 @@
+/* 先加载内部组件基础样式，再应用 white55 主题和组件覆盖。 */
+@import 'element-plus/dist/index.css';
+@import './styles/tokens.css';
+@import './styles/theme.css';
+@import './styles/avatar.css';
+@import './styles/breadcrumb.css';
+@import './styles/button.css';
+@import './styles/card.css';
+@import './styles/checkbox.css';
+@import './styles/dialog.css';
+@import './styles/dropdown.css';
+@import './styles/empty-state.css';
+@import './styles/form.css';
+@import './styles/icon.css';
+@import './styles/input.css';
+@import './styles/list.css';
+@import './styles/loading.css';
+@import './styles/menu.css';
+@import './styles/progress.css';
+@import './styles/rate.css';
+@import './styles/select.css';
+@import './styles/statistic.css';
+@import './styles/table.css';
+@import './styles/tabs.css';
+@import './styles/tooltip.css';
+@import './styles/trend.css';

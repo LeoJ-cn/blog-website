@@ -13,7 +13,7 @@ const config: StorybookConfig = {
       ...viteConfig.resolve,
       // Storybook 始终消费 Workspace 源码，发布包默认入口仍为 dist。
       conditions: [
-        'white-source',
+        'source-code',
         ...(viteConfig.resolve?.conditions ?? ['module', 'browser', 'development|production']),
       ],
     },
