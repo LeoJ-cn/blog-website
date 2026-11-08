@@ -1,0 +1,22 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="173.631" height="80.2385" viewBox="0 0 173.631 80.2385" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Cloud cushion">
+<g id="Cushion" filter="url(#filter0_d_0_197)">
+<path d="M71.0309 6.57692C80.2429 6.57696 88.4 11.0876 93.4186 18.0193C98.1615 13.3822 104.65 10.5233 111.807 10.5232C123.717 10.5232 133.776 18.4377 137.017 29.2937C139.354 28.2211 141.953 27.6229 144.692 27.6228C154.863 27.6228 163.108 35.8683 163.108 46.0388C163.108 56.2092 154.862 64.4539 144.692 64.4539C144.062 64.4539 143.44 64.4219 142.826 64.3601C142.36 64.4193 141.886 64.4539 141.404 64.4539H38.9059C36.6214 65.3037 34.1495 65.7693 31.569 65.7693C19.9457 65.7692 10.5233 56.3466 10.5231 44.7234C10.5231 33.1 19.9456 23.6767 31.569 23.6765C36.2828 23.6765 40.6349 25.2267 44.1432 27.8445C47.0141 15.6524 57.9623 6.57692 71.0309 6.57692Z" fill="url(#paint0_linear_0_197)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_197" x="0" y="2.38419e-07" width="173.631" height="80.2385" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="3.94615"/>
+<feGaussianBlur stdDeviation="5.26154"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.866667 0 0 0 0 0.890196 0 0 0 0 0.972549 0 0 0 1 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_197"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_197" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_0_197" x1="86.8156" y1="6.57692" x2="86.8156" y2="65.7693" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="#EEF3FD"/>
+</linearGradient>
+</defs>
+</svg>

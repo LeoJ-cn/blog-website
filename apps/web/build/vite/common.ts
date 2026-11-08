@@ -1,9 +1,23 @@
+import { cp } from 'node:fs/promises'
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { normalizePath, transformWithEsbuild, type Plugin, type UserConfig } from 'vite'
 
 const reactMigrationDemoTsxPattern = /\/packages\/react-vue-migration-demo\/src\/.*\.tsx$/
+
+const copyOtherSitePlugin = (): Plugin => ({
+  name: 'blog:copy-other-site',
+  apply: 'build',
+  async closeBundle() {
+    // other-site 已是可直接发布的静态资源，构建结束后原样合并到根发布目录。
+    await cp(
+      new URL('../../../../other-site/', import.meta.url),
+      new URL('../../../../dist-vite/', import.meta.url),
+      { recursive: true, force: true },
+    )
+  },
+})
 
 const createReactMigrationDemoTsxPlugin = (): Plugin => ({
   name: 'blog:react-migration-demo-tsx',
@@ -49,6 +63,7 @@ export const createViteCommonConfig = (): UserConfig => ({
     createReactMigrationDemoTsxPlugin(),
     vue(),
     vueJsx({ exclude: reactMigrationDemoTsxPattern }),
+    copyOtherSitePlugin(),
   ],
   // public 目录会原样复制到构建产物。
   publicDir: 'public',
