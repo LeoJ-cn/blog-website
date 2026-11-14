@@ -1,0 +1,1 @@
+import{B as t}from"./index-DHiaB96v.js";function n(n){const e=n.coverUrl;if("string"==typeof e&&e.length>0)return e;const r=t.covers;let o=0;const s=n.id;for(let t=0;t<s.length;t++)o=(31*o+s.charCodeAt(t))%1e5;return r[o%r.length]}function e(t){const n=t.trim();return n.length>0?n:"未命名作品"}export{e as d,n as p};
