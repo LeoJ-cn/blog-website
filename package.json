@@ -80,6 +80,11 @@
   "pnpm": {
     "overrides": {
       "vite": "6.0.11"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@a2ui/web_core": "0.15.0"
+      }
     }
   }
 }

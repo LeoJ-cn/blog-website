@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    // 配置文件只做类型检查，不允许 JavaScript 混入。
+    "allowJs": false,
+    // Vite 配置不依赖自动注入的浏览器类型集合。
+    "types": []
+  },
+  // 只检查 Vite 配置，不扫描应用源码。
+  "include": ["vite.config.ts"]
+}
