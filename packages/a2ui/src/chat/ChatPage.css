@@ -65,6 +65,47 @@
   gap: var(--leo-space-2);
 }
 
+.chat-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chat-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--leo-space-1);
+  padding: var(--leo-space-2) var(--leo-space-4) 0;
+  border-bottom: 1px solid var(--a2ui-color-border);
+  flex-shrink: 0;
+}
+
+.chat-tab {
+  padding: var(--leo-space-2) var(--leo-space-3);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--a2ui-color-on-surface);
+  font-family: var(--a2ui-font-family-title);
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.chat-tab:hover {
+  opacity: 0.9;
+}
+
+.chat-tab--active {
+  opacity: 1;
+  font-weight: 600;
+  border-bottom-color: var(--a2ui-color-primary);
+  color: var(--a2ui-color-primary);
+}
+
 .chat-surface {
   display: flex;
   flex-direction: column;
@@ -80,4 +121,18 @@
   font-size: 14px;
   color: var(--a2ui-color-on-surface);
   opacity: 0.5;
+}
+
+/* 基础组件页直接写 JSX，用普通 Flex 容器排布 */
+.demo-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--leo-space-4);
+}
+
+.demo-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--leo-space-2);
 }
