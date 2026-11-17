@@ -1,0 +1,30 @@
+:root {
+  --leo-brand: #1a73e8;
+  --leo-bg: #ffffff;
+  --leo-text: #1f1f1f;
+  --leo-border: #e5e5e5;
+  --leo-radius: 8px;
+  --leo-font: 'Inter', system-ui, -apple-system, sans-serif;
+  --leo-space-1: 4px;
+  --leo-space-2: 8px;
+  --leo-space-3: 12px;
+  --leo-space-4: 16px;
+
+  /* 映射给 A2UI basic catalog：让两侧读同一份颜色与字体 */
+  --a2ui-color-primary: var(--leo-brand);
+  --a2ui-color-surface: var(--leo-bg);
+  --a2ui-color-background: var(--leo-bg);
+  --a2ui-color-on-surface: var(--leo-text);
+  --a2ui-color-on-background: var(--leo-text);
+  --a2ui-color-border: var(--leo-border);
+  --a2ui-border: 1px solid var(--leo-border);
+  --a2ui-border-radius: var(--leo-radius);
+  --a2ui-font-family-title: var(--leo-font);
+}
+
+[data-theme='dark'] {
+  --leo-brand: #4a9eff;
+  --leo-bg: #121212;
+  --leo-text: #e8e8e8;
+  --leo-border: #333333;
+}
