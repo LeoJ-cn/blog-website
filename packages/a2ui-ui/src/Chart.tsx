@@ -125,7 +125,10 @@ function toOption(p: ChartProps): EChartsCoreOption {
       right: 16,
       top: 16,
       bottom: p.showLegend === false ? 24 : 48,
-      containLabel: true,
+      // ECharts 6 弃用 containLabel，改用 outerBounds。
+      // 语义等价于原来的 containLabel: true —— 让坐标轴标签不被 grid 边距裁掉。
+      outerBoundsMode: 'same',
+      outerBoundsContain: 'axisLabel',
     },
     series: p.series.map((s, index) => ({
       type: isLineLike ? 'line' : 'bar',

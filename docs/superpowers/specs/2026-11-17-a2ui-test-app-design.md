@@ -445,7 +445,7 @@ export { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog'
 
 ### 5.10 构建与部署
 
-- **脚手架**：`pnpm create vite packages/a2ui --template react-ts` 生成骨架，再按仓库约定覆盖
+- **脚手架**：只有 `packages/a2ui` 用 `pnpm create vite packages/a2ui --template react-ts` 生成骨架，再按仓库约定覆盖；`a2ui-catalog` 与 `a2ui-ui` 没有浏览器入口，直接创建文件
 - 模板产物中 `eslint.config.js`、`.gitignore`、`public/`、`src/assets/`、`src/index.css`、`src/App.css`、`tsconfig.app.json`、`tsconfig.node.json` 一律删除 —— 仓库根已提供统一的 ESLint 与 `.gitignore`，TypeScript 配置用本包自带的 `tsconfig.json` + `tsconfig.config.json` 两分法
 - 模板给的 `^` 范围版本必须替换为精确版本，并补 `workspace:*` 依赖
 - `base: '/a2ui/'`

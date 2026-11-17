@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "a2ui",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@white55/a2ui", "dev:vite"],
+      "port": 5175
+    }
+  ]
+}

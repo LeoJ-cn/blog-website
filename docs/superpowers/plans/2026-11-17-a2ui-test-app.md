@@ -123,6 +123,8 @@ packages/a2ui/
 - Consumes: 无
 - Produces: `ChartApi`（`{ name: 'Chart', schema: ZodType }`）、`CHART_KINDS`（`readonly ['bar','hbar','line','area']`）
 
+**不使用 Vite 脚手架。** `a2ui-catalog` 是纯 TypeScript 的契约包，没有浏览器入口、没有 dev server，构建产物由 `scripts/export.ts` 生成而非 Vite。`pnpm create vite` 在这里只会产生无关文件。
+
 - [ ] **Step 1: 创建 `packages/a2ui-catalog/package.json`**
 
 ```json
@@ -359,6 +361,8 @@ git commit -m "feat(a2ui-catalog): 增加 OrderCard 契约与 catalog 产物脚�
 **Interfaces:**
 - Consumes: 无
 - Produces: `tokens.css`（对外暴露 `--leo-*` 品牌变量并把它们映射到 `--a2ui-*`）
+
+**不使用 Vite 脚手架。** `a2ui-ui` 是被消费的组件库，没有 `index.html`、没有 dev server、不产出可执行页面；`pnpm create vite` 会生成一堆用不上的入口文件，还得逐个删。文件少，直接创建更快也更清楚。
 
 - [ ] **Step 1: 创建 `packages/a2ui-ui/package.json`**
 
