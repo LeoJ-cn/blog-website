@@ -1,0 +1,24 @@
+.leo-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--leo-space-2);
+}
+
+.leo-checkbox__input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--a2ui-color-primary);
+  cursor: pointer;
+  margin: 0;
+}
+
+.leo-checkbox__input:disabled {
+  cursor: not-allowed;
+}
+
+.leo-checkbox__label {
+  font-size: 14px;
+  color: var(--a2ui-color-on-surface);
+  font-family: var(--a2ui-font-family-title);
+  cursor: pointer;
+}
