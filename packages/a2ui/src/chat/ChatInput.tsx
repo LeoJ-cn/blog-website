@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { Button, TextField } from '@white55/a2ui-ui'
+import { LeoButton, LeoTextField } from '@white55/a2ui-ui'
 
-const PLACEHOLDER: Record<'basic' | 'complex', string> = {
-  basic: '基础页直接写组件，发送消息只用于回显…',
-  complex: '生成一个订单卡片与图表…',
+type DemoMode = 'library' | 'builtin' | 'integrated'
+
+const PLACEHOLDER: Record<DemoMode, string> = {
+  library: '组件库页直接渲染，发送仅回显…',
+  builtin: 'A2UI 自带组件页直接渲染，发送仅回显…',
+  integrated: '生成一组接入组件…',
 }
 
 export function ChatInput({
@@ -13,7 +16,7 @@ export function ChatInput({
 }: {
   onSend: (text: string) => void
   disabled?: boolean
-  mode: 'basic' | 'complex'
+  mode: DemoMode
 }) {
   const [value, setValue] = useState('')
 
@@ -25,10 +28,10 @@ export function ChatInput({
 
   return (
     <div className="chat-input">
-      <TextField value={value} placeholder={PLACEHOLDER[mode]} onChange={setValue} />
-      <Button variant="primary" disabled={disabled || !value.trim()} onClick={submit}>
+      <LeoTextField value={value} placeholder={PLACEHOLDER[mode]} onChange={setValue} />
+      <LeoButton variant="primary" disabled={disabled || !value.trim()} onClick={submit}>
         发送
-      </Button>
+      </LeoButton>
     </div>
   )
 }

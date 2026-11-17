@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { A2uiMessage, ReactCatalogComponent, SurfaceModel } from '../a2ui/protocol'
 import { processor } from '../a2ui/processor'
-import { CATALOG_VERSION } from '../a2ui/catalog'
+import { CATALOG_VERSION } from '../a2ui/catalog-meta'
 
 export interface ChatMessage {
   id: string

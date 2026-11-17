@@ -1,7 +1,7 @@
 import { ChartApi } from '@white55/a2ui-catalog'
 import { createComponentImplementation } from '../protocol'
 import {
-  A2uiChartComponent,
+  LeoChart,
   type ChartKind,
   type ChartSeries,
 } from '@white55/a2ui-ui'
@@ -9,7 +9,7 @@ import {
 export const A2uiChart = createComponentImplementation(
   ChartApi,
   ({ props }) => (
-    <A2uiChartComponent
+    <LeoChart
       kind={props.kind as ChartKind}
       data={Array.isArray(props.data) ? (props.data as Record<string, unknown>[]) : []}
       xField={props.xField}

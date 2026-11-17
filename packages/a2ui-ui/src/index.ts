@@ -1,12 +1,12 @@
-export { Button, type ButtonProps } from './Button'
-export { Text, type TextProps, type TextViewVariant } from './Text'
-export { Card, type CardProps } from './Card'
-export { TextField, type TextFieldProps } from './TextField'
-export { CheckBox, type CheckBoxProps } from './CheckBox'
+export { LeoButton, type LeoButtonProps } from './LeoButton'
+export { LeoText, type LeoTextProps, type TextViewVariant } from './LeoText'
+export { LeoCard, type LeoCardProps } from './LeoCard'
+export { LeoTextField, type LeoTextFieldProps } from './LeoTextField'
+export { LeoCheckBox, type LeoCheckBoxProps } from './LeoCheckBox'
 export {
-  A2uiChartComponent,
+  LeoChart,
   CHART_KINDS,
   type ChartKind,
-  type ChartProps,
+  type LeoChartProps,
   type ChartSeries,
-} from './Chart'
+} from './LeoChart'

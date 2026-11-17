@@ -11,7 +11,7 @@ export interface ChartSeries {
   color?: string
 }
 
-export interface ChartProps {
+export interface LeoChartProps {
   kind: ChartKind
   data: Record<string, unknown>[]
   xField: string
@@ -22,7 +22,7 @@ export interface ChartProps {
   optimize?: 'none' | 'large' | 'sampling'
 }
 
-export function A2uiChartComponent(props: ChartProps) {
+export function LeoChart(props: LeoChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   // React 19 的 useRef 要求显式初值，这里用 undefined 表示「尚未 init」
   const chartRef = useRef<EChartsType | undefined>(undefined)
@@ -87,7 +87,7 @@ function readVar(name: string, fallback: string): string {
 }
 
 // A2UI 声明 -> ECharts option 的唯一转换点
-function toOption(p: ChartProps): EChartsCoreOption {
+function toOption(p: LeoChartProps): EChartsCoreOption {
   const rows = Array.isArray(p.data) ? p.data : []
   const isHorizontal = p.kind === 'hbar'
   const isLineLike = p.kind === 'line' || p.kind === 'area'

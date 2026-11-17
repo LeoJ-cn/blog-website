@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
-import './Card.css'
+import './LeoCard.css'
 
-export interface CardProps {
+export interface LeoCardProps {
   children: ReactNode
   borderColor?: 'default' | 'danger' | 'warning'
 }
 
-export function Card({ children, borderColor = 'default' }: CardProps) {
+export function LeoCard({ children, borderColor = 'default' }: LeoCardProps) {
   return <div className={`leo-card leo-card--border-${borderColor}`}>{children}</div>
 }

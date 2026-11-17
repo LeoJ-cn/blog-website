@@ -1,7 +1,7 @@
 import { useId } from 'react'
-import './TextField.css'
+import './LeoTextField.css'
 
-export interface TextFieldProps {
+export interface LeoTextFieldProps {
   label?: string
   value?: string
   placeholder?: string
@@ -10,14 +10,14 @@ export interface TextFieldProps {
   onChange?: (value: string) => void
 }
 
-export function TextField({
+export function LeoTextField({
   label,
   value,
   placeholder,
   disabled,
   invalid,
   onChange,
-}: TextFieldProps) {
+}: LeoTextFieldProps) {
   const id = useId()
   return (
     <div className={`leo-field${invalid ? ' leo-field--invalid' : ''}`}>

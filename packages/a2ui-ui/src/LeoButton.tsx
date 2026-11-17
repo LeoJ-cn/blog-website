@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
-import './Button.css'
+import './LeoButton.css'
 
-export interface ButtonProps {
+export interface LeoButtonProps {
   variant?: 'default' | 'primary' | 'borderless'
   disabled?: boolean
   onClick?: () => void
   children: ReactNode
 }
 
-export function Button({ variant = 'default', disabled, onClick, children }: ButtonProps) {
+export function LeoButton({ variant = 'default', disabled, onClick, children }: LeoButtonProps) {
   return (
     <button
       type="button"

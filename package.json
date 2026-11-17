@@ -64,7 +64,7 @@
     "build:docker": "node scripts/docker-build.mjs",
     "verify:ci:docker": "node scripts/ci-docker-check.mjs",
     "prepare": "husky",
-    "typecheck": "pnpm --filter @white55/web typecheck && pnpm --filter @white55/low-code typecheck && pnpm --filter @white55/web exec vue-tsc --noEmit -p ../../packages/ui-playground/tsconfig.json && pnpm --filter @white55/a2ui-catalog exec tsc --noEmit && pnpm --filter @white55/a2ui-ui exec tsc --noEmit && pnpm --filter @white55/a2ui typecheck && pnpm --filter @white55/a2ui exec tsc --noEmit -p tsconfig.config.json",
+    "typecheck": "pnpm --filter @white55/web typecheck && pnpm --filter @white55/low-code typecheck && pnpm --filter @white55/web exec vue-tsc --noEmit -p ../../packages/ui-playground/tsconfig.json && pnpm --filter @white55/a2ui-catalog exec tsc --noEmit && pnpm --filter @white55/a2ui-ui exec tsc --noEmit && pnpm --filter @white55/a2ui-adapter typecheck && pnpm --filter @white55/a2ui typecheck && pnpm --filter @white55/a2ui exec tsc --noEmit -p tsconfig.config.json",
     "typecheck:low-code": "pnpm --filter @white55/low-code typecheck",
     "test:monitoring": "pnpm --filter @white55/monitoring test",
     "check:vite": "node scripts/check-vite-version.mjs",

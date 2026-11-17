@@ -216,6 +216,9 @@ importers:
       '@a2ui/web_core':
         specifier: 0.15.0
         version: 0.15.0
+      '@white55/a2ui-adapter':
+        specifier: workspace:*
+        version: link:../a2ui-adapter
       '@white55/a2ui-catalog':
         specifier: workspace:*
         version: link:../a2ui-catalog
@@ -244,6 +247,31 @@ importers:
       vite:
         specifier: 6.0.11
         version: 6.0.11(@types/node@22.10.5)(jiti@1.21.7)(sass@1.83.4)(terser@5.51.2)(tsx@4.19.2)(yaml@2.9.1)
+
+  packages/a2ui-adapter:
+    dependencies:
+      '@a2ui/react':
+        specifier: 0.15.0
+        version: 0.15.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@a2ui/web_core':
+        specifier: 0.15.0
+        version: 0.15.0
+      '@white55/a2ui-catalog':
+        specifier: workspace:*
+        version: link:../a2ui-catalog
+      '@white55/a2ui-ui':
+        specifier: workspace:*
+        version: link:../a2ui-ui
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.8
+        version: 19.2.8
+      '@types/react-dom':
+        specifier: 19.2.7
+        version: 19.2.7(@types/react@19.2.8)
+      typescript:
+        specifier: 5.6.3
+        version: 5.6.3
 
   packages/a2ui-catalog:
     dependencies:

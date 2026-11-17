@@ -1,6 +1,21 @@
-import { MessageProcessor } from './protocol'
+import { APP_CATALOG, MessageProcessor, assertCatalogConsistency } from './protocol'
 import type { ActionPayload, ReactCatalogComponent } from './protocol'
-import { APP_CATALOG } from './catalog'
+
+// 开发期自检：OVERRIDDEN 与 selfBuilt 两份清单必须互相印证，
+// 否则会出现「basic 里剔除了、自建里没补上」的静默缺组件。
+if (import.meta.env.DEV) {
+  assertCatalogConsistency()
+}
+
+/**
+ * 当前所有打开的 surface 的数据模型快照。
+ *
+ * 只有在 createSurface 里声明了 `sendDataModel: true` 的 surface 才会被包含进来。
+ * 拿的是「此刻」的值，所以能反映用户刚在表单里改过的内容，而不是初始数据。
+ */
+function currentDataModel(proc: MessageProcessor<ReactCatalogComponent>) {
+  return proc.getRendererDataModel()
+}
 
 // MessageProcessor 的构造函数签名是 Catalog<any>[]，无法从实参推断组件类型，
 // 必须显式给出泛型参数，否则 T 退化为 ComponentApi，getSurfaces() 的返回类型
@@ -8,12 +23,18 @@ import { APP_CATALOG } from './catalog'
 export const processor = new MessageProcessor<ReactCatalogComponent>(
   [APP_CATALOG],
   (action: ActionPayload) => {
-    // 后端未接入时只在控制台留痕，便于验证 action 链路
-    console.info('[a2ui] action', action)
+    // action.context 里只有组件自己声明的静态参数；
+    // 页面上的最新数据要靠 dataModel 单独带上，两者一起发给后端。
+    const payload = {
+      ...action,
+      dataModel: currentDataModel(processor),
+    }
+    console.info('[a2ui] action', payload)
+
     void fetch('/api/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(action),
+      body: JSON.stringify(payload),
     }).catch(() => {
       console.warn('[a2ui] /api/action 不可用，action 未回传')
     })

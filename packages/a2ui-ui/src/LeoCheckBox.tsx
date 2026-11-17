@@ -1,14 +1,14 @@
 import { useId } from 'react'
-import './CheckBox.css'
+import './LeoCheckBox.css'
 
-export interface CheckBoxProps {
+export interface LeoCheckBoxProps {
   label?: string
   checked?: boolean
   disabled?: boolean
   onChange?: (checked: boolean) => void
 }
 
-export function CheckBox({ label, checked, disabled, onChange }: CheckBoxProps) {
+export function LeoCheckBox({ label, checked, disabled, onChange }: LeoCheckBoxProps) {
   const id = useId()
   return (
     <div className="leo-checkbox">

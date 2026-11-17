@@ -59,6 +59,7 @@ pnpm dev:a2ui
 
 - **左侧固定区**：标题、消息列表、输入框、发送按钮。这一段是普通 React 页面，直接使用 `a2ui-ui` 组件，不经过协议。
 - **右侧动态区**：顶部两个 tab，下方内容随 tab 切换。
+
 | tab | 渲染方式 | 验证点 |
 |---|---|---|
 | 基础组件展示 | `BasicDemo.tsx` 直接写 JSX 使用 `a2ui-ui`，**不经过 A2UI** | 组件库本身的视觉、`disabled` / `borderColor` 等变体 |
@@ -486,19 +487,19 @@ export interface MetricProps {
 
 export function Metric({ label, value, unit, trend = 'flat' }: MetricProps) {
   return (
-    <div className={`leo-metric leo-metric--trend-${trend}`}>
+    <div className="leo-metric">
       <span className="leo-metric__label">{label}</span>
       <span className="leo-metric__value">
         {value}
         {unit ? <span className="leo-metric__unit">{unit}</span> : null}
       </span>
-      <span className="leo-metric__arrow" aria-hidden="true" />
+      <span className={`leo-metric__arrow leo-metric__arrow--${trend}`} aria-hidden="true" />
     </div>
   )
 }
 ```
 
-新建 `packages/a2ui-ui/src/Metric.css`。三条硬约束：只用 token 变量、Flexbox、样式只挂自身 class（不能写 `.parent .leo-metric`）：
+新建 `packages/a2ui-ui/src/Metric.css`。三条硬约束：只用 token 变量、Flexbox、样式只挂自身 class（不写 `.parent .leo-metric` 这类跨组件后代选择器；修饰态也直接挂到元素上，避免依赖层级）：
 
 ```css
 .leo-metric {
@@ -538,15 +539,15 @@ export function Metric({ label, value, unit, trend = 'flat' }: MetricProps) {
   border-right: 5px solid transparent;
 }
 
-.leo-metric--trend-up .leo-metric__arrow {
+.leo-metric__arrow--up {
   border-bottom: 8px solid var(--a2ui-color-primary);
 }
 
-.leo-metric--trend-down .leo-metric__arrow {
+.leo-metric__arrow--down {
   border-top: 8px solid var(--a2ui-color-border);
 }
 
-.leo-metric--trend-flat .leo-metric__arrow {
+.leo-metric__arrow--flat {
   border-top: 4px solid var(--a2ui-color-border);
 }
 ```
@@ -584,6 +585,8 @@ export const A2uiMetric = createComponentImplementation(
 - `props`：已经解析过的属性，绑定值变成实际值，`Action` 变成可调用函数；
 - `buildChild(child)`：把子组件 id 或节点渲染成 ReactNode；
 - `context`：组件上下文（一般用不到）。
+
+解析规则见 `@a2ui/web_core` 的 `ResolveA2uiProp`：动态字段解析成绑定的实际值，`Action` 解析成 `(options?) => Promise<void>`，含 `checks` 的组件额外得到 `isValid`。`unit` 是普通 `z.string().optional()`，本身就是 `string | undefined`，可以直传。
 
 ### 7.4 第四步：注册进 catalog
 
@@ -687,13 +690,15 @@ document.documentElement.setAttribute('data-theme', 'dark')
 const textColor = readVar('--a2ui-color-on-surface', '#1f1f1f')
 ```
 
-### 8.3 `display: contents` 包裹层
+### 8.3 custom element 包裹层与样式作用域
 
-React 实现最终会被渲染进 `<a2ui-react-*>` custom element，basic 组件本身也是 custom element。因此：
+basic 组件自带 `:host { display: contents; }`，自研 React 实现会被包进 `<a2ui-react-*>` host。由此产生的约束：
 
-- **样式只能挂在组件自身 class 上**，写 `.chat-page .leo-btn` 这类后代选择器在右侧会失效；
-- 不要假设某个 DOM 层级一定存在；
+- **样式只能挂在组件自身 class 上**，写 `.chat-page .leo-btn` 这类依赖父级层级的选择器，在右侧渲染区可能失效；
+- 不要假设某个 DOM 层级一定存在（`display: contents` 的 host 不产生盒子）；
 - 尺寸依赖父容器时（如图表 `width: 100%`），父级必须有确定宽度。
+
+当前仓库的自研组件样式都只写自身 class（如 `.leo-btn--primary`），未出现跨组件后代选择器，新增组件也应按此写法。
 
 ### 8.4 禁止 CSS Grid
 
@@ -757,14 +762,14 @@ pnpm --filter @white55/a2ui-catalog build
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| 右侧一直是「等待生成…」 | 没发消息，或 SSE 没返回可解析消息 | 看 Network 里 `/api/chat` 状态码与响应体 |
+| 复杂页右侧一直显示「发送一条消息生成界面」 | 没发消息，或 SSE 没返回可解析消息 | 看 Network 里 `/api/chat` 状态码与响应体 |
 | 控制台报「后端未接入」 | 生产构建或 mock 插件未启用 | 用 `pnpm dev:a2ui`，确认 `mockApiPlugin` 在 `vite.config.ts` |
 | 某个组件完全不出现且不报错 | 名字拼错，或 `catalogId` 与 `CATALOG_ID` 不一致，或该名字既不在 basic 也不在 `selfBuilt` | 核对 `catalog.ts` 与消息里的 `catalogId` |
 | 图表空白 | 容器宽度为 0（隐藏 tab / modal）时初始化 | 先切到可见 tab；`ResizeObserver` 首次有尺寸时会 resize |
 | 图表颜色不随主题变 | 只改了 CSS 变量，canvas 已渲染 | 确认 `Chart.tsx` 的 `MutationObserver` 未失效 |
 | 增量更新后整个界面重建 | 发了完整组件列表而非只发变更 id | 增量消息只发变化的那几条组件 |
 | 右侧组件样式丢失 | 用了父级后代选择器，被 custom element 隔断 | 样式只挂组件自身 class |
-| 切 tab 后组件错乱 | 未清理旧 surface | 先 `deleteSurface` 再发新消息 |
+| 两组消息渲染进同一个 surface 后错乱 | 复用 `surfaceId` 且未清理旧树 | 先 `deleteSurface` 再发新消息 |
 | 输入框打字不回写数据模型 | 适配器没接 `props.setValue` | 参照 `TextField.tsx` / `CheckBox.tsx` |
 | 类型报 `SurfaceModel` 不兼容 | 联合类型推断导致方差问题 | 显式写 `SurfaceModel<ReactCatalogComponent>` |
 
@@ -803,7 +808,8 @@ grep -rn "display:\s*grid\|grid-template\|grid-column\|grid-row\|grid-area" pack
 | MessageProcessor 单例与 action 回传 | `packages/a2ui/src/a2ui/processor.ts` |
 | 字段翻译 | `packages/a2ui/src/a2ui/adapters/*.tsx` |
 | SSE 消费 | `packages/a2ui/src/chat/useChat.ts` |
-| 页面布局 | `packages/a2ui/src/chat/ChatPage.tsx` / `ChatPage.css` |
+| 页面布局与 tab 切换 | `packages/a2ui/src/chat/ChatPage.tsx` / `ChatPage.css` |
+| 基础组件页（纯 JSX 对照） | `packages/a2ui/src/chat/BasicDemo.tsx` |
 | 演示消息 | `packages/a2ui/src/mock/fixtures.ts` |
 | mock 中间件 | `packages/a2ui/src/mock/middleware.ts` |
 | 契约 | `packages/a2ui-catalog/src/components/*.api.ts` |

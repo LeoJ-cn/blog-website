@@ -1,9 +1,9 @@
 import type { ElementType, ReactNode } from 'react'
-import './Text.css'
+import './LeoText.css'
 
 export type TextViewVariant = 'body' | 'caption' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5'
 
-export interface TextProps {
+export interface LeoTextProps {
   variant?: TextViewVariant
   children: ReactNode
 }
@@ -19,7 +19,7 @@ const TAG_BY_VARIANT: Record<TextViewVariant, ElementType> = {
   caption: 'span',
 }
 
-export function Text({ variant = 'body', children }: TextProps) {
+export function LeoText({ variant = 'body', children }: LeoTextProps) {
   const Tag = TAG_BY_VARIANT[variant]
   return <Tag className={`leo-text leo-text--${variant}`}>{children}</Tag>
 }

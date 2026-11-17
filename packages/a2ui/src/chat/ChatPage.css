@@ -136,3 +136,10 @@
   flex-wrap: wrap;
   gap: var(--leo-space-2);
 }
+
+/* A2UI surface 容器：第二、三个 tab 用 */
+.demo-surface-host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--leo-space-4);
+}
