@@ -8,8 +8,7 @@ import { A2uiCheckBox } from './adapters/CheckBox'
 import { A2uiChart } from './adapters/Chart'
 import { A2uiOrderCard } from './adapters/OrderCard'
 
-export const CATALOG_ID = 'https://leo.example/a2ui/catalog'
-export const CATALOG_VERSION = '0.1.0'
+export { CATALOG_ID, CATALOG_VERSION } from './catalog-meta'
 
 // 与 basic catalog 同名、需要用自建实现替换的组件。
 // Icon 不在其中：左侧固定区域不需要图标，右侧直接用 basic 的 Web Component 即可。

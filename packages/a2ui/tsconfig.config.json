@@ -3,8 +3,12 @@
   "compilerOptions": {
     // 配置文件只做类型检查，不允许 JavaScript 混入。
     "allowJs": false,
-    // Vite 配置不依赖自动注入的浏览器类型集合。
-    "types": []
+    // vite.config.ts 会 import src/mock/middleware.ts，而它又引到 src/a2ui 下的 tsx，
+    // 因此这里必须开启 React JSX 并带上 vite/client 类型。
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"]
   },
   // 只检查 Vite 配置，不扫描应用源码。
   "include": ["vite.config.ts"]
