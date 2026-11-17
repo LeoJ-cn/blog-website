@@ -1,0 +1,21 @@
+.leo-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--leo-space-3);
+  padding: var(--leo-space-4);
+  background: var(--a2ui-color-surface);
+  border-radius: var(--a2ui-border-radius);
+  box-sizing: border-box;
+}
+
+.leo-card--border-default {
+  box-shadow: inset 0 0 0 1px var(--a2ui-color-border);
+}
+
+.leo-card--border-danger {
+  box-shadow: inset 0 0 0 1px #d93f3f;
+}
+
+.leo-card--border-warning {
+  box-shadow: inset 0 0 0 1px #d99a3f;
+}

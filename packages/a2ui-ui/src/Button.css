@@ -1,0 +1,41 @@
+.leo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--leo-space-2);
+  padding: var(--leo-space-2) var(--leo-space-4);
+  border: none;
+  cursor: pointer;
+  font-family: var(--a2ui-font-family-title);
+  font-size: 14px;
+  line-height: 1.5;
+  border-radius: var(--a2ui-border-radius);
+  transition: background-color 120ms ease;
+}
+
+.leo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.leo-btn--default {
+  background: transparent;
+  color: var(--a2ui-color-primary);
+  box-shadow: inset 0 0 0 1px var(--a2ui-color-border);
+}
+
+.leo-btn--primary {
+  background: var(--a2ui-color-primary);
+  color: var(--a2ui-color-on-primary);
+}
+
+.leo-btn--primary:hover:not(:disabled) {
+  background: var(--a2ui-color-primary-hover);
+}
+
+.leo-btn--borderless {
+  background: transparent;
+  color: var(--a2ui-color-primary);
+  padding-left: var(--leo-space-2);
+  padding-right: var(--leo-space-2);
+}

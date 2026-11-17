@@ -1,6 +1,6 @@
 :root {
   --leo-brand: #1a73e8;
-  --leo-bg: #ffffff;
+  --leo-bg: #fff;
   --leo-text: #1f1f1f;
   --leo-border: #e5e5e5;
   --leo-radius: 8px;
@@ -20,11 +20,16 @@
   --a2ui-border: 1px solid var(--leo-border);
   --a2ui-border-radius: var(--leo-radius);
   --a2ui-font-family-title: var(--leo-font);
+
+  /* 派生色必须与 basic catalog 用同一套算法，否则左右两侧的同名按钮会不同色。
+     @a2ui/web_core 的 styles/default.js 用 color-mix 生成这两项。 */
+  --a2ui-color-primary-hover: color-mix(in oklab, var(--a2ui-color-primary) 85%, black);
+  --a2ui-color-on-primary: #fff;
 }
 
 [data-theme='dark'] {
   --leo-brand: #4a9eff;
   --leo-bg: #121212;
   --leo-text: #e8e8e8;
-  --leo-border: #333333;
+  --leo-border: #333;
 }
