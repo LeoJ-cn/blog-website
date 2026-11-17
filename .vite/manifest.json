@@ -97,7 +97,7 @@
     ]
   },
   "index-legacy.html": {
-    "file": "assets/entry-index-legacy-C3lKbz8X.js",
+    "file": "assets/entry-index-legacy-DPMxmiVy.js",
     "name": "index",
     "src": "index-legacy.html",
     "isEntry": true,
@@ -121,7 +121,7 @@
     ]
   },
   "index.html": {
-    "file": "assets/entry-index-L6fyDHci.js",
+    "file": "assets/entry-index-CJlS65qI.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -361,7 +361,7 @@
     ]
   },
   "src/pages/PlaygroundReactVueMigrationPage-legacy.vue": {
-    "file": "assets/chunk-legacy-BWSU3k6B.js",
+    "file": "assets/chunk-legacy-DFYsNIUW.js",
     "name": "PlaygroundReactVueMigrationPage",
     "src": "src/pages/PlaygroundReactVueMigrationPage-legacy.vue",
     "isDynamicEntry": true,
@@ -374,7 +374,7 @@
     ]
   },
   "src/pages/PlaygroundReactVueMigrationPage.vue": {
-    "file": "assets/chunk-BSzDIrYQ.js",
+    "file": "assets/chunk-Mj-gkfK-.js",
     "name": "PlaygroundReactVueMigrationPage",
     "src": "src/pages/PlaygroundReactVueMigrationPage.vue",
     "isDynamicEntry": true,
@@ -491,7 +491,7 @@
     ]
   },
   "vite/legacy-polyfills": {
-    "file": "assets/entry-polyfills-Ixbl5kbv.js",
+    "file": "assets/entry-polyfills-EvtKU929.js",
     "name": "polyfills",
     "src": "vite/legacy-polyfills",
     "isEntry": true
