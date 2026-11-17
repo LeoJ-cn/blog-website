@@ -1,5 +1,6 @@
 import { Catalog, basicCatalog } from './protocol'
 import type { ReactCatalogComponent } from './protocol'
+import { CATALOG_ID } from './catalog-meta'
 import { A2uiButton } from './adapters/Button'
 import { A2uiText } from './adapters/Text'
 import { A2uiCard } from './adapters/Card'
@@ -8,6 +9,7 @@ import { A2uiCheckBox } from './adapters/CheckBox'
 import { A2uiChart } from './adapters/Chart'
 import { A2uiOrderCard } from './adapters/OrderCard'
 
+// 对外仍从本模块导出这两个常量，调用方无需知道 catalog-meta 的存在
 export { CATALOG_ID, CATALOG_VERSION } from './catalog-meta'
 
 // 与 basic catalog 同名、需要用自建实现替换的组件。
