@@ -1,3 +1,5 @@
+import { ChatPage } from '../chat/ChatPage'
+
 export function App() {
-  return <div>A2UI</div>
+  return <ChatPage />
 }
