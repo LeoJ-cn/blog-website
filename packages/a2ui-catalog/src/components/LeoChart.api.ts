@@ -3,8 +3,8 @@ import { CommonSchemas } from '@a2ui/web_core/v0_9'
 
 export const CHART_KINDS = ['bar', 'hbar', 'line', 'area'] as const
 
-export const ChartApi = {
-  name: 'Chart',
+export const LeoChartApi = {
+  name: 'LeoChart',
   schema: z.object({
     // 图表形态。hbar 表示横向条形图，与 bar 共用同一份数据字段。
     kind: z.enum(CHART_KINDS),

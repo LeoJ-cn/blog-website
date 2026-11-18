@@ -1,5 +1,5 @@
-export { ChartApi, CHART_KINDS } from './components/Chart.api'
-export { OrderCardApi } from './components/OrderCard.api'
+export { LeoChartApi, CHART_KINDS } from './components/LeoChart.api'
+export { LeoOrderCardApi } from './components/LeoOrderCard.api'
 export { LeoTextApi, TEXT_VARIANTS, type TextVariantName } from './components/LeoText.api'
 export {
   LeoButtonApi,
@@ -15,3 +15,6 @@ export {
 export { LeoCheckBoxApi } from './components/LeoCheckBox.api'
 export { LeoTabsApi, TABS_VARIANTS } from './components/LeoTabs.api'
 export { LeoModalApi } from './components/LeoModal.api'
+export { LeoBadgeApi, LEO_BADGE_TONES } from './components/LeoBadge.api'
+export { LeoStatCardApi } from './components/LeoStatCard.api'
+export { LeoLinkButtonApi } from './components/LeoLinkButton.api'

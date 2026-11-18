@@ -15,7 +15,9 @@
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "vue"],
 
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.eslint": "explicit",
+    // CSS/SCSS 的格式规则（如注释前空行）由 Stylelint 管，Prettier 不处理这类空行
+    "source.fixAll.stylelint": "explicit"
   },
 
   // Prettier

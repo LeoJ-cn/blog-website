@@ -11,5 +11,8 @@ export { A2uiLeoTabs } from './adapters/A2uiLeoTabs'
 export { A2uiLeoModal } from './adapters/A2uiLeoModal'
 
 // 业务组件
-export { A2uiChart } from './adapters/A2uiChart'
-export { A2uiOrderCard } from './adapters/A2uiOrderCard'
+export { A2uiLeoChart } from './adapters/A2uiLeoChart'
+export { A2uiLeoOrderCard } from './adapters/A2uiLeoOrderCard'
+export { A2uiLeoBadge } from './adapters/A2uiLeoBadge'
+export { A2uiLeoStatCard } from './adapters/A2uiLeoStatCard'
+export { A2uiLeoLinkButton } from './adapters/A2uiLeoLinkButton'

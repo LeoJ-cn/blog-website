@@ -1,4 +1,4 @@
-import { ChartApi } from '@white55/a2ui-catalog'
+import { LeoChartApi } from '@white55/a2ui-catalog'
 import { createComponentImplementation } from '../protocol'
 import {
   LeoChart,
@@ -6,8 +6,8 @@ import {
   type ChartSeries,
 } from '@white55/a2ui-ui'
 
-export const A2uiChart = createComponentImplementation(
-  ChartApi,
+export const A2uiLeoChart = createComponentImplementation(
+  LeoChartApi,
   ({ props }) => (
     <LeoChart
       kind={props.kind as ChartKind}

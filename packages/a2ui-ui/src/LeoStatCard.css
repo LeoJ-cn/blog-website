@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--leo-space-1);
+
   /* 用弹性基准宽度而不是固定宽度：一行几张卡由容器宽度决定 */
   flex: 1 1 160px;
   min-width: 0;
@@ -29,6 +30,7 @@
   font-weight: 600;
   line-height: 1.2;
   color: var(--a2ui-color-on-surface);
+
   /* 等宽数字：多张卡并排时位数对齐 */
   font-variant-numeric: tabular-nums;
 }

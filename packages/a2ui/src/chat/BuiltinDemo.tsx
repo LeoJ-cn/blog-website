@@ -44,8 +44,7 @@ const builtinMessages: A2uiMessage[] = [
         {
           id: 'tip',
           component: 'Text',
-          text: '以下 18 个组件全部来自 basic catalog，直接用 A2UI 消息渲染，没有经过我们的 UI 库。',
-          variant: 'caption',
+          text: '以下 18 个组件全部来自 basic catalog，直接用 A2UI 消息渲染，没有经过我们的 UI 库。',          variant: 'caption',
         },
 
         // ---- 内容类 ----
@@ -169,16 +168,50 @@ const builtinMessages: A2uiMessage[] = [
         {
           id: 'mediaInner',
           component: 'Column',
-          children: ['lblMedia', 'biImage', 'lblModal'],
+          children: ['lblMedia', 'biImage', 'lblAv', 'biVideo', 'biAudio', 'lblModal', 'biModal'],
         },
-        { id: 'lblMedia', component: 'Text', text: 'Image / Video / AudioPlayer', variant: 'h5' },
+        { id: 'lblMedia', component: 'Text', text: 'Image', variant: 'h5' },
         {
           id: 'biImage',
           component: 'Image',
           url: 'https://placehold.co/240x120/e8eef7/1a73e8?text=Image',
           description: '占位图',
         },
-        { id: 'lblModal', component: 'Text', text: 'Modal 需要 trigger，第一版未启用。', variant: 'caption' },
+        { id: 'lblAv', component: 'Text', text: 'Video / AudioPlayer', variant: 'h5' },
+        {
+          id: 'biVideo',
+          component: 'Video',
+          url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        },
+        {
+          id: 'biAudio',
+          component: 'AudioPlayer',
+          url: 'https://www.w3schools.com/html/horse.mp3',
+          description: '示例音频',
+        },
+        // basic 的 Modal 用 trigger 指向触发组件 id；
+        // buildChild 无法给子节点注入 onClick，因此这里把 trigger 指向一个独立按钮节点。
+        { id: 'lblModal', component: 'Text', text: 'Modal', variant: 'h5' },
+        {
+          id: 'biModal',
+          component: 'Modal',
+          trigger: 'biModalTrigger',
+          content: 'biModalContent',
+        },
+        {
+          id: 'biModalTrigger',
+          component: 'Button',
+          variant: 'default',
+          child: 'biModalTriggerText',
+          action: { event: { name: 'builtin-modal-trigger' } },
+        },
+        { id: 'biModalTriggerText', component: 'Text', text: '打开 basic Modal', variant: 'body' },
+        {
+          id: 'biModalContent',
+          component: 'Text',
+          text: '这是 basic catalog 的 Modal 内容。',
+          variant: 'body',
+        },
       ],
     },
   },

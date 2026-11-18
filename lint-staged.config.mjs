@@ -12,4 +12,8 @@ const command = (name, files) => {
 
 export default {
   '*.{js,mjs,cjs,ts,vue}': (files) => command('eslint', files),
+  // CSS 的注释空行、声明顺序等规则由 Stylelint 负责，ESLint 与 Prettier 都不覆盖。
+  // 这里只收独立样式文件：.vue 的 <style> 交给 ESLint 那条规则，
+  // 否则同一文件会命中两组命令，lint-staged 默认并发执行，两个进程同时改写同一文件会互相覆盖。
+  '*.{css,scss}': (files) => command('stylelint --fix', files),
 }

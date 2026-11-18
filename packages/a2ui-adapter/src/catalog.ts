@@ -7,8 +7,11 @@ import { A2uiLeoTextField } from './adapters/A2uiLeoTextField'
 import { A2uiLeoCheckBox } from './adapters/A2uiLeoCheckBox'
 import { A2uiLeoTabs } from './adapters/A2uiLeoTabs'
 import { A2uiLeoModal } from './adapters/A2uiLeoModal'
-import { A2uiChart } from './adapters/A2uiChart'
-import { A2uiOrderCard } from './adapters/A2uiOrderCard'
+import { A2uiLeoChart } from './adapters/A2uiLeoChart'
+import { A2uiLeoOrderCard } from './adapters/A2uiLeoOrderCard'
+import { A2uiLeoBadge } from './adapters/A2uiLeoBadge'
+import { A2uiLeoStatCard } from './adapters/A2uiLeoStatCard'
+import { A2uiLeoLinkButton } from './adapters/A2uiLeoLinkButton'
 
 export const CATALOG_ID = 'https://leo.example/a2ui/catalog'
 
@@ -27,8 +30,11 @@ const selfBuilt: ReactCatalogComponent[] = [
   A2uiLeoCheckBox,
   A2uiLeoTabs,
   A2uiLeoModal,
-  A2uiChart,
-  A2uiOrderCard,
+  A2uiLeoChart,
+  A2uiLeoOrderCard,
+  A2uiLeoBadge,
+  A2uiLeoStatCard,
+  A2uiLeoLinkButton,
 ]
 
 /**

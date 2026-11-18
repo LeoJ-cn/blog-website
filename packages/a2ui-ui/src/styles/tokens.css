@@ -13,20 +13,25 @@
 
 :root {
   /* ---- 品牌层 ---- */
+
   /* 强调色：琥珀金，用于链接、选中态、选中边框 */
   --leo-brand: #b8925a;
+
   /* 数据色：图表与进度条用蓝，和强调金区分开，避免误读为可点击 */
   --leo-data: #5b7fa6;
   --leo-bg: #f7f5f0;
   --leo-surface: #fff;
   --leo-text: #1c1c1c;
+
   /* 次级文字：截图里的说明行、meta 信息 */
   --leo-text-muted: #7a7568;
   --leo-border: #e8e4db;
+
   /* 近黑实心按钮（截图里的「添加任务」） */
   --leo-solid: #1c1c1c;
   --leo-solid-text: #fff;
   --leo-radius: 12px;
+
   /* 卡片内的小圆角：徽标、小按钮用 */
   --leo-radius-sm: 6px;
   --leo-font: 'Inter', system-ui, -apple-system, sans-serif;
@@ -73,13 +78,13 @@
   --leo-solid: #ebe7de;
   --leo-solid-text: #14130f;
 
+  /* 语义色：深色下统一提亮，保证浅字与深底仍有足够对比度 */
   --leo-danger: #f0a49c;
   --leo-danger-bg: #2e1e1c;
   --leo-warning: #e0c084;
   --leo-warning-bg: #2b2519;
   --leo-success: #8fc4a2;
   --leo-success-bg: #1b2720;
-
   --leo-shadow: 0 1px 2px rgb(0 0 0 / 40%);
   --leo-shadow-raised: 0 8px 24px rgb(0 0 0 / 55%);
 
@@ -88,6 +93,7 @@
    * 深色下金色被提亮，白字对比度不足，改用深色文字。
    */
   --a2ui-color-on-primary: #1a1608;
+
   /* 深色下实心按钮反相：浅底深字 */
   --a2ui-color-on-surface: var(--leo-text);
 }
