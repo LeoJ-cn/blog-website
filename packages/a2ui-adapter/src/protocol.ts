@@ -17,4 +17,6 @@ export {
   CardApi,
   TextFieldApi,
   CheckBoxApi,
+  TabsApi,
+  ModalApi,
 } from '@a2ui/web_core/v0_9/basic_catalog'

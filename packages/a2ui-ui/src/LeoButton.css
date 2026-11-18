@@ -3,14 +3,24 @@
   align-items: center;
   justify-content: center;
   gap: var(--leo-space-2);
-  padding: var(--leo-space-2) var(--leo-space-4);
   border: none;
   cursor: pointer;
   font-family: var(--a2ui-font-family-title);
   font-size: 14px;
   line-height: 1.5;
-  border-radius: var(--a2ui-border-radius);
-  transition: background-color 120ms ease;
+  border-radius: var(--leo-radius-sm);
+  transition: background-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
+}
+
+/* ---- 尺寸 ---- */
+
+.leo-btn--md {
+  padding: var(--leo-space-2) var(--leo-space-4);
+}
+
+.leo-btn--sm {
+  padding: var(--leo-space-1) var(--leo-space-3);
+  font-size: 13px;
 }
 
 .leo-btn:disabled {
@@ -18,12 +28,24 @@
   cursor: not-allowed;
 }
 
-.leo-btn--default {
-  background: transparent;
-  color: var(--a2ui-color-primary);
-  box-shadow: inset 0 0 0 1px var(--a2ui-color-border);
+.leo-btn:focus-visible {
+  outline: 2px solid var(--leo-brand);
+  outline-offset: 2px;
 }
 
+/* ---- 变体 ---- */
+
+/* 近黑实心：页面主行动 */
+.leo-btn--dark {
+  background: var(--leo-solid);
+  color: var(--leo-solid-text);
+}
+
+.leo-btn--dark:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--leo-solid) 85%, var(--leo-bg));
+}
+
+/* 品牌金实心：次级行动 */
 .leo-btn--primary {
   background: var(--a2ui-color-primary);
   color: var(--a2ui-color-on-primary);
@@ -33,9 +55,37 @@
   background: var(--a2ui-color-primary-hover);
 }
 
+/* 白底描边：普通行动 */
+.leo-btn--default {
+  background: var(--leo-surface);
+  color: var(--a2ui-color-on-surface);
+  box-shadow: inset 0 0 0 1px var(--leo-border);
+}
+
+.leo-btn--default:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1px var(--leo-brand);
+}
+
+/* 透明底描边：密集工具栏里不抢视觉 */
+.leo-btn--outline {
+  background: transparent;
+  color: var(--a2ui-color-on-surface);
+  box-shadow: inset 0 0 0 1px var(--leo-border);
+}
+
+.leo-btn--outline:hover:not(:disabled) {
+  color: var(--leo-brand);
+  box-shadow: inset 0 0 0 1px var(--leo-brand);
+}
+
+/* 纯文字按钮 */
 .leo-btn--borderless {
   background: transparent;
-  color: var(--a2ui-color-primary);
+  color: var(--leo-brand);
   padding-left: var(--leo-space-2);
   padding-right: var(--leo-space-2);
+}
+
+.leo-btn--borderless:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--leo-brand) 8%, transparent);
 }

@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import {
+  LeoBadge,
   LeoButton,
   LeoCard,
   LeoCheckBox,
   LeoChart,
+  LeoLinkButton,
+  LeoModal,
+  LeoStatCard,
+  LeoTabs,
   LeoText,
   LeoTextField,
 } from '@white55/a2ui-ui'
@@ -18,6 +23,8 @@ export function LibraryDemo() {
   const [line, setLine] = useState('A 区装配线')
   const [remember, setRemember] = useState(true)
   const [lastAction, setLastAction] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [note, setNote] = useState('')
 
   return (
     <div className="demo-stack">
@@ -46,11 +53,17 @@ export function LibraryDemo() {
       <LeoCard>
         <LeoText variant="h4">按钮变体</LeoText>
         <div className="demo-row">
+          <LeoButton variant="dark" onClick={() => setLastAction('dark')}>
+            添加任务
+          </LeoButton>
           <LeoButton variant="primary" onClick={() => setLastAction('primary')}>
             主按钮
           </LeoButton>
           <LeoButton variant="default" onClick={() => setLastAction('default')}>
             次按钮
+          </LeoButton>
+          <LeoButton variant="outline" onClick={() => setLastAction('outline')}>
+            描边
           </LeoButton>
           <LeoButton variant="borderless" onClick={() => setLastAction('borderless')}>
             无边框
@@ -59,14 +72,90 @@ export function LibraryDemo() {
             禁用态
           </LeoButton>
         </div>
+        <div className="demo-row">
+          <LeoButton variant="dark" size="sm">
+            小号
+          </LeoButton>
+          <LeoButton variant="default" size="sm">
+            小号
+          </LeoButton>
+        </div>
         <LeoText variant="caption">
           {lastAction ? `最近点击：${lastAction}` : '点击任一按钮查看回传'}
         </LeoText>
       </LeoCard>
 
+      <LeoCard>
+        <LeoText variant="h4">Badge 状态标签</LeoText>
+        <div className="demo-row">
+          <LeoBadge tone="danger">有风险</LeoBadge>
+          <LeoBadge tone="warning">待审核</LeoBadge>
+          <LeoBadge tone="neutral">待处理</LeoBadge>
+          <LeoBadge tone="success">已完成</LeoBadge>
+          <LeoBadge tone="brand">共享</LeoBadge>
+          <LeoBadge tone="outline">受限</LeoBadge>
+          <LeoBadge tone="brand" dashed>
+            演示
+          </LeoBadge>
+        </div>
+      </LeoCard>
+
+      <LeoCard>
+        <div className="demo-row demo-row--between">
+          <LeoText variant="h4">StatCard 指标卡</LeoText>
+          <LeoLinkButton arrow>查看全部</LeoLinkButton>
+        </div>
+        <div className="demo-row">
+          <LeoStatCard label="08:00 前产出" value="18,460" caption="计划 19,680" />
+          <LeoStatCard label="上一个完整小时" value="6,560" caption="计划 6,560" />
+          <LeoStatCard label="机加工 OEE" value="80.6%" caption="目标 85%" highlight />
+          <LeoStatCard label="一次合格率" value="98.4%" caption="目标 99%" />
+        </div>
+        <div className="demo-row">
+          <LeoLinkButton>查看数据</LeoLinkButton>
+          <LeoLinkButton arrow>打开工作</LeoLinkButton>
+        </div>
+      </LeoCard>
+
       <LeoCard borderColor="warning">
         <LeoText variant="h5">卡片边色</LeoText>
         <LeoText variant="body">borderColor 支持 default / warning / danger。</LeoText>
+      </LeoCard>
+
+      <LeoCard>
+        <LeoText variant="h4">Tabs（Radix）</LeoText>
+        <LeoTabs
+          items={[
+            {
+              title: '概览',
+              content: <LeoText variant="body">第一个标签的内容，键盘左右方向键可切换。</LeoText>,
+            },
+            {
+              title: '明细',
+              content: <LeoText variant="body">第二个标签的内容。</LeoText>,
+            },
+            {
+              title: '设置',
+              content: <LeoText variant="body">第三个标签的内容。</LeoText>,
+            },
+          ]}
+        />
+      </LeoCard>
+
+      <LeoCard>
+        <LeoText variant="h4">Modal（Radix Dialog）</LeoText>
+        <LeoText variant="body">点击按钮打开弹窗，Esc 或点击遮罩可关闭。</LeoText>
+        <div className="demo-row">
+          <LeoButton variant="primary" onClick={() => setModalOpen(true)}>
+            打开 Modal
+          </LeoButton>
+        </div>
+        <LeoModal open={modalOpen} onOpenChange={setModalOpen} title="示例弹窗">
+          <LeoText variant="body">
+            这是一个基于 Radix Dialog 的弹窗，具备焦点陷阱与 Esc 关闭。
+          </LeoText>
+          <LeoTextField label="备注" value={note} onChange={setNote} />
+        </LeoModal>
       </LeoCard>
 
       <LeoCard>

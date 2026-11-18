@@ -1,0 +1,37 @@
+.leo-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--leo-space-1);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--leo-brand);
+  font-family: var(--a2ui-font-family-title);
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 140ms ease;
+}
+
+.leo-link-btn:hover:not(:disabled) {
+  opacity: 0.75;
+}
+
+.leo-link-btn:focus-visible {
+  outline: 2px solid var(--leo-brand);
+  outline-offset: 2px;
+  border-radius: var(--leo-radius-sm);
+}
+
+.leo-link-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 箭头在悬停时右移，暗示「跳转」方向 */
+.leo-link-btn__arrow {
+  transition: transform 140ms ease;
+}
+
+.leo-link-btn:hover:not(:disabled) .leo-link-btn__arrow {
+  transform: translateX(2px);
+}

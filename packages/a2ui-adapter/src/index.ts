@@ -7,6 +7,8 @@ export { A2uiText } from './adapters/A2uiText'
 export { A2uiCard } from './adapters/A2uiCard'
 export { A2uiTextField } from './adapters/A2uiTextField'
 export { A2uiCheckBox } from './adapters/A2uiCheckBox'
+export { A2uiTabs } from './adapters/A2uiTabs'
+export { A2uiModal } from './adapters/A2uiModal'
 export { A2uiChart } from './adapters/A2uiChart'
 export { A2uiOrderCard } from './adapters/A2uiOrderCard'
 

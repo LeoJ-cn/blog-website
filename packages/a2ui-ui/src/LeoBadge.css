@@ -1,0 +1,57 @@
+.leo-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px var(--leo-space-2);
+  border-radius: var(--leo-radius-sm);
+  font-family: var(--a2ui-font-family-title);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* 默认：中性标签，用于「待处理」这类无强烈语义的状态 */
+.leo-badge--neutral {
+  background: color-mix(in oklab, var(--leo-text-muted) 12%, transparent);
+  color: var(--leo-text-muted);
+}
+
+/* 待审核 / 需要注意，但还没到出错 */
+.leo-badge--warning {
+  background: var(--leo-warning-bg);
+  color: var(--leo-warning);
+}
+
+/* 有风险 / 失败：唯一使用红色语义的地方 */
+.leo-badge--danger {
+  background: var(--leo-danger-bg);
+  color: var(--leo-danger);
+}
+
+.leo-badge--success {
+  background: var(--leo-success-bg);
+  color: var(--leo-success);
+}
+
+/* 品牌色标签：用于权限范围这类「已确认」的陈述 */
+.leo-badge--brand {
+  background: color-mix(in oklab, var(--leo-brand) 12%, transparent);
+  color: var(--leo-brand);
+}
+
+/* 无填充，只有描边 */
+.leo-badge--outline {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--leo-border);
+  color: var(--leo-text-muted);
+}
+
+/*
+ * 虚线变体：在任意 tone 之上叠加虚线边框并去掉填充。
+ * 语义是「提示/示意」，与实心标签的「状态」区分开。
+ */
+.leo-badge--dashed {
+  background: transparent;
+  border: 1px dashed color-mix(in oklab, var(--leo-brand) 55%, transparent);
+  color: var(--leo-brand);
+}

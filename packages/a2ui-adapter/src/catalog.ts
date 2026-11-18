@@ -5,6 +5,8 @@ import { A2uiText } from './adapters/A2uiText'
 import { A2uiCard } from './adapters/A2uiCard'
 import { A2uiTextField } from './adapters/A2uiTextField'
 import { A2uiCheckBox } from './adapters/A2uiCheckBox'
+import { A2uiTabs } from './adapters/A2uiTabs'
+import { A2uiModal } from './adapters/A2uiModal'
 import { A2uiChart } from './adapters/A2uiChart'
 import { A2uiOrderCard } from './adapters/A2uiOrderCard'
 
@@ -12,7 +14,7 @@ export const CATALOG_ID = 'https://leo.example/a2ui/catalog'
 
 // 与 basic catalog 同名、需要用自建实现替换的组件。
 // Icon 不在其中：左侧固定区域不需要图标，右侧直接用 basic 的 Web Component 即可。
-const OVERRIDDEN = new Set(['Text', 'Button', 'Card', 'TextField', 'CheckBox'])
+const OVERRIDDEN = new Set(['Text', 'Button', 'Card', 'TextField', 'CheckBox', 'Tabs', 'Modal'])
 
 const selfBuilt: ReactCatalogComponent[] = [
   A2uiText,
@@ -20,6 +22,8 @@ const selfBuilt: ReactCatalogComponent[] = [
   A2uiCard,
   A2uiTextField,
   A2uiCheckBox,
+  A2uiTabs,
+  A2uiModal,
   A2uiChart,
   A2uiOrderCard,
 ]

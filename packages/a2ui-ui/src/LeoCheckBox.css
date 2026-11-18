@@ -4,16 +4,55 @@
   gap: var(--leo-space-2);
 }
 
-.leo-checkbox__input {
+/* Radix 的 Root 是 button 元素，需要显式重置按钮默认样式 */
+.leo-checkbox__root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
-  accent-color: var(--a2ui-color-primary);
+  padding: 0;
+  border: 1px solid var(--a2ui-color-border);
+  border-radius: 4px;
+  background: var(--a2ui-color-surface);
+  color: var(--a2ui-color-on-primary);
   cursor: pointer;
-  margin: 0;
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
 
-.leo-checkbox__input:disabled {
+.leo-checkbox__root:hover:not(:disabled) {
+  border-color: var(--a2ui-color-primary);
+}
+
+/* 选中态与半选态都用品牌色填充，与原生 accent-color 的视觉一致 */
+.leo-checkbox__root[data-state='checked'],
+.leo-checkbox__root[data-state='indeterminate'] {
+  background: var(--a2ui-color-primary);
+  border-color: var(--a2ui-color-primary);
+}
+
+.leo-checkbox__root:focus-visible {
+  outline: 2px solid var(--a2ui-color-primary);
+  outline-offset: 2px;
+}
+
+.leo-checkbox__root:disabled {
   cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.leo-checkbox__indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.leo-checkbox__indicator svg {
+  width: 12px;
+  height: 12px;
 }
 
 .leo-checkbox__label {

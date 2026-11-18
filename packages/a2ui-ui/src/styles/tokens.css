@@ -1,18 +1,55 @@
+/*
+ * 主题变量两层结构：
+ *   品牌层 --leo-*   —— 主题切换只改这一层
+ *   映射层 --a2ui-*  —— 引用品牌层，A2UI basic catalog 的 Web Component 读的就是它
+ *
+ * 只覆盖 --leo-* 的原因：--a2ui-* 全是 var(--leo-*) 的引用，
+ * 浏览器会跟着品牌层一起重算，不需要在两处重复维护同一份颜色。
+ *
+ * 配色取向：暖白底 + 琥珀金强调 + 近黑实心主按钮。
+ * 这是刻意与 A2UI 默认的蓝色拉开距离——金色承担「强调/交互」，
+ * 蓝色只保留给数据可视化，避免两者在同屏抢注意力。
+ */
+
 :root {
-  --leo-brand: #1a73e8;
-  --leo-bg: #fff;
-  --leo-text: #1f1f1f;
-  --leo-border: #e5e5e5;
-  --leo-radius: 8px;
+  /* ---- 品牌层 ---- */
+  /* 强调色：琥珀金，用于链接、选中态、选中边框 */
+  --leo-brand: #b8925a;
+  /* 数据色：图表与进度条用蓝，和强调金区分开，避免误读为可点击 */
+  --leo-data: #5b7fa6;
+  --leo-bg: #f7f5f0;
+  --leo-surface: #fff;
+  --leo-text: #1c1c1c;
+  /* 次级文字：截图里的说明行、meta 信息 */
+  --leo-text-muted: #7a7568;
+  --leo-border: #e8e4db;
+  /* 近黑实心按钮（截图里的「添加任务」） */
+  --leo-solid: #1c1c1c;
+  --leo-solid-text: #fff;
+  --leo-radius: 12px;
+  /* 卡片内的小圆角：徽标、小按钮用 */
+  --leo-radius-sm: 6px;
   --leo-font: 'Inter', system-ui, -apple-system, sans-serif;
   --leo-space-1: 4px;
   --leo-space-2: 8px;
   --leo-space-3: 12px;
   --leo-space-4: 16px;
 
-  /* 映射给 A2UI basic catalog：让两侧读同一份颜色与字体 */
+  /* 语义色：都是浅底 + 深字的低饱和组合，与金色主调不冲突 */
+  --leo-danger: #c0392b;
+  --leo-danger-bg: #fbeceb;
+  --leo-warning: #a4772a;
+  --leo-warning-bg: #f8f1e3;
+  --leo-success: #3d7a52;
+  --leo-success-bg: #ecf4ee;
+
+  /* 阴影：截图里卡片阴影极淡，主要靠底色差分层 */
+  --leo-shadow: 0 1px 2px rgb(28 28 28 / 4%);
+  --leo-shadow-raised: 0 8px 24px rgb(28 28 28 / 10%);
+
+  /* ---- 映射层：给 A2UI basic catalog ---- */
   --a2ui-color-primary: var(--leo-brand);
-  --a2ui-color-surface: var(--leo-bg);
+  --a2ui-color-surface: var(--leo-surface);
   --a2ui-color-background: var(--leo-bg);
   --a2ui-color-on-surface: var(--leo-text);
   --a2ui-color-on-background: var(--leo-text);
@@ -20,16 +57,37 @@
   --a2ui-border: 1px solid var(--leo-border);
   --a2ui-border-radius: var(--leo-radius);
   --a2ui-font-family-title: var(--leo-font);
-
-  /* 派生色必须与 basic catalog 用同一套算法，否则左右两侧的同名按钮会不同色。
-     @a2ui/web_core 的 styles/default.js 用 color-mix 生成这两项。 */
   --a2ui-color-primary-hover: color-mix(in oklab, var(--a2ui-color-primary) 85%, black);
   --a2ui-color-on-primary: #fff;
 }
 
 [data-theme='dark'] {
-  --leo-brand: #4a9eff;
-  --leo-bg: #121212;
-  --leo-text: #e8e8e8;
-  --leo-border: #333;
+  /* 深色下把暖白改成暖黑，金色略微提亮以维持对比度 */
+  --leo-brand: #d4a96a;
+  --leo-data: #7ea3c9;
+  --leo-bg: #14130f;
+  --leo-surface: #1e1d19;
+  --leo-text: #ebe7de;
+  --leo-text-muted: #9a948a;
+  --leo-border: #34322c;
+  --leo-solid: #ebe7de;
+  --leo-solid-text: #14130f;
+
+  --leo-danger: #f0a49c;
+  --leo-danger-bg: #2e1e1c;
+  --leo-warning: #e0c084;
+  --leo-warning-bg: #2b2519;
+  --leo-success: #8fc4a2;
+  --leo-success-bg: #1b2720;
+
+  --leo-shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  --leo-shadow-raised: 0 8px 24px rgb(0 0 0 / 55%);
+
+  /*
+   * on-primary 需要跟着主题走：浅色下金色较深，白字可读；
+   * 深色下金色被提亮，白字对比度不足，改用深色文字。
+   */
+  --a2ui-color-on-primary: #1a1608;
+  /* 深色下实心按钮反相：浅底深字 */
+  --a2ui-color-on-surface: var(--leo-text);
 }

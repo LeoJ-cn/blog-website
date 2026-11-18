@@ -1,0 +1,50 @@
+.leo-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--leo-space-3);
+}
+
+.leo-tabs__list {
+  display: flex;
+  align-items: center;
+  gap: var(--leo-space-1);
+  border-bottom: 1px solid var(--a2ui-color-border);
+}
+
+.leo-tabs__trigger {
+  padding: var(--leo-space-2) var(--leo-space-3);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--a2ui-color-on-surface);
+  font-family: var(--a2ui-font-family-title);
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.leo-tabs__trigger:hover {
+  opacity: 0.9;
+}
+
+.leo-tabs__trigger[data-state='active'] {
+  opacity: 1;
+  font-weight: 600;
+  color: var(--a2ui-color-primary);
+  border-bottom-color: var(--a2ui-color-primary);
+}
+
+.leo-tabs__trigger:focus-visible {
+  outline: 2px solid var(--a2ui-color-primary);
+  outline-offset: -2px;
+}
+
+.leo-tabs__trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.leo-tabs__panel {
+  outline: none;
+}

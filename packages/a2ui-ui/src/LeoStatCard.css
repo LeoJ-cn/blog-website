@@ -1,0 +1,40 @@
+.leo-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--leo-space-1);
+  /* 用弹性基准宽度而不是固定宽度：一行几张卡由容器宽度决定 */
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: var(--leo-space-3) var(--leo-space-4);
+  border-radius: var(--leo-radius);
+  background: var(--leo-surface);
+  box-shadow: var(--leo-shadow), inset 0 0 0 1px var(--leo-border);
+  box-sizing: border-box;
+}
+
+/* 高亮卡：金色边框覆盖掉默认那一圈浅色描边 */
+.leo-stat-card--highlight {
+  box-shadow: var(--leo-shadow), inset 0 0 0 1px var(--leo-brand);
+}
+
+.leo-stat-card__label {
+  font-family: var(--a2ui-font-family-title);
+  font-size: 13px;
+  color: var(--leo-text-muted);
+}
+
+.leo-stat-card__value {
+  font-family: var(--a2ui-font-family-title);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--a2ui-color-on-surface);
+  /* 等宽数字：多张卡并排时位数对齐 */
+  font-variant-numeric: tabular-nums;
+}
+
+.leo-stat-card__caption {
+  font-family: var(--a2ui-font-family-title);
+  font-size: 12px;
+  color: var(--leo-text-muted);
+}
