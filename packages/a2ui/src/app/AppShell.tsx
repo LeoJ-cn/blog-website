@@ -18,7 +18,6 @@ export function AppShell({
   sidebar,
   sidebarCollapsed = false,
   contentFullscreen = false,
-  contentToolbar,
   children,
 }: {
   header: ReactNode
@@ -27,8 +26,6 @@ export function AppShell({
   /** 侧边栏收起时内容区要吃掉腾出来的宽度，所以宽度由这一层统一控制 */
   sidebarCollapsed?: boolean
   contentFullscreen?: boolean
-  /** 全屏切换按钮等常驻操作，贴在内容区右上角 */
-  contentToolbar?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -41,10 +38,7 @@ export function AppShell({
         >
           {sidebar}
         </aside>
-        <main className="app-content">
-          {contentToolbar && <div className="app-content__toolbar">{contentToolbar}</div>}
-          {children}
-        </main>
+        <main className="app-content">{children}</main>
       </div>
     </div>
   )

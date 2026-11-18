@@ -14,7 +14,7 @@ import {
 } from '@white55/a2ui-ui'
 
 /**
- * Tab ①：作为 UI 组件库单独使用。
+ * Tab ①：UI 组件库。
  *
  * 直接 import @white55/a2ui-ui 的组件写 JSX，完全不涉及 A2UI。
  * 这些组件不认识协议，只接受普通 React props。
@@ -28,7 +28,7 @@ export function LibraryDemo() {
 
   return (
     <div className="demo-stack">
-      <LeoText variant="h2">作为 UI 组件库单独使用</LeoText>
+      <LeoText variant="h2">UI 组件库</LeoText>
       <LeoText variant="caption">
         直接 import @white55/a2ui-ui，写普通 JSX。这些组件不知道 A2UI 存在，
         任何 React 项目都能这样用。

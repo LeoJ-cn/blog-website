@@ -18,7 +18,7 @@ import './ChatPage.css'
  * 路由结构（basename 为 /a2ui）：
  *   /library     组件库直接使用
  *   /builtin     A2UI 自带组件
- *   /integrated  A2UI 接入组件库的组件
+ *   /integrated  A2UI  自定义组件
  *   /protocol/*  协议能力说明（这些页面没有独立内容，统一落到聊天框演示）
  *
  * 全屏状态放 ?fullscreen=1，侧边栏折叠放 ?nav=collapsed，
@@ -52,18 +52,6 @@ export function ChatPage() {
     <AppShell
       sidebarCollapsed={searchParams.get('nav') === 'collapsed'}
       contentFullscreen={fullscreen}
-      contentToolbar={
-        <button
-          type="button"
-          className="content-fullscreen-btn"
-          onClick={toggleFullscreen}
-          aria-pressed={fullscreen}
-          title={fullscreen ? '退出全屏' : '内容区全屏'}
-        >
-          <span aria-hidden="true">{fullscreen ? '⤡' : '⤢'}</span>
-          {fullscreen ? '退出全屏' : '全屏'}
-        </button>
-      }
       header={
         <div className="app-header__inner">
           <span className="app-header__mark" aria-hidden="true">
@@ -84,13 +72,23 @@ export function ChatPage() {
         </div>
       }
       subheader={
-        /* 二级 header 只做定位，不放操作项；Tab 属于内容区 */
+        /* 二级 header：左侧定位信息，右侧全屏切换 */
         <div className="app-subheader__inner">
           <span className="breadcrumb">组件展示</span>
           <span className="breadcrumb__sep" aria-hidden="true">
             /
           </span>
           <span className="breadcrumb--current">{title}</span>
+          <button
+            type="button"
+            className="app-subheader__fullscreen"
+            onClick={toggleFullscreen}
+            aria-pressed={fullscreen}
+            title={fullscreen ? '退出全屏' : '内容区全屏'}
+          >
+            <span aria-hidden="true">{fullscreen ? '⤡' : '⤢'}</span>
+            {fullscreen ? '退出全屏' : '全屏'}
+          </button>
         </div>
       }
       sidebar={<Sidebar />}

@@ -35,9 +35,9 @@ export const NAV_GROUPS: NavGroup[] = [
         label: '三种使用形态',
         icon: '▦',
         children: [
-          { key: 'library', label: '作为 UI 组件库单独使用', icon: '◻', path: '/library' },
+          { key: 'library', label: 'UI 组件库', icon: '◻', path: '/library' },
           { key: 'builtin', label: 'A2UI 自带组件', icon: '◈', path: '/builtin' },
-          { key: 'integrated', label: 'A2UI 接入组件库的组件', icon: '◉', path: '/integrated' },
+          { key: 'integrated', label: 'A2UI  自定义组件', icon: '◉', path: '/integrated' },
         ],
       },
     ],
@@ -54,16 +54,16 @@ export const NAV_GROUPS: NavGroup[] = [
 
 /** 路径 → 内容区标题，二级 header 用它做面包屑。 */
 export const PATH_LABEL: Record<string, string> = {
-  '/library': '作为 UI 组件库单独使用',
+  '/library': 'UI 组件库',
   '/builtin': 'A2UI 自带组件',
-  '/integrated': 'A2UI 接入组件库的组件',
+  '/integrated': 'A2UI  自定义组件',
   '/protocol/sse': '增量数据与清空',
   '/protocol/action': '组件动作回传',
 }
 
 /** 内容区内部的 Tab，直接对应三个演示路由。 */
 export const CONTENT_TABS = [
-  { path: '/library', label: '作为 UI 组件库单独使用' },
+  { path: '/library', label: 'UI 组件库' },
   { path: '/builtin', label: 'A2UI 自带组件' },
-  { path: '/integrated', label: 'A2UI 接入组件库的组件' },
+  { path: '/integrated', label: 'A2UI  自定义组件' },
 ]

@@ -15,11 +15,8 @@
 
 .app-header {
   flex-shrink: 0;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--a2ui-color-primary) 10%, var(--a2ui-color-surface)),
-    var(--a2ui-color-surface) 55%
-  );
+  /* 白底：只有内容区是米色，页头保持白色，两者靠分隔线划开 */
+  background: var(--a2ui-color-surface);
   border-bottom: 1px solid var(--a2ui-color-border);
 }
 
@@ -89,6 +86,7 @@
 
 .app-subheader {
   flex-shrink: 0;
+  /* 白底：与内容区的米色区分开，边界由下方分隔线明确 */
   background: var(--a2ui-color-surface);
   border-bottom: 1px solid var(--a2ui-color-border);
 }
@@ -100,6 +98,35 @@
   padding: var(--leo-space-2) var(--leo-space-4);
   font-size: 13px;
   color: var(--a2ui-color-on-surface);
+}
+
+/* 全屏按钮靠右：margin-left:auto 把它推到头部的另一端 */
+.app-subheader__fullscreen {
+  display: flex;
+  align-items: center;
+  gap: var(--leo-space-1);
+  margin-left: auto;
+  padding: var(--leo-space-1) var(--leo-space-3);
+  border: 1px solid var(--a2ui-color-border);
+  border-radius: var(--leo-radius-sm);
+  background: var(--a2ui-color-surface);
+  color: var(--a2ui-color-on-surface);
+  font-family: var(--a2ui-font-family-title);
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.app-subheader__fullscreen:hover {
+  opacity: 1;
+  border-color: var(--leo-brand);
+  color: var(--leo-brand);
+}
+
+.app-subheader__fullscreen:focus-visible {
+  outline: 2px solid var(--leo-brand);
+  outline-offset: 2px;
 }
 
 .breadcrumb {
@@ -130,6 +157,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   border-right: 1px solid var(--a2ui-color-border);
+  /* 白底：与内容区的米色拉开层次，边界由右侧竖线明确 */
   background: var(--a2ui-color-surface);
   box-sizing: border-box;
   transition: width 160ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -154,38 +182,6 @@
   background: var(--a2ui-color-background);
 }
 
-/* 内容区工具条：全屏按钮常驻右上角，不随内容滚动 */
-.app-content__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--leo-space-2);
-  flex-shrink: 0;
-  padding: var(--leo-space-2) var(--leo-space-4) 0;
-}
-
-.content-fullscreen-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--leo-space-1);
-  padding: var(--leo-space-1) var(--leo-space-3);
-  border: 1px solid var(--a2ui-color-border);
-  border-radius: 6px;
-  background: var(--a2ui-color-surface);
-  color: var(--a2ui-color-on-surface);
-  font-family: var(--a2ui-font-family-title);
-  font-size: 12px;
-  cursor: pointer;
-  opacity: 0.75;
-  transition: opacity 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-
-.content-fullscreen-btn:hover {
-  opacity: 1;
-  border-color: var(--a2ui-color-primary);
-  color: var(--a2ui-color-primary);
-}
-
 /*
  * 内容区全屏：整个 shell 叠一层全屏容器，把两个 header 与侧边栏一起挡住。
  * 用 position: fixed 而不是只让 content 撑满下段，否则顶部仍被占掉两条，
@@ -201,9 +197,12 @@
   background: var(--a2ui-color-background);
 }
 
-/* 全屏下工具条贴到右上角，给按钮留出安全边距 */
-.app-shell--content-fullscreen .app-content__toolbar {
-  padding: var(--leo-space-4) var(--leo-space-4) 0;
+/* 全屏时二级 header 已被遮住，浮一个退出按钮到右上角，保证随时能退出 */
+.app-shell--content-fullscreen .app-subheader__fullscreen {
+  position: fixed;
+  top: var(--leo-space-4);
+  right: var(--leo-space-4);
+  z-index: 31;
 }
 
 /* ============================================================
@@ -217,34 +216,34 @@
   flex-shrink: 0;
   padding: var(--leo-space-2) var(--leo-space-4) 0;
   border-bottom: 1px solid var(--a2ui-color-border);
+  /* 白底：Tab 条属于页头的一部分，与内容区的米色分开 */
   background: var(--a2ui-color-surface);
 }
 
 .content-tab {
   padding: var(--leo-space-2) var(--leo-space-3);
   border: none;
-  border-radius: 6px 6px 0 0;
-  border-bottom: 2px solid transparent;
+  border-radius: var(--leo-radius-sm);
   background: transparent;
   color: var(--a2ui-color-on-surface);
   font-family: var(--a2ui-font-family-title);
   font-size: 14px;
   cursor: pointer;
   opacity: 0.6;
-  transition: opacity 140ms ease, border-color 140ms ease, background-color 140ms ease;
+  transition: opacity 140ms ease, background-color 140ms ease, color 140ms ease;
 }
 
 .content-tab:hover {
-  opacity: 0.95;
-  background: color-mix(in oklab, var(--a2ui-color-primary) 6%, transparent);
+  opacity: 0.9;
+  background: color-mix(in oklab, var(--a2ui-color-primary) 8%, transparent);
 }
 
+/* 选中态：金色浅底药丸，而不是下划线——截图里「今天/绩效/重点」就是这个形态 */
 .content-tab--active {
   opacity: 1;
   font-weight: 600;
-  color: var(--a2ui-color-primary);
-  border-bottom-color: var(--a2ui-color-primary);
-  background: color-mix(in oklab, var(--a2ui-color-primary) 8%, transparent);
+  color: var(--leo-brand);
+  background: color-mix(in oklab, var(--leo-brand) 14%, transparent);
 }
 
 /* ============================================================

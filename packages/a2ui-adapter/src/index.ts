@@ -1,16 +1,15 @@
-// 协议运行时与渲染器（升级或换渲染器只改 protocol.ts）
 export * from './protocol'
+export { CATALOG_ID, APP_CATALOG, assertCatalogConsistency } from './catalog'
 
-// 已接入 UI 库的组件实现
-export { A2uiButton } from './adapters/A2uiButton'
-export { A2uiText } from './adapters/A2uiText'
-export { A2uiCard } from './adapters/A2uiCard'
-export { A2uiTextField } from './adapters/A2uiTextField'
-export { A2uiCheckBox } from './adapters/A2uiCheckBox'
-export { A2uiTabs } from './adapters/A2uiTabs'
-export { A2uiModal } from './adapters/A2uiModal'
+// 自建组件（Leo 前缀）：与 basic catalog 并存，不覆盖任何标准组件
+export { A2uiLeoText } from './adapters/A2uiLeoText'
+export { A2uiLeoButton } from './adapters/A2uiLeoButton'
+export { A2uiLeoCard } from './adapters/A2uiLeoCard'
+export { A2uiLeoTextField } from './adapters/A2uiLeoTextField'
+export { A2uiLeoCheckBox } from './adapters/A2uiLeoCheckBox'
+export { A2uiLeoTabs } from './adapters/A2uiLeoTabs'
+export { A2uiLeoModal } from './adapters/A2uiLeoModal'
+
+// 业务组件
 export { A2uiChart } from './adapters/A2uiChart'
 export { A2uiOrderCard } from './adapters/A2uiOrderCard'
-
-// 合并后的 catalog
-export { APP_CATALOG, CATALOG_ID, assertCatalogConsistency } from './catalog'

@@ -25,10 +25,10 @@ const defaultBatch: A2uiMessage[] = [
       surfaceId: SURFACE_ID,
       components: [
         { id: 'root', component: 'Column', children: ['title', 'tip', 'stats', 'form', 'actions'] },
-        { id: 'title', component: 'Text', text: '复杂组件展示', variant: 'h2' },
+        { id: 'title', component: 'LeoText', text: '复杂组件展示', variant: 'h2' },
         {
           id: 'tip',
-          component: 'Text',
+          component: 'LeoText',
           text: '这些组件由 JSON 经适配层渲染，与「基础组件展示」页直接写 JSX 的组件应完全一致。',
           variant: 'caption',
         },
@@ -45,17 +45,17 @@ const defaultBatch: A2uiMessage[] = [
           ],
           showValueLabel: true,
         },
-        { id: 'form', component: 'Card', child: 'formInner' },
+        { id: 'form', component: 'LeoCard', child: 'formInner' },
         { id: 'formInner', component: 'Column', children: ['nameField', 'rememberBox'] },
         {
           id: 'nameField',
-          component: 'TextField',
+          component: 'LeoTextField',
           label: '产线名称',
           value: { path: '/form/line' },
         },
         {
           id: 'rememberBox',
-          component: 'CheckBox',
+          component: 'LeoCheckBox',
           label: '记住这台设备',
           value: { path: '/form/remember' },
         },
@@ -124,10 +124,10 @@ const updateBatch: A2uiMessage[] = [
     updateComponents: {
       surfaceId: SURFACE_ID,
       components: [
-        { id: 'title', component: 'Text', text: '复杂组件展示（数据已更新）', variant: 'h2' },
+        { id: 'title', component: 'LeoText', text: '复杂组件展示（数据已更新）', variant: 'h2' },
         {
           id: 'tip',
-          component: 'Text',
+          component: 'LeoText',
           text: '第一轮下发默认数据，停顿后第二轮只发更新数据；组件树未重建。',
           variant: 'caption',
         },
