@@ -1,4 +1,15 @@
-export { LeoChartApi, CHART_KINDS } from './components/LeoChart.api'
+export {
+  LeoBarChartApi,
+  LeoHBarChartApi,
+  LeoLineChartApi,
+  LeoAreaChartApi,
+  LeoPieChartApi,
+  LeoRingChartApi,
+  LeoGaugeChartApi,
+  type CartesianChartContract,
+  type PieChartContract,
+  type GaugeChartContract,
+} from './components/LeoChart.api'
 export { LeoOrderCardApi } from './components/LeoOrderCard.api'
 export { LeoTextApi, TEXT_VARIANTS, type TextVariantName } from './components/LeoText.api'
 export {

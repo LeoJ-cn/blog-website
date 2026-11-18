@@ -1,5 +1,7 @@
-import { Navigate, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { A2uiSurface } from '../a2ui/protocol'
+import { setNavigate } from '../a2ui/navigation'
 import { AppShell } from '../app/AppShell'
 import { useChat } from './useChat'
 import { useTheme } from './useTheme'
@@ -28,8 +30,15 @@ export function ChatPage() {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const fullscreen = searchParams.get('fullscreen') === '1'
+  // 对话面板开合放 URL，与全屏、侧栏折叠保持一致：刷新和前进后退都能恢复
+  const dockOpen = searchParams.get('dock') !== 'closed'
   const { theme, toggleTheme } = useTheme()
   const { messages, surfaces, send, sending } = useChat()
+  const navigate = useNavigate()
+
+  // 把 navigate 交给 A2UI 处理器：组件动作里的 navigate 事件在本地完成跳转，
+  // 不经过后端。卸载时撤销，避免处理器继续调用已失效的导航函数。
+  useEffect(() => setNavigate((to) => navigate(to)), [navigate])
 
   // 聊天输入框的提示语按当前路由区分，否则在协议页仍会提示「生成接入组件」
   const dockMode = location.pathname === '/integrated'
@@ -43,6 +52,13 @@ export function ChatPage() {
     if (fullscreen) params.delete('fullscreen')
     else params.set('fullscreen', '1')
     // 用 push：用户按浏览器后退能退回退出全屏前的状态
+    setSearchParams(params)
+  }
+
+  const setDockOpen = (open: boolean) => {
+    const params = new URLSearchParams(searchParams)
+    if (open) params.delete('dock')
+    else params.set('dock', 'closed')
     setSearchParams(params)
   }
 
@@ -110,36 +126,39 @@ export function ChatPage() {
         ))}
       </nav>
 
-      <div className="content">
-        <Routes>
-          <Route path="/" element={<Navigate to="/library" replace />} />
-          <Route path="/library" element={<LibraryDemo />} />
-          <Route path="/builtin" element={<BuiltinDemo />} />
-          <Route
-            path="/integrated"
-            element={
-              surfaces.length === 0 ? (
-                <p className="content__empty">等待生成…</p>
-              ) : (
-                surfaces.map((surface) => (
-                  <A2uiSurface key={surface.id} surface={surface} />
-                ))
-              )
-            }
-          />
-          {/* 协议页没有独立内容区，点了就打开聊天框演示对应能力 */}
-          <Route
-            path="/protocol/*"
-            element={<p className="content__empty">该能力通过右下角 AI 对话演示</p>}
-          />
-          <Route path="*" element={<Navigate to="/library" replace />} />
-        </Routes>
-      </div>
+      {/* 内容区与对话面板并排：面板是内容区右侧的一列，不是浮层 */}
+      <div className="content-row">
+        <div className="content">
+          <Routes>
+            <Route path="/" element={<Navigate to="/library" replace />} />
+            <Route path="/library" element={<LibraryDemo />} />
+            <Route path="/builtin" element={<BuiltinDemo />} />
+            <Route
+              path="/integrated"
+              element={
+                surfaces.length === 0 ? (
+                  <p className="content__empty">等待生成…</p>
+                ) : (
+                  surfaces.map((surface) => (
+                    <A2uiSurface key={surface.id} surface={surface} />
+                  ))
+                )
+              }
+            />
+            {/* 协议页没有独立内容区，点了就打开聊天框演示对应能力 */}
+            <Route
+              path="/protocol/*"
+              element={<p className="content__empty">该能力通过右侧 AI 对话演示</p>}
+            />
+            <Route path="*" element={<Navigate to="/library" replace />} />
+          </Routes>
+        </div>
 
-      <ChatDock title="AI 对话">
-        <MessageList messages={messages} />
-        <ChatInput onSend={send} disabled={sending} mode={dockMode} />
-      </ChatDock>
+        <ChatDock title="AI 对话" open={dockOpen} onOpenChange={setDockOpen}>
+          <MessageList messages={messages} />
+          <ChatInput onSend={send} disabled={sending} mode={dockMode} />
+        </ChatDock>
+      </div>
     </AppShell>
   )
 }

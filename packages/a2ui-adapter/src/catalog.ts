@@ -7,7 +7,14 @@ import { A2uiLeoTextField } from './adapters/A2uiLeoTextField'
 import { A2uiLeoCheckBox } from './adapters/A2uiLeoCheckBox'
 import { A2uiLeoTabs } from './adapters/A2uiLeoTabs'
 import { A2uiLeoModal } from './adapters/A2uiLeoModal'
-import { A2uiLeoChart } from './adapters/A2uiLeoChart'
+import {
+  A2uiLeoBarChart,
+  A2uiLeoHBarChart,
+  A2uiLeoLineChart,
+  A2uiLeoAreaChart,
+} from './adapters/A2uiLeoCartesianCharts'
+import { A2uiLeoPieChart, A2uiLeoRingChart } from './adapters/A2uiLeoPieCharts'
+import { A2uiLeoGaugeChart } from './adapters/A2uiLeoGaugeChart'
 import { A2uiLeoOrderCard } from './adapters/A2uiLeoOrderCard'
 import { A2uiLeoBadge } from './adapters/A2uiLeoBadge'
 import { A2uiLeoStatCard } from './adapters/A2uiLeoStatCard'
@@ -30,7 +37,14 @@ const selfBuilt: ReactCatalogComponent[] = [
   A2uiLeoCheckBox,
   A2uiLeoTabs,
   A2uiLeoModal,
-  A2uiLeoChart,
+  // 图表按图形逐个注册：A2UI 里不提供可切换形态的万能图表组件
+  A2uiLeoBarChart,
+  A2uiLeoHBarChart,
+  A2uiLeoLineChart,
+  A2uiLeoAreaChart,
+  A2uiLeoPieChart,
+  A2uiLeoRingChart,
+  A2uiLeoGaugeChart,
   A2uiLeoOrderCard,
   A2uiLeoBadge,
   A2uiLeoStatCard,

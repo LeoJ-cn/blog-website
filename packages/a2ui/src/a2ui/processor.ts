@@ -1,5 +1,6 @@
 import { APP_CATALOG, MessageProcessor, assertCatalogConsistency } from './protocol'
 import type { ActionPayload, ReactCatalogComponent } from './protocol'
+import { NAVIGATE_ACTION, navigateTo } from './navigation'
 
 // 开发期自检：OVERRIDDEN 与 selfBuilt 两份清单必须互相印证，
 // 否则会出现「basic 里剔除了、自建里没补上」的静默缺组件。
@@ -23,6 +24,19 @@ function currentDataModel(proc: MessageProcessor<ReactCatalogComponent>) {
 export const processor = new MessageProcessor<ReactCatalogComponent>(
   [APP_CATALOG],
   (action: ActionPayload) => {
+    // 路由跳转是纯前端行为：协议没有「跳转」原语，后端只能下发一个动作名。
+    // 命中约定名且导航函数已注入时，本地完成跳转，不再上行——否则后端
+    // 会收到一个它无法处理、也不该处理的 navigate 事件。
+    if (action.name === NAVIGATE_ACTION) {
+      const to = action.context?.to
+      if (typeof to === 'string' && navigateTo(to)) {
+        console.info('[a2ui] 本地跳转', to)
+        return
+      }
+      // 目标缺失或导航未就绪时继续走默认上行，避免动作被静默吞掉
+      console.warn('[a2ui] navigate 动作无法本地执行，按普通动作回传', action)
+    }
+
     // action.context 里只有组件自己声明的静态参数；
     // 页面上的最新数据要靠 dataModel 单独带上，两者一起发给后端。
     const payload = {

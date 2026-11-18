@@ -9,9 +9,24 @@ import {
   LeoModal,
   LeoStatCard,
   LeoTabs,
+  LeoTable,
   LeoText,
   LeoTextField,
 } from '@white55/a2ui-ui'
+
+/**
+ * 表格演示数据。
+ *
+ * 放在组件外：LeoTable 用引用相等判断是否要 replaceData，
+ * 若在渲染中内联数组，每次渲染都会触发一次无意义的数据替换。
+ */
+const INITIAL_TABLE_ROWS: Record<string, unknown>[] = [
+  { orderNo: 'SO-2026001', customer: '华东机械', amount: 128600.5, rate: 0.86, dueDate: '2026-12-01', status: '进行中' },
+  { orderNo: 'SO-2026002', customer: '南方电子', amount: 43200, rate: 1, dueDate: '2026-11-25', status: '已完成' },
+  { orderNo: 'SO-2026003', customer: '北方重工', amount: 98750.75, rate: 0.42, dueDate: '2026-12-15', status: '延期' },
+  { orderNo: 'SO-2026004', customer: '西部材料', amount: 15600, rate: 0.95, dueDate: '2026-11-30', status: '进行中' },
+  { orderNo: 'SO-2026005', customer: '中原物流', amount: 234890.25, rate: 0.68, dueDate: '2026-12-20', status: '进行中' },
+]
 
 /**
  * Tab ①：UI 组件库。
@@ -25,6 +40,16 @@ export function LibraryDemo() {
   const [lastAction, setLastAction] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [note, setNote] = useState('')
+  const [tableRows, setTableRows] = useState(INITIAL_TABLE_ROWS)
+
+  // 换一份数据，用于验证 replaceData 是否保留用户当前排序与滚动位置
+  const shuffleTable = () => {
+    setTableRows((prev) =>
+      prev.length === 0
+        ? INITIAL_TABLE_ROWS
+        : [...INITIAL_TABLE_ROWS].sort(() => Math.random() - 0.5).slice(0, prev.length),
+    )
+  }
 
   return (
     <div className="demo-stack">
@@ -160,8 +185,12 @@ export function LibraryDemo() {
 
       <LeoCard>
         <LeoText variant="h4">Chart（引擎模式）</LeoText>
+        <LeoText variant="caption">
+          三种图型各有独立字段：直角坐标系用 xField + series，饼图用 nameField + valueField，仪表盘只有 value。
+        </LeoText>
         <LeoChart
-          kind="bar"
+          kind="cartesian"
+          chartType="bar"
           height={220}
           data={[
             { area: 'A 区', actual: 6420, planned: 6845 },
@@ -175,6 +204,45 @@ export function LibraryDemo() {
           ]}
           showValueLabel
         />
+        <div className="demo-row">
+          <LeoChart
+            kind="pie"
+            chartType="ring"
+            height={220}
+            data={[
+              { name: 'A 区', value: 6420 },
+              { name: 'B 区', value: 5880 },
+              { name: 'C 区', value: 4260 },
+            ]}
+            nameField="name"
+            valueField="value"
+          />
+          <LeoChart kind="gauge" value={80.6} max={100} unit="%" height={220} />
+        </div>
+      </LeoCard>
+
+      <LeoCard>
+        <LeoText variant="h4">Table（引擎模式）</LeoText>
+        <div className="demo-row">
+          <LeoButton variant="default" onClick={shuffleTable}>
+            替换数据（验证排序是否保留）
+          </LeoButton>
+        </div>
+        <LeoTable
+          columns={[
+            { field: 'orderNo', label: '订单号', width: 140, sortable: true },
+            { field: 'customer', label: '客户', sortable: true },
+            { field: 'amount', label: '金额', width: 120, align: 'end', sortable: true, format: 'money' },
+            { field: 'rate', label: '完成率', width: 100, align: 'end', format: 'percent' },
+            { field: 'dueDate', label: '交付日期', width: 130, format: 'date' },
+            { field: 'status', label: '状态', width: 90, align: 'center' },
+          ]}
+          rows={tableRows}
+          height={260}
+          stripe
+          onRowClick={(row) => setLastAction(`点击了订单 ${String(row.orderNo)}`)}
+        />
+        {lastAction ? <LeoText variant="caption">{lastAction}</LeoText> : null}
       </LeoCard>
     </div>
   )

@@ -20,8 +20,18 @@ let requestCount = 0
 
 function chatHandler(): Connect.NextHandleFunction {
   return async (req, res) => {
-    // 请求体只用于触发；返回什么由它已经是第几次请求决定
-    await readBody(req)
+    // 请求体除了触发，还携带前端当前是否已有 surface。
+    // 刷新页面会丢掉前端内存里的 surface，但本进程的计数器不受影响；
+    // 若继续按计数下发 update 批次，页面拿不到 createSurface，就会一直停在「等待生成…」。
+    // 所以前端声明「没有 surface」时，强制从第 0 轮（含 createSurface）重来。
+    const body = await readBody(req)
+    let hasSurface = true
+    try {
+      hasSurface = JSON.parse(body)?.hasSurface !== false
+    } catch {
+      // 非法 body 时按「已有 surface」处理，保持原有行为
+    }
+    if (!hasSurface) requestCount = 0
 
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')

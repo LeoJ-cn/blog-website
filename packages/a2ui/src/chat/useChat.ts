@@ -38,7 +38,10 @@ export function useChat() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        // hasSurface 告诉 mock 后端「前端此刻有没有 surface」：
+        // 刷新后前端内存清空，mock 需要据此重发 createSurface，
+        // 否则它会接着上一轮的计数器只发增量消息，页面永远停在「等待生成…」。
+        body: JSON.stringify({ message: text, hasSurface: processor.getSurfaces().size > 0 }),
       })
 
       const serverVersion = res.headers.get('X-A2UI-Version')

@@ -15,8 +15,12 @@ export { LeoTabs, type LeoTabsProps, type LeoTabItem } from './LeoTabs'
 export { LeoModal, type LeoModalProps } from './LeoModal'
 export {
   LeoChart,
-  CHART_KINDS,
-  type ChartKind,
-  type LeoChartProps,
+  CARTESIAN_CHART_TYPES,
+  type CartesianChartType,
   type ChartSeries,
+  type CartesianChartProps,
+  type PieChartProps,
+  type GaugeChartProps,
+  type LeoChartProps,
 } from './LeoChart'
+export { LeoTable, type LeoTableProps, type LeoTableColumn } from './LeoTable'

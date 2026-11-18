@@ -15,6 +15,7 @@
 
 .app-header {
   flex-shrink: 0;
+
   /* 白底：只有内容区是米色，页头保持白色，两者靠分隔线划开 */
   background: var(--a2ui-color-surface);
   border-bottom: 1px solid var(--a2ui-color-border);
@@ -86,6 +87,7 @@
 
 .app-subheader {
   flex-shrink: 0;
+
   /* 白底：与内容区的米色区分开，边界由下方分隔线明确 */
   background: var(--a2ui-color-surface);
   border-bottom: 1px solid var(--a2ui-color-border);
@@ -154,9 +156,9 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   border-right: 1px solid var(--a2ui-color-border);
+
   /* 白底：与内容区的米色拉开层次，边界由右侧竖线明确 */
   background: var(--a2ui-color-surface);
   box-sizing: border-box;
@@ -216,6 +218,7 @@
   flex-shrink: 0;
   padding: var(--leo-space-2) var(--leo-space-4) 0;
   border-bottom: 1px solid var(--a2ui-color-border);
+
   /* 白底：Tab 条属于页头的一部分，与内容区的米色分开 */
   background: var(--a2ui-color-surface);
 }
@@ -332,6 +335,7 @@
   margin: 0 var(--leo-space-2);
   padding: var(--leo-space-2) var(--leo-space-3);
   border: none;
+
   /* 左侧竖线标记选中，比整块填色更克制 */
   border-left: 2px solid transparent;
   border-radius: 6px;
@@ -397,18 +401,35 @@
    内容区
    ============================================================ */
 
+/*
+ * 内容区 + 对话面板的并排容器。
+ *
+ * 内容区自己滚动（.app-content 是 overflow:auto），面板固定在右侧不参与滚动，
+ * 所以两者是同一行里的两个 flex 子项，而不是把面板塞进滚动内容里。
+ */
+.content-row {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
 .content {
   display: flex;
   flex-direction: column;
   gap: var(--leo-space-4);
+  flex: 1;
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   padding: var(--leo-space-4);
   box-sizing: border-box;
 }
 
 .content__empty {
   margin: 0;
+
   /* token 只有 1~4 四档，这里用 4 的两倍表达「更大的留白」，不引新变量 */
   padding: calc(var(--leo-space-4) * 2) 0;
   text-align: center;
@@ -418,64 +439,58 @@
 }
 
 /* ============================================================
-   悬浮 AI 对话窗
+   AI 对话面板：内容区右侧常驻一列
    ============================================================ */
 
+/*
+ * 收起态：掉出文档流，固定在视口右侧边缘。
+ * 用 fixed 而非 sticky，是因为收起后面板已不占位，
+ * 内容区会铺满整个宽度，按钮必须浮在其上才能一直点得到。
+ */
 .dock__launcher {
   position: fixed;
-  /* 位置由 JS 的 left/top 决定，默认贴左上角 */
-  left: var(--leo-space-4);
-  top: var(--leo-space-4);
+  top: 50%;
+  right: 0;
   z-index: 40;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: var(--leo-space-2);
   padding: var(--leo-space-3) var(--leo-space-4);
-  border: none;
-  border-radius: 999px;
+  border: 1px solid var(--a2ui-color-border);
+  border-right: none;
+  border-radius: var(--leo-radius) 0 0 var(--leo-radius);
   background: var(--a2ui-color-primary);
   color: var(--a2ui-color-on-primary);
   font-family: var(--a2ui-font-family-title);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 6px 20px color-mix(in oklab, var(--a2ui-color-primary) 40%, transparent);
-  transition: transform 140ms ease, box-shadow 140ms ease;
-  /* 拖动小按钮时别让浏览器把它当成滚动手势 */
-  touch-action: none;
-  user-select: none;
+  box-shadow: -4px 0 16px color-mix(in oklab, var(--a2ui-color-primary) 28%, transparent);
+  transition: padding-right 140ms ease;
 }
 
 .dock__launcher:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 26px color-mix(in oklab, var(--a2ui-color-primary) 45%, transparent);
+  /* 悬停时略微向左探出，提示可以展开 */
+  padding-right: calc(var(--leo-space-4) + 4px);
 }
 
+/*
+ * 展开态：作为 .content-row 的第二个 flex 子项常驻右侧。
+ * 不设 position，避免和内容区的滚动容器互相遮挡。
+ */
 .dock {
-  position: fixed;
-  left: var(--leo-space-4);
-  top: var(--leo-space-4);
-  z-index: 40;
   display: flex;
   flex-direction: column;
-  width: 380px;
-  height: min(70vh, 640px);
-  border: 1px solid var(--a2ui-color-border);
-  border-radius: 12px;
+  flex-shrink: 0;
+  width: 360px;
+  min-width: 0;
+
+  /* 与内容区同高，随 .content-row 拉伸 */
+  align-self: stretch;
+  min-height: 0;
+  border-left: 1px solid var(--a2ui-color-border);
   background: var(--a2ui-color-surface);
-  box-shadow: 0 16px 40px rgb(0 0 0 / 18%), 0 2px 8px rgb(0 0 0 / 8%);
-  overflow: hidden;
-}
-
-/* 拖拽时禁止选中文字、关掉过渡与 hover 位移，避免位置跟手迟滞 */
-.dock--dragging {
-  user-select: none;
-  transition: none;
-}
-
-.dock__launcher.dock--dragging {
-  transform: none;
-  box-shadow: 0 10px 26px color-mix(in oklab, var(--a2ui-color-primary) 45%, transparent);
 }
 
 .dock__header {
@@ -486,13 +501,6 @@
   padding: var(--leo-space-3) var(--leo-space-4);
   border-bottom: 1px solid var(--a2ui-color-border);
   background: color-mix(in oklab, var(--a2ui-color-primary) 5%, var(--a2ui-color-surface));
-  /* 标题栏即拖拽把手 */
-  cursor: grab;
-  touch-action: none;
-}
-
-.dock--dragging .dock__header {
-  cursor: grabbing;
 }
 
 .dock__title {
@@ -531,6 +539,26 @@
   flex: 1;
   min-height: 0;
   padding: var(--leo-space-3) var(--leo-space-4) var(--leo-space-4);
+}
+
+/*
+ * 窄屏降级：并排会把内容区压到只剩几十像素，无法阅读。
+ * 此时面板改为盖在内容区上的浮层，右侧留出一点边距；
+ * 收起按钮仍是 fixed，位置不变。
+ */
+@media (max-width: 900px) {
+  .dock {
+    position: fixed;
+    top: var(--leo-space-4);
+    right: var(--leo-space-4);
+    bottom: var(--leo-space-4);
+    width: min(360px, calc(100vw - var(--leo-space-4) * 2));
+    z-index: 40;
+    border: 1px solid var(--a2ui-color-border);
+    border-radius: var(--leo-radius);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 18%);
+    overflow: hidden;
+  }
 }
 
 /* ============================================================

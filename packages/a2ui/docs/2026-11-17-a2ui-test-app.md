@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 19.2.8、Vite 6.0.11、TypeScript 5.6.3、`@a2ui/react` 0.15.0、`@a2ui/web_core` 0.15.0、zod 3.25.76、Radix UI、ECharts 6.1.0
 
-**Spec:** `docs/superpowers/specs/2026-11-17-a2ui-test-app-design.md`
+**Spec:** `packages/a2ui/docs/2026-11-17-a2ui-test-app-design.md`
 
 ## Global Constraints
 

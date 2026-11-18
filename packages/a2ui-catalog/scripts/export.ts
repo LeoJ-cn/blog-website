@@ -11,7 +11,15 @@ import { LeoTextFieldApi } from '../src/components/LeoTextField.api'
 import { LeoCheckBoxApi } from '../src/components/LeoCheckBox.api'
 import { LeoTabsApi } from '../src/components/LeoTabs.api'
 import { LeoModalApi } from '../src/components/LeoModal.api'
-import { LeoChartApi } from '../src/components/LeoChart.api'
+import {
+  LeoBarChartApi,
+  LeoHBarChartApi,
+  LeoLineChartApi,
+  LeoAreaChartApi,
+  LeoPieChartApi,
+  LeoRingChartApi,
+  LeoGaugeChartApi,
+} from '../src/components/LeoChart.api'
 import { LeoOrderCardApi } from '../src/components/LeoOrderCard.api'
 import { LeoBadgeApi } from '../src/components/LeoBadge.api'
 import { LeoStatCardApi } from '../src/components/LeoStatCard.api'
@@ -34,7 +42,13 @@ const merged = new Catalog(
     LeoCheckBoxApi,
     LeoTabsApi,
     LeoModalApi,
-    LeoChartApi,
+    LeoBarChartApi,
+    LeoHBarChartApi,
+    LeoLineChartApi,
+    LeoAreaChartApi,
+    LeoPieChartApi,
+    LeoRingChartApi,
+    LeoGaugeChartApi,
     LeoOrderCardApi,
     LeoBadgeApi,
     LeoStatCardApi,

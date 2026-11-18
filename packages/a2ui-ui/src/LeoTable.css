@@ -1,0 +1,167 @@
+/*
+ * Tabulator 主题覆盖。
+ *
+ * 为什么需要这一层：tabulator.css 有 116 处硬编码色值、0 个 CSS 变量，
+ * 而本包规则要求颜色只能来自 --leo-* / --a2ui-*。这里按 Tabulator 的
+ * 选择器结构逐块重新声明，所有色值改走变量，暗色主题因此自动生效。
+ *
+ * 不使用 !important：Tabulator 的选择器最高 4 层且全部挂在 .tabulator 下，
+ * 本文件在其后加载，同层级即可覆盖。个别带 !important 的原始规则单独处理。
+ */
+
+/* ---------- 容器 ---------- */
+.tabulator {
+  border: 1px solid var(--leo-border);
+  background-color: var(--leo-surface);
+  color: var(--leo-text);
+  font-family: var(--leo-font);
+  border-radius: var(--leo-radius);
+  overflow: hidden;
+}
+
+/* ---------- 表头 ---------- */
+.tabulator .tabulator-header {
+  border-bottom: 1px solid var(--leo-border);
+  background-color: var(--leo-surface);
+  color: var(--leo-text-muted);
+  font-weight: 600;
+}
+
+.tabulator .tabulator-header .tabulator-col {
+  border-right: 1px solid var(--leo-border);
+  background-color: transparent;
+}
+
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
+  background-color: var(--leo-bg);
+}
+
+/* 排序箭头：原实现用 border 拼三角，颜色需要单独改 */
+.tabulator .tabulator-header .tabulator-col .tabulator-col-sorter .tabulator-arrow {
+  border-bottom-color: var(--leo-text-muted);
+}
+
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort='ascending']
+  .tabulator-col-sorter
+  .tabulator-arrow {
+  border-bottom-color: var(--leo-brand);
+}
+
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort='descending']
+  .tabulator-col-sorter
+  .tabulator-arrow {
+  border-top-color: var(--leo-brand);
+}
+
+/* ---------- 表体 ---------- */
+.tabulator .tabulator-tableholder .tabulator-table {
+  background-color: var(--leo-surface);
+  color: var(--leo-text);
+}
+
+.tabulator-row {
+  background-color: var(--leo-surface);
+  color: var(--leo-text);
+}
+
+/* 斑马纹：Tabulator 自带 CSS 无条件给偶数行上 #EFEFEF，
+   且其选择器 (.tabulator-row.tabulator-row-even) 有两个类名。
+   这里显式把偶数行恢复成普通底色，再按 stripe 开关叠加条纹——
+   否则即使传 stripe={false} 也会出现条纹和主题外的灰。 */
+.tabulator .tabulator-row.tabulator-row-even {
+  background-color: var(--leo-surface);
+}
+
+.leo-table--stripe .tabulator-row.tabulator-row-even {
+  background-color: var(--leo-bg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabulator-row.tabulator-selectable:hover {
+    background-color: var(--leo-bg);
+  }
+}
+
+.tabulator-row.tabulator-selected {
+  background-color: color-mix(in oklab, var(--leo-brand) 18%, var(--leo-surface));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabulator-row.tabulator-selected:hover {
+    background-color: color-mix(in oklab, var(--leo-brand) 26%, var(--leo-surface));
+  }
+}
+
+.tabulator-row .tabulator-cell {
+  border-right: 1px solid var(--leo-border);
+}
+
+/* ---------- 空状态 ---------- */
+.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placeholder-contents {
+  color: var(--leo-text-muted);
+  font-weight: normal;
+  font-size: 14px;
+}
+
+/* ---------- 页脚 / 分页 ---------- */
+.tabulator .tabulator-footer {
+  border-top: 1px solid var(--leo-border);
+  background-color: var(--leo-surface);
+  color: var(--leo-text-muted);
+}
+
+.tabulator .tabulator-footer .tabulator-page {
+  border: 1px solid var(--leo-border);
+  background: transparent;
+  color: var(--leo-text);
+  border-radius: var(--leo-radius-sm);
+}
+
+.tabulator .tabulator-footer .tabulator-page.active {
+  color: var(--leo-surface);
+  background-color: var(--leo-brand);
+  border-color: var(--leo-brand);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabulator .tabulator-footer .tabulator-page:not(:disabled):hover {
+    background: var(--leo-bg);
+    color: var(--leo-text);
+  }
+}
+
+.tabulator .tabulator-footer .tabulator-page-size {
+  border: 1px solid var(--leo-border);
+  background: transparent;
+  color: var(--leo-text);
+}
+
+/* ---------- 汇总行 ---------- */
+.tabulator .tabulator-footer .tabulator-calcs-holder {
+  background-color: var(--leo-bg);
+  border-bottom: 1px solid var(--leo-border);
+}
+
+.tabulator-row.tabulator-calcs {
+  background-color: var(--leo-bg) !important;
+  font-weight: 600;
+  color: var(--leo-text);
+}
+
+/* ---------- 提示气泡 ---------- */
+.tabulator-tooltip {
+  background-color: var(--leo-solid);
+  color: var(--leo-solid-text);
+  border-radius: var(--leo-radius-sm);
+}
+
+/* ---------- 加载遮罩 ---------- */
+.tabulator .tabulator-loader {
+  background-color: color-mix(in oklab, var(--leo-surface) 78%, transparent);
+}
+
+.tabulator .tabulator-loader .tabulator-loader-msg {
+  background-color: var(--leo-surface);
+  color: var(--leo-text);
+  border: 1px solid var(--leo-border);
+}

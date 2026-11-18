@@ -39,9 +39,11 @@ const defaultBatch: A2uiMessage[] = [
             'interactionBlock',
             'badgeBlock',
             'businessBlock',
+            'searchBlock',
+            'navBlock',
           ],
         },
-        { id: 'title', component: 'LeoText', text: '自定义组件总览', variant: 'h2' },
+        { id: 'title', component: 'LeoText', text: '自定义组件总览', variant: 'h1' },
         {
           id: 'tip',
           component: 'LeoText',
@@ -50,14 +52,13 @@ const defaultBatch: A2uiMessage[] = [
         },
         { id: 'divider0', component: 'Divider', axis: 'horizontal' },
 
-        // ---- 图表：LeoChart ----
+        // ---- 图表：每个图形一个独立组件 ----
         { id: 'chartBlock', component: 'LeoCard', child: 'chartInner' },
-        { id: 'chartInner', component: 'Column', children: ['chartLabel', 'stats'] },
-        { id: 'chartLabel', component: 'LeoText', text: 'LeoChart（引擎模式）', variant: 'h5' },
+        { id: 'chartInner', component: 'Column', children: ['chartLabel', 'stats', 'pieRow'] },
+        { id: 'chartLabel', component: 'LeoText', text: '图表（引擎模式）', variant: 'h5' },
         {
           id: 'stats',
-          component: 'LeoChart',
-          kind: 'bar',
+          component: 'LeoBarChart',
           height: 260,
           data: { path: '/outputByArea' },
           xField: 'area',
@@ -66,6 +67,28 @@ const defaultBatch: A2uiMessage[] = [
             { field: 'planned', label: '计划', color: '#c5cfe0' },
           ],
           showValueLabel: true,
+        },
+        {
+          id: 'pieRow',
+          component: 'Row',
+          children: ['pie', 'gauge'],
+          justify: 'start',
+        },
+        {
+          id: 'pie',
+          component: 'LeoRingChart',
+          height: 220,
+          data: { path: '/outputByArea' },
+          nameField: 'area',
+          valueField: 'actual',
+        },
+        {
+          id: 'gauge',
+          component: 'LeoGaugeChart',
+          height: 220,
+          value: { path: '/oee' },
+          max: 100,
+          unit: '%',
         },
 
         // ---- 指标卡：LeoStatCard ----
@@ -272,6 +295,79 @@ const defaultBatch: A2uiMessage[] = [
           label: '备注',
           value: { path: '/form/note' },
         },
+
+        // ---- 搜索：演示 action.context 的路径绑定 ----
+        // 这里刻意把本页所有可写状态都绑进 context：
+        //   form/line      —— 输入框当前值
+        //   form/remember  —— 勾选框当前值
+        //   form/note      —— 弹窗里的备注
+        // 用户改动这些控件后点搜索，后端在 /api/action 的 context 里拿到的就是
+        // 点击那一刻的实际值，而不是组件初始化时下发的默认值。
+        // 纯展示组件（Chart / StatCard / Badge / Card / Text）没有可写状态，
+        // 不进入 context；它们绑定的数据由 processor 自动附加的 dataModel 覆盖。
+        { id: 'searchBlock', component: 'LeoCard', child: 'searchInner' },
+        {
+          id: 'searchInner',
+          component: 'Column',
+          children: ['searchLabel', 'searchTip', 'searchButton'],
+        },
+        { id: 'searchLabel', component: 'LeoText', text: '搜索（action 取值演示）', variant: 'h5' },
+        {
+          id: 'searchTip',
+          component: 'LeoText',
+          text: '修改上方输入框或勾选框后点搜索，回传的 context 是当前页面状态。',
+          variant: 'caption',
+        },
+        {
+          id: 'searchButton',
+          component: 'LeoButton',
+          variant: 'primary',
+          child: 'searchButtonText',
+          action: {
+            event: {
+              name: 'search',
+              context: {
+                line: { path: '/form/line' },
+                remember: { path: '/form/remember' },
+                note: { path: '/form/note' },
+              },
+            },
+          },
+        },
+        { id: 'searchButtonText', component: 'LeoText', text: '搜索', variant: 'body' },
+
+        // ---- 路由跳转：action 名为 navigate 时由前端本地处理，不上行后端 ----
+        // context.to 是目标路径；这里用字面量而非路径绑定，
+        // 因为跳转目标由后端决定，不来自页面状态。
+        { id: 'navBlock', component: 'LeoCard', child: 'navInner' },
+        { id: 'navInner', component: 'Column', children: ['navLabel', 'navTip', 'navRow'] },
+        // { id: 'navLabel', component: 'LeoText', text: '路由跳转', variant: 'h5' },
+        // {
+        //   id: 'navTip',
+        //   component: 'LeoText',
+        //   text: '点击后由前端本地跳转，不会 POST /api/action。',
+        //   variant: 'caption',
+        // },
+        // {
+        //   id: 'navRow',
+        //   component: 'Row',
+        //   children: ['navToBuiltin', 'navToLibrary'],
+        //   justify: 'start',
+        // },
+        // {
+        //   id: 'navToBuiltin',
+        //   component: 'LeoLinkButton',
+        //   text: '去 A2UI 自带组件',
+        //   arrow: true,
+        //   action: { event: { name: 'navigate', context: { to: '/builtin' } } },
+        // },
+        // {
+        //   id: 'navToLibrary',
+        //   component: 'LeoLinkButton',
+        //   text: '去 UI 组件库',
+        //   arrow: true,
+        //   action: { event: { name: 'navigate', context: { to: '/library' } } },
+        // },
       ],
     },
   },
@@ -284,6 +380,8 @@ const defaultBatch: A2uiMessage[] = [
         order: { no: 'SVPC-PRO-2410', amount: 128.5 },
         // note 对应 LeoModal 内的备注输入框；缺失会让该绑定渲染成空值
         form: { line: 'A 区装配线', remember: true, note: '' },
+        // oee 供 LeoGaugeChart 绑定；仪表盘只吃单个标量，不是数组
+        oee: 80.6,
         outputByArea: [
           { area: 'A 区', actual: 6420, planned: 6845 },
           { area: 'B 区', actual: 5880, planned: 6189 },
@@ -311,6 +409,7 @@ const updateBatch: A2uiMessage[] = [
       value: {
         order: { no: 'SVPC-PRO-2411', amount: 268.0 },
         form: { line: 'B 区装配线', remember: false, note: '' },
+        oee: 92.4,
         outputByArea: [
           { area: 'A 区', actual: 7100, planned: 6900 },
           { area: 'B 区', actual: 6420, planned: 6280 },
@@ -325,7 +424,7 @@ const updateBatch: A2uiMessage[] = [
     updateComponents: {
       surfaceId: SURFACE_ID,
       components: [
-        { id: 'title', component: 'LeoText', text: '复杂组件展示（数据已更新）', variant: 'h2' },
+        { id: 'title', component: 'LeoText', text: 'Leo 复杂组件展示（数据已更新）', variant: 'h5' },
         {
           id: 'tip',
           component: 'LeoText',
