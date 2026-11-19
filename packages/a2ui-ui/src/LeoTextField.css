@@ -26,6 +26,13 @@
   border-color: var(--a2ui-color-primary);
 }
 
+/* textarea 与 input 共用尺寸规则；textarea 额外允许纵向缩放并给一个够用的默认高度 */
+.leo-field__input--textarea {
+  min-height: 88px;
+  resize: vertical;
+  font-family: inherit;
+}
+
 .leo-field__input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -33,4 +40,10 @@
 
 .leo-field--invalid .leo-field__input {
   border-color: var(--leo-danger);
+}
+
+.leo-field__error {
+  font-size: 12px;
+  color: var(--leo-danger);
+  font-family: var(--a2ui-font-family-title);
 }

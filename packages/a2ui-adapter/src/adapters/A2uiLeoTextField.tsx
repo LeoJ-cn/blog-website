@@ -3,12 +3,13 @@ import { createComponentImplementation } from '../protocol'
 import { LeoTextField } from '@white55/a2ui-ui'
 
 /**
- * 校验失败与否由两套机制决定，任一不通过即为非法：
- *   validationRegexp —— 正则不匹配
- *   checks           —— 任一条 condition 为 false
+ * 校验状态有两个来源，任一不通过即为非法：
  *
- * 注意 condition 已经在 web_core 里解析过：绑定路径的会解成布尔值，
- * 所以这里只需要处理布尔结果，不必再关心它原本是 path 还是字面量。
+ *   checks           —— 由 binder 的 Checkable 机制求值，结果已汇总到
+ *                       isValid / validationErrors / validationResults；
+ *                       这里只消费，不重新遍历规则，否则会丢掉 severity 与结构化 message
+ *   validationRegexp —— 不在 Checkable 机制内（web_core 未处理该字段），
+ *                       由适配层自行用 RegExp 求值
  */
 export const A2uiLeoTextField = createComponentImplementation(
   LeoTextFieldApi,
@@ -27,13 +28,20 @@ export const A2uiLeoTextField = createComponentImplementation(
         }
       })()
 
-    const checkFailed = (props.checks ?? []).some((c) => c.condition === false)
+    // validationErrors 只含 severity 为 error 的条目；warning/info 留在 validationResults 里
+    const checkErrors = props.validationErrors ?? []
+    const checksFailed = props.isValid === false
+
+    // 正则与 checks 可能同时失败；优先展示 checks 的文案，它更贴近业务规则
+    const errorText = checkErrors[0] ?? (regexFailed ? '格式不正确' : undefined)
 
     return (
       <LeoTextField
         label={typeof props.label === 'string' ? props.label : undefined}
         value={raw}
-        invalid={regexFailed || checkFailed}
+        variant={props.variant}
+        invalid={checksFailed || regexFailed}
+        errorText={errorText}
         onChange={(next) => props.setValue?.(next)}
       />
     )

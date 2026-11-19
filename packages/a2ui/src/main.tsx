@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import '@white55/a2ui-ui/tokens.css'
+// 图表 token 依赖 tokens.css 里的品牌层变量，必须在其后引入
+import '@white55/a2ui-ui/chart-tokens.css'
 import { App } from './app/App'
 
 const container = document.getElementById('root')

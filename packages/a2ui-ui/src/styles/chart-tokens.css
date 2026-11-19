@@ -1,0 +1,163 @@
+/*
+ * 图表样式 token。
+ *
+ * 与 tokens.css 的分工：
+ *   tokens.css       —— 全局品牌色与映射层，所有组件共用
+ *   本文件            —— 只服务 ECharts，把「图表怎么长」从 LeoChart.tsx 里搬出来
+ *
+ * 为什么单独一个文件：
+ *   图表的配色、线宽、间距有十几项，且要按主题整组切换。塞进 tokens.css 会
+ *   让通用品牌层被图表细节淹没；分开之后，调图表视觉只改这里，不碰其它组件。
+ *
+ * 引入顺序要求：必须在 tokens.css 之后引入。
+ *   本文件大量使用 var(--leo-*) / var(--a2ui-*)，那些值由 tokens.css 定义；
+ *   CSS 变量在运行时解析，顺序不影响取值，但放在后面读起来才符合依赖方向。
+ *
+ * 命名约定：
+ *   --leo-chart-*      图表专用，前缀区分于通用品牌 token
+ *   色值统一从 --leo-brand / --leo-data 派生，保证与全站同源
+ */
+
+:root {
+  /* ============================================================
+     一、系列色板
+     ============================================================ */
+
+  /*
+   * 多系列图表的取色顺序。第 1、2 个直接复用品牌层：
+   *   chart-1 用 --leo-data（蓝）—— 数据主色，与可点击的金色区分
+   *   chart-2 用 --leo-brand（金）—— 第二系列与强调色同源
+   * 后面三个是低饱和的辅助色，保证同一张图里五个系列都能区分。
+   *
+   * 取值原则：饱和度低于品牌色，避免辅助系列抢走视觉重心。
+   */
+  --leo-chart-1: var(--leo-data);
+  --leo-chart-2: var(--leo-brand);
+  --leo-chart-3: #7b9e87;
+  --leo-chart-4: #a67c94;
+  --leo-chart-5: #c49a6c;
+
+  /* ============================================================
+     二、线条与网格
+     ============================================================ */
+
+  /* 坐标轴主线。比全局 border 略淡，避免图表内部比卡片边框还重 */
+  --leo-chart-axis-line: var(--leo-border);
+
+  /* 网格分割线：比轴线更淡，只在深色下略微提亮 */
+  --leo-chart-split-line: color-mix(in oklab, var(--leo-border) 70%, transparent);
+
+  /* 分割线样式。虚线比实线轻，能让数据本身更突出 */
+  --leo-chart-split-line-type: dashed;
+  --leo-chart-split-line-width: 1px;
+
+  /* 折线的线宽与标记点大小 */
+  --leo-chart-line-width: 2px;
+  --leo-chart-symbol-size: 6px;
+
+  /* 柱状图最大宽度，防止少分类时柱子过粗 */
+  --leo-chart-bar-max-width: 32px;
+
+  /* 柱状图顶部圆角。只圆上两角，贴住基线的下两角保持直角 */
+  --leo-chart-bar-radius: 4px;
+
+  /* ============================================================
+     三、面积图渐变
+     ============================================================ */
+
+  /*
+   * 面积图的填充是「顶部半透明 → 底部几乎透明」的垂直渐变。
+   * 用两个不透明度表达，实际颜色由系列色在运行时叠加：
+   *   顶部 alpha 让色块可辨但不像实心色块那样压迫
+   *   底部接近 0，让面积与白色背景自然融合
+   */
+  --leo-chart-area-fill-top: 0.32;
+  --leo-chart-area-fill-bottom: 0.02;
+
+  /* ============================================================
+     四、文字
+     ============================================================ */
+
+  /* 坐标轴刻度文字：比正文小一号 */
+  --leo-chart-axis-font-size: 12px;
+
+  /* 图例文字 */
+  --leo-chart-legend-font-size: 12px;
+
+  /* 数值标签（柱顶、点上） */
+  --leo-chart-label-font-size: 11px;
+
+  /* 数值标签与图形的间距 */
+  --leo-chart-label-distance: 6px;
+
+  /* ============================================================
+     五、布局
+     ============================================================ */
+
+  /*
+   * 画布内边距。
+   *   left 要留够纵轴刻度文字的宽度（四位数约 40px）
+   *   bottom 要为图例预留空间，不显示图例时由 JS 单独收窄
+   */
+  --leo-chart-grid-left: 48px;
+  --leo-chart-grid-right: 16px;
+  --leo-chart-grid-top: 16px;
+  --leo-chart-grid-bottom: 24px;
+  --leo-chart-grid-bottom-with-legend: 48px;
+
+  /* 图例与画布底边的间距 */
+  --leo-chart-legend-bottom: 0px;
+
+  /* 图例色块尺寸 */
+  --leo-chart-legend-icon-size: 10px;
+
+  /* 默认画布高度；契约里的 height 字段会覆盖它 */
+  --leo-chart-height: 240px;
+
+  /* ============================================================
+     六、Tooltip
+     ============================================================ */
+
+  /* 背景与边框跟卡片同源，避免出现 ECharts 默认的白色方块 */
+  --leo-chart-tooltip-bg: var(--leo-surface);
+  --leo-chart-tooltip-border: var(--leo-border);
+  --leo-chart-tooltip-radius: var(--leo-radius-sm);
+  --leo-chart-tooltip-shadow: var(--leo-shadow-raised);
+  --leo-chart-tooltip-padding: 8px 10px;
+
+  /* ============================================================
+     七、饼图与仪表盘
+     ============================================================ */
+
+  /* 分片之间的描边，用画布底色「切」出间隙 */
+  --leo-chart-pie-border-color: var(--leo-surface);
+  --leo-chart-pie-border-width: 2px;
+
+  /* 悬停时的高亮阴影，用主色做柔和外发光 */
+  --leo-chart-emphasis-shadow-blur: 8px;
+
+  /* 仪表盘刻度与指针 */
+  --leo-chart-gauge-axis-width: 12px;
+  --leo-chart-gauge-pointer-width: 4px;
+}
+
+[data-theme='dark'] {
+  /*
+   * 深色下辅助色提亮约两档。
+   * 原因与 tokens.css 里语义色一致：低饱和的中间调在暖黑底上会糊成一片，
+   * 提亮后既保持低饱和，又能在深底上分辨出系列差异。
+   */
+  --leo-chart-3: #8fb89c;
+  --leo-chart-4: #b98da8;
+  --leo-chart-5: #d4ab7c;
+
+  /* 深色下分割线需要比浅色更明显，否则整片区域看不出网格 */
+  --leo-chart-split-line: color-mix(in oklab, var(--leo-border) 60%, transparent);
+
+  /*
+   * 深色下面积图需要更高的不透明度：同样的 alpha 在深底上的视觉对比度更低，
+   * 不提亮会几乎看不见填充。
+   */
+  --leo-chart-area-fill-top: 0.42;
+  --leo-chart-area-fill-bottom: 0.04;
+}
